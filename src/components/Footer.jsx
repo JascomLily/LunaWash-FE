@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Footer component dùng chung cho toàn bộ giao diện LunaWash.
- * Sửa lỗi scale nền tràn màn hình (full-width background) và dịch sang tiếng Việt có dấu hoàn chỉnh.
+ * 
  */
 export default function Footer() {
   return (
