@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 
 /**
  * Trang Đăng nhập - LunaWash.
- * Chuyển sang React và sử dụng tiếng Việt có dấu hoàn chỉnh.
+ * Hỗ trợ lưu trữ trạng thái người dùng cục bộ (localStorage) khi đăng nhập thành công.
+ * Tự động phân tách hạng thành viên theo email nhập vào để khớp với dữ liệu mẫu của Database.
  */
 export default function Login() {
   const navigate = useNavigate();
@@ -40,8 +41,45 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Đăng nhập thành công! Chào mừng bạn quay lại với LunaWash.');
-    navigate('/');
+
+    // Giả lập phân tách thông tin đăng nhập theo email khớp với Seed Data của SQL Server
+    let loggedInUser = {
+      fullName: 'Tran Khach Hang Member',
+      email: email,
+      tier: 'Member',
+      avatarUrl: null
+    };
+
+    if (email.toLowerCase() === 'customer2@gmail.com' || email.toLowerCase() === 'gold@gmail.com') {
+      loggedInUser = {
+        fullName: 'Pham Khach Vang',
+        email: email,
+        tier: 'Gold',
+        avatarUrl: null
+      };
+    } else if (email.toLowerCase() === 'admin@lunawash.com') {
+      loggedInUser = {
+        fullName: 'Nguyen Van Admin',
+        email: email,
+        tier: 'Admin',
+        avatarUrl: null
+      };
+    } else if (email.toLowerCase() === 'staff1@lunawash.com') {
+      loggedInUser = {
+        fullName: 'Le Nhan Vien 1',
+        email: email,
+        tier: 'Staff',
+        avatarUrl: null
+      };
+    }
+
+    // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
+    localStorage.setItem('user', JSON.stringify(loggedInUser));
+
+    alert(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName} quay lại với LunaWash.`);
+    
+    // Tải lại trang chủ để cập nhật tức thì Header mà không cần cơ chế phức tạp
+    window.location.href = '/';
   };
 
   return (
@@ -71,7 +109,7 @@ export default function Login() {
               <input 
                 className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface" 
                 id="email" 
-                placeholder="email@example.com" 
+                placeholder="customer1@gmail.com" 
                 type="email"
                 required
                 value={email}
