@@ -41,10 +41,40 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Đăng ký tài khoản thành công! Chào mừng bạn đến với LunaWash.');
-    navigate('/login');
+
+    if (password !== confirmPassword) {
+      alert('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+
+    if (!agreeTerms) {
+      alert('Bạn cần đồng ý với các điều khoản.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/Auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ fullName, email, phone, password })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Đăng ký thất bại: ${errorData.message || 'Email có thể đã tồn tại hoặc dữ liệu không hợp lệ.'}`);
+        return;
+      }
+
+      alert('Đăng ký tài khoản thành công! Chào mừng bạn đến với LunaWash.');
+      navigate('/login');
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Đã xảy ra lỗi khi kết nối tới máy chủ.');
+    }
   };
 
   return (
