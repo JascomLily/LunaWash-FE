@@ -39,47 +39,47 @@ export default function Login() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Giả lập phân tách thông tin đăng nhập theo email khớp với Seed Data của SQL Server
-    let loggedInUser = {
-      fullName: 'Tran Khach Hang Member',
-      email: email,
-      tier: 'Member',
-      avatarUrl: null
-    };
+    try {
+      const response = await fetch('/api/Auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
 
-    if (email.toLowerCase() === 'customer2@gmail.com' || email.toLowerCase() === 'gold@gmail.com') {
-      loggedInUser = {
-        fullName: 'Pham Khach Vang',
-        email: email,
-        tier: 'Gold',
-        avatarUrl: null
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Đăng nhập thất bại: ${errorData.message || 'Lỗi hệ thống'}`);
+        return;
+      }
+
+      const data = await response.json();
+      
+      // Assume the backend returns an object with user info and token
+      // data.token, data.user
+      let loggedInUser = {
+        fullName: data.user?.fullName || data.fullName || 'Người dùng',
+        email: data.user?.email || data.email || email,
+        tier: data.user?.tier || data.role || 'Member',
+        avatarUrl: data.user?.avatarUrl || null,
+        token: data.token
       };
-    } else if (email.toLowerCase() === 'admin@lunawash.com') {
-      loggedInUser = {
-        fullName: 'Nguyen Van Admin',
-        email: email,
-        tier: 'Admin',
-        avatarUrl: null
-      };
-    } else if (email.toLowerCase() === 'staff1@lunawash.com') {
-      loggedInUser = {
-        fullName: 'Le Nhan Vien 1',
-        email: email,
-        tier: 'Staff',
-        avatarUrl: null
-      };
+
+      // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
+
+      alert(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName} quay lại với LunaWash.`);
+      
+      // Tải lại trang chủ để cập nhật tức thì Header mà không cần cơ chế phức tạp
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Đã xảy ra lỗi khi kết nối tới máy chủ.');
     }
-
-    // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
-    localStorage.setItem('user', JSON.stringify(loggedInUser));
-
-    alert(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName} quay lại với LunaWash.`);
-    
-    // Tải lại trang chủ để cập nhật tức thì Header mà không cần cơ chế phức tạp
-    window.location.href = '/';
   };
 
   return (
