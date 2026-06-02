@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 /**
  * Trang Đăng ký tài khoản - LunaWash.
- * Chuyển sang React và sử dụng tiếng Việt có dấu hoàn chỉnh.
+ * Kết nối trực tiếp với API Backend của hệ thống.
  */
 export default function Register() {
   const navigate = useNavigate();
@@ -13,9 +13,11 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Add some atmospheric micro-interaction
+    // Hiệu ứng tương tác nền
     const handleMouseMove = (e) => {
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
@@ -41,10 +43,53 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Đăng ký tài khoản thành công! Chào mừng bạn đến với LunaWash.');
-    navigate('/login');
+    setErrorMsg('');
+
+    if (password !== confirmPassword) {
+      setErrorMsg('Mật khẩu xác nhận không trùng khớp.');
+      return;
+    }
+
+    if (!agreeTerms) {
+      setErrorMsg('Vui lòng đồng ý với các Điều khoản & Chính sách.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5010/api/Auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: fullName,
+          email: email,
+          phone: phone,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        let errText = 'Đăng ký tài khoản thất bại.';
+        try {
+          const errData = await response.json();
+          if (errData.message) errText = errData.message;
+        } catch (jsonErr) {}
+        throw new Error(errText);
+      }
+
+      alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập để bắt đầu sử dụng.');
+      navigate('/login');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Không thể kết nối đến máy chủ Backend.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,6 +146,14 @@ export default function Register() {
             <h1 className="font-headline-lg text-headline-lg text-primary mb-2">Đăng ký tài khoản</h1>
             <p className="font-body-md text-body-md text-on-surface-variant">Khởi đầu hành trình chăm sóc xe chuyên nghiệp cùng chúng tôi.</p>
           </div>
+
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-error-container/20 border border-error/30 rounded-xl text-error text-sm font-medium flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">error</span>
+              {errorMsg}
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="fullname">Họ tên</label>
@@ -114,6 +167,7 @@ export default function Register() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -131,6 +185,7 @@ export default function Register() {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -146,6 +201,7 @@ export default function Register() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -163,11 +219,13 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
                 <button 
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" 
                   type="button"
                   onClick={togglePasswordVisibility}
+                  disabled={loading}
                 >
                   <span className="material-symbols-outlined" id="toggle-icon">visibility</span>
                 </button>
@@ -186,6 +244,7 @@ export default function Register() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -198,17 +257,29 @@ export default function Register() {
                 required
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
+                disabled={loading}
               />
-              <label className="text-sm text-on-surface-variant" htmlFor="terms">
+              <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="terms">
                 Tôi đồng ý với <a className="text-primary font-bold hover:underline" href="#">Điều khoản</a> và <a className="text-primary font-bold hover:underline" href="#">Chính sách bảo mật</a>.
               </label>
             </div>
 
             <button 
-              className="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-xl shadow-lg hover:shadow-primary/20 transition-all duration-300 transform active:scale-[0.98] hover:bg-primary-container" 
+              className="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-xl shadow-lg hover:shadow-primary/20 transition-all duration-300 transform active:scale-[0.98] hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
               type="submit"
+              disabled={loading}
             >
-              Đăng ký ngay
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang đăng ký...
+                </>
+              ) : (
+                'Đăng ký ngay'
+              )}
             </button>
             <div className="text-center pt-4">
               <p className="font-body-md text-body-md text-on-surface-variant">

@@ -2,116 +2,130 @@ import React from 'react';
 
 /**
  * Footer component dùng chung cho toàn bộ giao diện LunaWash.
- * 
+ * Khớp hoàn hảo với thiết kế chân trang trong hình ảnh số 1.
  */
 export default function Footer() {
   return (
-    <footer className="w-full bg-on-background dark:bg-inverse-surface mt-16 text-surface-bright font-body-md text-body-md border-t border-outline-variant/10 py-12">
-      <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row justify-between items-start gap-gutter">
+    <footer className="w-full bg-[#111625] text-surface-bright font-body-md text-body-md py-12">
+      <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col lg:flex-row justify-between items-start gap-12">
         
         {/* Cột 1: Thông tin thương hiệu */}
-        <div className="max-w-sm">
-          <div className="mb-6">
+        <div className="max-w-sm flex flex-col gap-4">
+          <div className="mb-2">
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
               alt="LunaWash Logo"
-              className="h-16 w-auto object-contain brightness-0 invert"
+              className="h-12 w-auto object-contain brightness-0 invert"
             />
           </div>
-          <p className="text-surface-variant mb-6 font-body-md">
+          <p className="text-white/60 text-sm leading-relaxed">
             Hệ thống chăm sóc xe thông minh hàng đầu Việt Nam, ứng dụng công nghệ tự động hóa và quản lý tối ưu.
           </p>
-          <p className="text-surface-variant text-sm">
-            © 2026 LunaWash Technologies. All rights reserved.
+          <p className="text-white/40 text-xs mt-4">
+            © 2024 LunaWash. All rights reserved.
           </p>
         </div>
 
-        {/* Khối các liên kết nhanh */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-12">
+        {/* Khối các liên kết nhanh (Khớp chính xác ảnh 1) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter lg:flex-grow lg:justify-end">
+          
           {/* Cột khám phá */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-bold text-secondary-fixed uppercase text-sm tracking-widest text-white">
+          <div className="flex flex-col gap-4 min-w-[120px]">
+            <h4 className="font-bold text-white uppercase text-xs tracking-widest">
               Khám phá
             </h4>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Rửa cơ bản
+                <a className="text-white/60 hover:text-white transition-colors" href="#about">
+                  Về chúng tôi
                 </a>
               </li>
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Rửa chuyên sâu
+                <a className="text-white/60 hover:text-white transition-colors" href="#packages">
+                  Bảng giá
                 </a>
               </li>
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Phủ Ceramic
+                <a className="text-white/60 hover:text-white transition-colors" href="#locations">
+                  Chi nhánh
                 </a>
               </li>
             </ul>
           </div>
 
           {/* Cột hỗ trợ */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-bold text-secondary-fixed uppercase text-sm tracking-widest text-white">
+          <div className="flex flex-col gap-4 min-w-[120px]">
+            <h4 className="font-bold text-white uppercase text-xs tracking-widest">
               Hỗ trợ
             </h4>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
+                <a className="text-white/60 hover:text-white transition-colors" href="#support-center">
+                  Trung tâm hỗ trợ
+                </a>
+              </li>
+              <li>
+                <a className="text-white/60 hover:text-white transition-colors" href="#faq">
                   FAQ
                 </a>
               </li>
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
+                <a className="text-white/60 hover:text-white transition-colors" href="#contact">
                   Liên hệ
                 </a>
               </li>
-              <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Accessibility
-                </a>
-              </li>
             </ul>
           </div>
 
-          {/* Cột pháp lý */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-bold text-secondary-fixed uppercase text-sm tracking-widest text-white">
-              Pháp lý
+          {/* Cột chính sách */}
+          <div className="flex flex-col gap-4 min-w-[120px]">
+            <h4 className="font-bold text-white uppercase text-xs tracking-widest">
+              Chính sách
             </h4>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Privacy Policy
+                <a className="text-white/60 hover:text-white transition-colors" href="#privacy">
+                  Bảo mật
                 </a>
               </li>
               <li>
-                <a className="text-surface-variant hover:text-secondary-fixed transition-colors hover:underline" href="#">
-                  Terms of Service
+                <a className="text-white/60 hover:text-white transition-colors" href="#terms">
+                  Điều khoản
                 </a>
               </li>
             </ul>
           </div>
-        </div>
 
-        {/* Kết nối mạng xã hội */}
-        <div className="flex flex-col gap-6">
-          <h4 className="font-bold text-secondary-fixed uppercase text-sm tracking-widest text-white">
-            Kết nối
-          </h4>
-          <div className="flex gap-4">
-            <a className="w-10 h-10 rounded-full bg-surface-variant/10 flex items-center justify-center hover:bg-secondary-fixed hover:text-on-background transition-all" href="#">
-              <span className="material-symbols-outlined text-white hover:text-black">public</span>
-            </a>
-            <a className="w-10 h-10 rounded-full bg-surface-variant/10 flex items-center justify-center hover:bg-secondary-fixed hover:text-on-background transition-all" href="#">
-              <span className="material-symbols-outlined text-white hover:text-black">mail</span>
-            </a>
-            <a className="w-10 h-10 rounded-full bg-surface-variant/10 flex items-center justify-center hover:bg-secondary-fixed hover:text-on-background transition-all" href="#">
-              <span className="material-symbols-outlined text-white hover:text-black">share</span>
-            </a>
+          {/* Cột Kết nối */}
+          <div className="flex flex-col gap-4 min-w-[120px]">
+            <h4 className="font-bold text-white uppercase text-xs tracking-widest">
+              Kết nối
+            </h4>
+            <div className="flex gap-3">
+              <a 
+                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all text-white" 
+                href="#globe"
+                title="Website"
+              >
+                <span className="material-symbols-outlined text-lg">public</span>
+              </a>
+              <a 
+                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all text-white" 
+                href="mailto:support@lunawash.vn"
+                title="Email"
+              >
+                <span className="material-symbols-outlined text-lg">mail</span>
+              </a>
+              <a 
+                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all text-white" 
+                href="#share"
+                title="Chia sẻ"
+              >
+                <span className="material-symbols-outlined text-lg">share</span>
+              </a>
+            </div>
           </div>
+
         </div>
 
       </div>
