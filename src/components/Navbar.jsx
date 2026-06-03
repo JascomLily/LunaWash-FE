@@ -91,136 +91,146 @@ export default function Navbar() {
                 : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
             }`}
           >
-            Trang chủ
+            Trang Chủ
           </Link>
-          <a className="text-on-surface-variant hover:text-primary transition-colors py-2 border-b-2 border-transparent" href="#packages">
-            Gói dịch vụ
-          </a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors py-2 border-b-2 border-transparent" href="#locations">
-            Chi nhánh
-          </a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors py-2 border-b-2 border-transparent" href="#membership">
-            Hội viên
-          </a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors py-2 border-b-2 border-transparent" href="#support">
-            Hỗ trợ
-          </a>
+          <Link
+            to="/booking"
+            className={`transition-colors py-2 border-b-2 ${
+              isActive('/booking') 
+                ? 'text-primary font-bold border-primary' 
+                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+            }`}
+          >
+            Đặt Lịch
+          </Link>
+          <Link
+            to="/history"
+            className={`transition-colors py-2 border-b-2 ${
+              isActive('/history') 
+                ? 'text-primary font-bold border-primary' 
+                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+            }`}
+          >
+            Lịch Sử
+          </Link>
+          <Link
+            to="/support"
+            className={`transition-colors py-2 border-b-2 ${
+              isActive('/support') 
+                ? 'text-primary font-bold border-primary' 
+                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+            }`}
+          >
+            Hỗ Trợ
+          </Link>
         </nav>
 
         {/* Action Button or User Profile */}
         <div className="flex items-center gap-4">
           {user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 focus:outline-none transition-transform active:scale-95 duration-200"
-                aria-expanded={dropdownOpen}
-                aria-haspopup="true"
+            <div className="flex items-center gap-4">
+              {/* Nút Manage Vehicle khớp thiết kế Ảnh 1 */}
+              <button 
+                onClick={() => navigate('/user')}
+                className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-[#00236f] hover:bg-primary-container text-white text-xs font-bold rounded-lg shadow-sm hover:scale-[1.02] active:scale-95 transition-all select-none"
               >
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.fullName}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-outline-variant/30 hover:border-secondary transition-all shadow-md"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary text-white font-extrabold text-lg flex items-center justify-center shadow-md select-none border-2 border-outline-variant/30 hover:border-secondary transition-all">
-                    {getInitials(user.fullName)}
-                  </div>
-                )}
-                <span className="hidden sm:inline font-bold text-sm text-on-surface-variant hover:text-primary max-w-[120px] truncate transition-colors">
-                  {user.fullName}
-                </span>
-                <span 
-                  className="material-symbols-outlined text-outline text-lg transition-transform duration-300 select-none hidden sm:inline" 
-                  style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}
-                >
-                  expand_more
-                </span>
+                Manage Vehicle
               </button>
 
-              {/* Dropdown Menu */}
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-2xl border border-outline-variant/30 z-50 glass-card animate-fadeIn">
-                  {/* User info header */}
-                  <div className="flex items-center gap-3 pb-3 mb-2 border-b border-outline-variant/20">
-                    {user.avatarUrl ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt={user.fullName}
-                        className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-secondary text-white font-extrabold text-xl flex-shrink-0 flex items-center justify-center shadow-sm select-none">
-                        {getInitials(user.fullName)}
+              {/* Nút Chuông Thông Báo */}
+              <button 
+                onClick={() => alert("Bạn không có thông báo mới nào.")}
+                className="text-on-surface-variant/80 hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low select-none flex items-center justify-center"
+                title="Thông báo"
+              >
+                <span className="material-symbols-outlined text-2xl">notifications</span>
+              </button>
+
+              {/* Nút Avatar bo góc sang trọng */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => navigate('/user')}
+                  onMouseEnter={() => setDropdownOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-outline-variant/60 rounded-full hover:bg-surface-container-low transition-all duration-200 shadow-sm"
+                  aria-expanded={dropdownOpen}
+                  aria-haspopup="true"
+                >
+                  <span className="font-bold text-sm text-on-surface-variant max-w-[120px] truncate">
+                    {user.fullName}
+                  </span>
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.fullName}
+                      className="w-7 h-7 rounded-full object-cover border border-outline-variant/30"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-primary text-white font-extrabold text-xs flex items-center justify-center select-none">
+                      {getInitials(user.fullName)}
+                    </div>
+                  )}
+                </button>
+
+                {/* Dropdown Menu (on hover/click if dropdownOpen) */}
+                {dropdownOpen && (
+                  <div 
+                    onMouseLeave={() => setDropdownOpen(false)}
+                    className="absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-2xl border border-outline-variant/30 z-50 glass-card animate-fadeIn"
+                  >
+                    {/* User info header */}
+                    <div className="flex items-center gap-3 pb-3 mb-2 border-b border-outline-variant/20">
+                      {user.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.fullName}
+                          className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-secondary text-white font-extrabold text-xl flex-shrink-0 flex items-center justify-center shadow-sm select-none">
+                          {getInitials(user.fullName)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-primary text-base truncate leading-tight">
+                          {user.fullName}
+                        </h4>
+                        <p className="text-xs text-on-surface-variant truncate">
+                          {user.email}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-primary text-base truncate leading-tight">
-                        {user.fullName}
-                      </h4>
-                      <p className="text-xs text-on-surface-variant truncate">
-                        {user.email}
-                      </p>
+                    </div>
+
+                    {/* Actions Links */}
+                    <div className="border-t border-outline-variant/20 pt-2 flex flex-col gap-1">
+                      <button 
+                        onClick={() => { setDropdownOpen(false); navigate('/user'); }} 
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg">account_circle</span>
+                        Thông tin cá nhân
+                      </button>
+                      <button 
+                        onClick={() => { setDropdownOpen(false); navigate('/user'); }} 
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg">calendar_month</span>
+                        Lịch sử đặt lịch
+                      </button>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="border-t border-outline-variant/20 mt-2 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error-container/20 rounded-xl transition-all font-bold text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg">logout</span>
+                        Đăng xuất
+                      </button>
                     </div>
                   </div>
-
-                  {/* Membership badge */}
-                  <div className="py-2 mb-2 flex flex-col gap-1">
-                    <span className="text-[11px] font-semibold text-outline tracking-wider uppercase">Hạng thành viên</span>
-                    {user.tier === 'Gold' ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-xs font-bold rounded-full w-fit shadow-sm">
-                        <span className="material-symbols-outlined text-xs">star</span>
-                        Hội viên Vàng (Gold)
-                      </div>
-                    ) : user.tier === 'Admin' ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs font-bold rounded-full w-fit shadow-sm">
-                        <span className="material-symbols-outlined text-xs">admin_panel_settings</span>
-                        Quản trị viên (Admin)
-                      </div>
-                    ) : user.tier === 'Staff' ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs font-bold rounded-full w-fit shadow-sm">
-                        <span className="material-symbols-outlined text-xs">badge</span>
-                        Nhân viên (Staff)
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-slate-400 to-slate-500 text-white text-xs font-bold rounded-full w-fit shadow-sm">
-                        <span className="material-symbols-outlined text-xs">person</span>
-                        Hội viên Bạc (Member)
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions Links */}
-                  <div className="border-t border-outline-variant/20 pt-2 flex flex-col gap-1">
-                    <button 
-                      onClick={() => { setDropdownOpen(false); alert("Tính năng lịch sử đặt lịch sẽ được cập nhật khi có API BE hoàn chỉnh."); }} 
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
-                    >
-                      <span className="material-symbols-outlined text-lg">calendar_month</span>
-                      Lịch sử đặt lịch
-                    </button>
-                    <button 
-                      onClick={() => { setDropdownOpen(false); alert("Tính năng cài đặt tài khoản sẽ được cập nhật khi có API BE hoàn chỉnh."); }} 
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
-                    >
-                      <span className="material-symbols-outlined text-lg">settings</span>
-                      Cài đặt tài khoản
-                    </button>
-                  </div>
-
-                  {/* Logout Button */}
-                  <div className="border-t border-outline-variant/20 mt-2 pt-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error-container/20 rounded-xl transition-all font-bold text-left"
-                    >
-                      <span className="material-symbols-outlined text-lg">logout</span>
-                      Đăng xuất
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : (
             location.pathname === '/login' ? (
