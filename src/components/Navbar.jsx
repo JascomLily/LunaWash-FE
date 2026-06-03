@@ -93,34 +93,50 @@ export default function Navbar() {
           >
             Trang Chủ
           </Link>
-          <a 
-            className={`transition-colors py-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary`} 
-            href="/#packages"
+          <Link
+            to="/booking"
+            className={`transition-colors py-2 border-b-2 ${
+              isActive('/booking') 
+                ? 'text-primary font-bold border-primary' 
+                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+            }`}
           >
             Đặt Lịch
-          </a>
+          </Link>
           <Link
-            to="/user"
+            to="/history"
             className={`transition-colors py-2 border-b-2 ${
-              isActive('/user') 
+              isActive('/history') 
                 ? 'text-primary font-bold border-primary' 
                 : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
             }`}
           >
             Lịch Sử
           </Link>
-          <a 
-            className="text-on-surface-variant hover:text-primary transition-colors py-2 border-b-2 border-transparent" 
-            href="/#support"
+          <Link
+            to="/support"
+            className={`transition-colors py-2 border-b-2 ${
+              isActive('/support') 
+                ? 'text-primary font-bold border-primary' 
+                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+            }`}
           >
             Hỗ Trợ
-          </a>
+          </Link>
         </nav>
 
         {/* Action Button or User Profile */}
         <div className="flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-4">
+              {/* Nút Manage Vehicle khớp thiết kế Ảnh 1 */}
+              <button 
+                onClick={() => navigate('/user')}
+                className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-[#00236f] hover:bg-primary-container text-white text-xs font-bold rounded-lg shadow-sm hover:scale-[1.02] active:scale-95 transition-all select-none"
+              >
+                Manage Vehicle
+              </button>
+
               {/* Nút Chuông Thông Báo */}
               <button 
                 onClick={() => alert("Bạn không có thông báo mới nào.")}

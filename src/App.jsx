@@ -6,6 +6,11 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import UserProfile from './pages/UserProfile';
+import Booking from './pages/Booking';
+import BookingHistory from './pages/BookingHistory';
+import Support from './pages/Support';
+import Payment from './pages/Payment';
+import Feedback from './pages/Feedback';
 
 /**
  * App component chinh de thiet lap dinh tuyen (Routing) cac trang giao dien
@@ -25,6 +30,11 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/user" element={<UserProfile />} />
+            <Route path="/booking" element={<Booking />} />
+            <Route path="/history" element={<BookingHistory />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/feedback" element={<Feedback />} />
           </Routes>
         </div>
 
