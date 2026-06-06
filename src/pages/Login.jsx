@@ -11,6 +11,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Background decorative movement
@@ -41,32 +43,48 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/Auth/login', {
+      const response = await fetch('http://localhost:5010/api/Auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Đăng nhập thất bại: ${errorData.message || 'Lỗi hệ thống'}`);
-        return;
+        let errText = 'Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.';
+        try {
+          const errData = await response.json();
+          if (errData.message) errText = errData.message;
+        } catch (jsonErr) {}
+        throw new Error(errText);
       }
 
       const data = await response.json();
+      // data: { token, fullName, email, role }
       
-      // Assume the backend returns an object with user info and token
-      // data.token, data.user
-      let loggedInUser = {
-        fullName: data.user?.fullName || data.fullName || 'Người dùng',
-        email: data.user?.email || data.email || email,
-        tier: data.user?.tier || data.role || 'Member',
-        avatarUrl: data.user?.avatarUrl || null,
-        token: data.token
+      // Map role to tier for frontend compatibility
+      let tier = 'Member';
+      if (data.role === 'Admin') tier = 'Admin';
+      else if (data.role === 'Staff') tier = 'Staff';
+      else if (data.role === 'BranchManager') tier = 'BranchManager';
+      else if (data.role === 'TechnicalStaff') tier = 'TechnicalStaff';
+      else if (data.role === 'Customer') tier = data.tier || 'Member';
+
+      const loggedInUser = {
+        fullName: data.fullName,
+        email: data.email,
+        tier: tier,
+        branchId: data.branchId || null,
+        token: data.token,
+        avatarUrl: null
       };
 
       // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
@@ -74,11 +92,17 @@ export default function Login() {
 
       alert(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName} quay lại với LunaWash.`);
       
-      // Tải lại trang chủ để cập nhật tức thì Header mà không cần cơ chế phức tạp
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Đã xảy ra lỗi khi kết nối tới máy chủ.');
+      // Chuyển hướng trực tiếp dựa trên vai trò để tránh hiện trang chủ
+      if (loggedInUser.tier === 'Staff' || loggedInUser.tier === 'BranchManager') {
+        window.location.href = '/staff/queue';
+      } else {
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Không thể kết nối đến máy chủ Backend.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,19 +125,27 @@ export default function Login() {
           <p className="font-body-md text-body-md text-on-surface-variant">Chào mừng bạn quay trở lại với LunaWash.</p>
         </div>
 
+        {errorMsg && (
+          <div className="mb-6 p-4 bg-error-container/20 border border-error/30 rounded-xl text-error text-sm font-medium flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">error</span>
+            {errorMsg}
+          </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="email">Email</label>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">mail</span>
               <input 
-                className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface" 
+                className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
                 id="email" 
                 placeholder="customer1@gmail.com" 
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
           </div>
@@ -123,18 +155,20 @@ export default function Login() {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">lock</span>
               <input 
-                className="w-full pl-12 pr-12 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface" 
+                className="w-full pl-12 pr-12 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
                 id="password" 
                 placeholder="••••••••" 
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
               <button 
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" 
                 type="button"
                 onClick={togglePasswordVisibility}
+                disabled={loading}
               >
                 <span className="material-symbols-outlined" id="toggle-icon">visibility</span>
               </button>
@@ -144,11 +178,12 @@ export default function Login() {
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
               <input 
-                className="w-5 h-5 text-primary border-outline-variant/50 rounded focus:ring-primary" 
+                className="w-5 h-5 text-primary border-outline-variant/50 rounded focus:ring-primary disabled:opacity-50" 
                 id="remember" 
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loading}
               />
               <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="remember">
                 Ghi nhớ đăng nhập
@@ -158,10 +193,21 @@ export default function Login() {
           </div>
 
           <button 
-            className="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-xl shadow-lg hover:shadow-primary/20 transition-all duration-300 transform active:scale-[0.98] hover:bg-primary-container" 
+            className="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-xl shadow-lg hover:shadow-primary/20 transition-all duration-300 transform active:scale-[0.98] hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
             type="submit"
+            disabled={loading}
           >
-            Đăng nhập ngay
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang đăng nhập...
+              </>
+            ) : (
+              'Đăng nhập ngay'
+            )}
           </button>
           
           <div className="text-center pt-4">
