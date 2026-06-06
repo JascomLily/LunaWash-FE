@@ -13,6 +13,30 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(user.tier);
+
+  // Lấy thông tin hạng thành viên (đồng bộ với UserProfile)
+  const getTierInfo = () => {
+    if (!user) return { label: 'Thành viên', bg: 'from-slate-400 to-slate-500', icon: 'person' };
+    const tier = user.tier;
+    if (tier === 'Admin') return { label: 'Quản trị viên (Admin)', bg: 'from-rose-600 to-pink-500', icon: 'admin_panel_settings' };
+    if (tier === 'BranchManager') return { label: 'Quản lý Chi nhánh', bg: 'from-indigo-600 to-blue-500', icon: 'manage_accounts' };
+    if (tier === 'TechnicalStaff') return { label: 'Kỹ Thuật Viên', bg: 'from-slate-700 to-slate-600', icon: 'engineering' };
+    if (tier === 'Staff') return { label: 'Nhân viên', bg: 'from-sky-600 to-sky-500', icon: 'support_agent' };
+    
+    const userTier = tier.toLowerCase();
+    if (userTier === 'platinum' || userTier === 'bạch kim' || userTier === 'bach kim') 
+      return { label: 'Thành viên Bạch Kim', bg: 'from-slate-500 to-slate-400', icon: 'diamond' };
+    if (userTier === 'gold' || userTier === 'vàng' || userTier === 'vang') 
+      return { label: 'Thành viên Vàng', bg: 'from-amber-500 to-yellow-400', icon: 'military_tech' };
+    if (userTier === 'silver' || userTier === 'bạc' || userTier === 'bac') 
+      return { label: 'Thành viên Bạc', bg: 'from-slate-400 to-gray-300', icon: 'military_tech' };
+    
+    // Mặc định khách hàng là Đồng
+    return { label: 'Thành viên Đồng', bg: 'from-orange-700 to-amber-600', icon: 'military_tech' };
+  };
+  const tierInfo = getTierInfo();
+
   // Lấy thông tin user từ localStorage khi mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -73,7 +97,8 @@ export default function Navbar() {
     <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 h-20 shadow-sm border-b border-outline-variant/20 transition-all duration-300 ease-in-out">
       <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
         {/* Logo */}
-        <Link to="/" className="font-display-lg text-display-lg font-bold text-primary flex items-center">
+        {/* Logo */}
+        <Link to={(!isCustomer && user) ? (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue") : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
             alt="LunaWash Logo"
@@ -83,60 +108,111 @@ export default function Navbar() {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-gutter">
-          <Link
-            to="/"
-            className={`transition-colors py-2 border-b-2 ${
-              isActive('/') 
-                ? 'text-primary font-bold border-primary' 
-                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-            }`}
-          >
-            Trang Chủ
-          </Link>
-          <Link
-            to="/booking"
-            className={`transition-colors py-2 border-b-2 ${
-              isActive('/booking') 
-                ? 'text-primary font-bold border-primary' 
-                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-            }`}
-          >
-            Đặt Lịch
-          </Link>
-          <Link
-            to="/history"
-            className={`transition-colors py-2 border-b-2 ${
-              isActive('/history') 
-                ? 'text-primary font-bold border-primary' 
-                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-            }`}
-          >
-            Lịch Sử
-          </Link>
-          <Link
-            to="/support"
-            className={`transition-colors py-2 border-b-2 ${
-              isActive('/support') 
-                ? 'text-primary font-bold border-primary' 
-                : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-            }`}
-          >
-            Hỗ Trợ
-          </Link>
+          {isCustomer ? (
+            <>
+              <Link
+                to="/"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Trang Chủ
+              </Link>
+              <Link
+                to="/booking"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/booking') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Đặt Lịch
+              </Link>
+              <Link
+                to="/history"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/history') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Lịch Sử
+              </Link>
+              <Link
+                to="/support"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/support') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Hỗ Trợ
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/staff/queue"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/staff/queue') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Hàng Đợi Xe
+              </Link>
+              <Link
+                to="/staff/history"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/staff/history') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Lịch Sử Trạm
+              </Link>
+              <Link
+                to="/staff/feedback"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/staff/feedback') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Phản Hồi
+              </Link>
+              <Link
+                to="/staff/technical"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/staff/technical') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Trang Kỹ Thuật
+              </Link>
+              {user.tier === 'BranchManager' && (
+                <Link
+                  to="/staff/employees"
+                  className={`transition-colors py-2 border-b-2 ${
+                    isActive('/staff/employees') 
+                      ? 'text-primary font-bold border-primary' 
+                      : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                  }`}
+                >
+                  Nhân Sự & Ca Trực
+                </Link>
+              )}
+            </>
+          )}
         </nav>
 
         {/* Action Button or User Profile */}
         <div className="flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-4">
-              {/* Nút Manage Vehicle khớp thiết kế Ảnh 1 */}
-              <button 
-                onClick={() => navigate('/user')}
-                className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-[#00236f] hover:bg-primary-container text-white text-xs font-bold rounded-lg shadow-sm hover:scale-[1.02] active:scale-95 transition-all select-none"
-              >
-                Manage Vehicle
-              </button>
-
               {/* Nút Chuông Thông Báo */}
               <button 
                 onClick={() => alert("Bạn không có thông báo mới nào.")}
@@ -151,24 +227,50 @@ export default function Navbar() {
                 <button
                   onClick={() => navigate('/user')}
                   onMouseEnter={() => setDropdownOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 border border-outline-variant/60 rounded-full hover:bg-surface-container-low transition-all duration-200 shadow-sm"
+                  className="flex items-center gap-2.5 px-3 py-1.5 border border-outline-variant/60 rounded-full hover:bg-surface-container-low transition-all duration-200 shadow-sm"
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                 >
-                  <span className="font-bold text-sm text-on-surface-variant max-w-[120px] truncate">
-                    {user.fullName}
-                  </span>
+                  {/* Avatar tròn */}
                   {user.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
                       alt={user.fullName}
-                      className="w-7 h-7 rounded-full object-cover border border-outline-variant/30"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-outline-variant/40 shadow-sm flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-primary text-white font-extrabold text-xs flex items-center justify-center select-none">
+                    <div className={`w-8 h-8 rounded-full font-extrabold text-xs flex items-center justify-center select-none flex-shrink-0 shadow-sm text-white bg-gradient-to-br ${tierInfo.bg}`}>
                       {getInitials(user.fullName)}
                     </div>
                   )}
+
+                  {/* Tên + Badge vai trò dạng ribbon */}
+                  <div className="flex flex-col text-left leading-tight gap-0.5">
+                    <span className="font-bold text-xs text-on-surface-variant max-w-[110px] truncate">
+                      {user.fullName}
+                    </span>
+                    {isCustomer ? (
+                      <span className={`relative inline-flex items-center gap-1 px-2 py-[1px] rounded text-white font-black text-[9px] uppercase tracking-widest select-none shadow-sm bg-gradient-to-r ${tierInfo.bg}`}
+                        style={{
+                          clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%)'
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          {tierInfo.icon}
+                        </span>
+                        {tierInfo.label}
+                        {/* Trailing spacer to account for clip-path arrow */}
+                        <span className="w-1.5 inline-block" />
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-extrabold uppercase tracking-wide text-primary">
+                        {user.tier === 'Staff' ? 'Nhân viên' : 
+                         user.tier === 'BranchManager' ? 'Quản lý' : 
+                         user.tier === 'Admin' ? 'Admin' : 
+                         user.tier === 'TechnicalStaff' ? 'Kỹ Thuật' : ''}
+                      </span>
+                    )}
+                  </div>
                 </button>
 
                 {/* Dropdown Menu (on hover/click if dropdownOpen) */}
@@ -209,13 +311,15 @@ export default function Navbar() {
                         <span className="material-symbols-outlined text-lg">account_circle</span>
                         Thông tin cá nhân
                       </button>
-                      <button 
-                        onClick={() => { setDropdownOpen(false); navigate('/user'); }} 
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
-                      >
-                        <span className="material-symbols-outlined text-lg">calendar_month</span>
-                        Lịch sử đặt lịch
-                      </button>
+                      {isCustomer && (
+                        <button 
+                          onClick={() => { setDropdownOpen(false); navigate('/user'); }} 
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
+                        >
+                          <span className="material-symbols-outlined text-lg">calendar_month</span>
+                          Lịch sử đặt lịch
+                        </button>
+                      )}
                     </div>
 
                     {/* Logout Button */}
