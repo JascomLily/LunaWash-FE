@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 
 // Cấu hình tọa độ bản đồ Google Map cho các chi nhánh của LunaWash
 const HOME_BRANCHES = [
@@ -16,6 +16,24 @@ const HOME_BRANCHES = [
  */
 export default function Home() {
   const navigate = useNavigate();
+
+  // Kiểm tra quyền nhân viên/quản lý đồng bộ ngay lập tức trước khi render để tránh flash trang chủ
+  const storedUser = localStorage.getItem('user');
+  let isStaffOrManager = false;
+  if (storedUser) {
+    try {
+      const parsed = JSON.parse(storedUser);
+      if (parsed.tier === 'Staff' || parsed.tier === 'BranchManager') {
+        isStaffOrManager = true;
+      }
+    } catch (e) {}
+  }
+
+  // Nếu là nhân viên/quản lý, chuyển hướng ngay lập tức bằng Navigate component
+  if (isStaffOrManager) {
+    return <Navigate to="/staff/queue" replace />;
+  }
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -38,6 +56,15 @@ export default function Home() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setIsLoggedIn(true);
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.tier === 'Staff' || parsed.tier === 'BranchManager') {
+          navigate('/staff/queue', { replace: true });
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -131,99 +158,151 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 2: CHỌN GÓI DỊCH VỤ PHÙ HỢP (Khớp 3 gói mới từ ảnh 5) */}
-      <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="packages">
-        <div className="text-center mb-16">
-          <span className="bg-sky-100 text-primary px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-widest select-none">
-            Dịch vụ hàng đầu
-          </span>
-          <h2 className="text-3xl font-extrabold mt-4 text-[#00236f] tracking-tight">
-            Chọn gói dịch vụ phù hợp
-          </h2>
+      {/* KHU VỰC QUẢNG CÁO KHUYẾN MÃI CHẠY LIÊN TỤC */}
+      <section className="pt-16 pb-8 overflow-hidden w-full bg-[#f8fafc]/40 border-b border-outline-variant/20">
+        <div className="max-w-container-max mx-auto px-margin-desktop mb-4 flex justify-between items-center">
+          <div className="flex items-center gap-2 text-[#00236f]">
+            <span className="material-symbols-outlined text-lg animate-pulse font-bold">campaign</span>
+            <span className="text-xs font-black uppercase tracking-wider">Ưu đãi độc quyền & Tin tức mới</span>
+          </div>
+          <span className="text-[10px] text-outline font-bold italic">Rê chuột vào để tạm dừng</span>
         </div>
         
-        {/* Lưới 3 gói dịch vụ theo thiết kế ảnh 5 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-5xl mx-auto">
+        {/* Marquee Wrapper */}
+        <div className="relative w-full overflow-hidden py-2">
+          {/* Faders for smooth edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background via-background/40 to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background via-background/40 to-transparent z-10 pointer-events-none"></div>
+
+          <div className="animate-marquee flex gap-6">
+            {/* Set 1 */}
+            <div className="flex gap-6">
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+            </div>
+            {/* Set 2 (Duplicated for infinite scroll effect) */}
+            <div className="flex gap-6">
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
+                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 2: CHỌN GÓI DỊCH VỤ PHÙ HỢP */}
+      <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="packages">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-gutter items-center">
           
-          {/* GÓI 1: Cơ bản */}
-          <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-            <div className="mb-5 text-primary">
-              <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                water_drop
-              </span>
-            </div>
-            <div className="flex justify-between items-baseline mb-2">
-              <h3 className="font-bold text-lg text-on-surface">Cơ bản</h3>
-              <span className="text-[10px] text-outline font-bold">~15 phút</span>
-            </div>
-            <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-              Rửa bề mặt, rửa kính, sấy khô.
+          {/* CỘT TIÊU ĐỀ HÀNG DỊCH VỤ */}
+          <div className="lg:pr-4 space-y-4">
+            <span className="inline-block bg-sky-100 text-[#00236f] px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest select-none">
+              Dịch vụ hàng đầu
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#00236f] tracking-tight leading-tight">
+              Chọn gói dịch vụ phù hợp
+            </h2>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Trải nghiệm công nghệ rửa xe thông minh nhanh chóng, chất lượng vượt trội tại LunaWash.
             </p>
-            <div className="mt-auto">
-              <p className="text-2xl font-black text-primary mb-5">150.000đ</p>
-              <button 
-                onClick={() => handleActionClick('Cơ bản')}
-                className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-              >
-                Chọn ngay
-              </button>
-            </div>
           </div>
 
-          {/* GÓI 2: Nâng cao (Nổi bật nhất - PHỔ BIẾN) */}
-          <div className="relative bg-surface-container-lowest p-7 rounded-3xl border-2 border-[#00236f] shadow-lg hover:shadow-2xl transition-all group flex flex-col h-full overflow-hidden">
-            {/* Nhãn PHỔ BIẾN ở góc trên bên phải */}
-            <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
-              Phổ Biến
+          {/* BA GÓI DỊCH VỤ */}
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-gutter">
+            
+            {/* GÓI 1: Cơ bản */}
+            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
+              <div className="mb-5 text-primary">
+                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  water_drop
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline mb-2">
+                <h3 className="font-bold text-lg text-on-surface">Cơ bản</h3>
+                <span className="text-[10px] text-outline font-bold">~15 phút</span>
+              </div>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
+                Rửa bề mặt, rửa kính, sấy khô.
+              </p>
+              <div className="mt-auto">
+                <p className="text-2xl font-black text-primary mb-5">150.000đ</p>
+                <button 
+                  onClick={() => handleActionClick('Cơ bản')}
+                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
+                >
+                  Chọn ngay
+                </button>
+              </div>
             </div>
-            <div className="mb-5 text-primary">
-              <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                cool_to_dry
-              </span>
-            </div>
-            <div className="flex justify-between items-baseline mb-2">
-              <h3 className="font-bold text-lg text-on-surface">Nâng cao</h3>
-              <span className="text-[10px] text-outline font-bold">~20 phút</span>
-            </div>
-            <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-              Tất cả gói Cơ bản và Rửa gầm xe.
-            </p>
-            <div className="mt-auto">
-              <p className="text-2xl font-black text-primary mb-5">250.000đ</p>
-              <button 
-                onClick={() => handleActionClick('Nâng cao')}
-                className="w-full py-3 bg-[#00236f] hover:bg-primary-container text-white font-bold rounded-xl transition-all text-sm shadow-md hover:shadow-lg active:scale-95"
-              >
-                Chọn ngay
-              </button>
-            </div>
-          </div>
 
-          {/* GÓI 3: Cao cấp */}
-          <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-            <div className="mb-5 text-primary">
-              <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                diamond
-              </span>
+            {/* GÓI 2: Nâng cao (Nổi bật nhất - PHỔ BIẾN) */}
+            <div className="relative bg-surface-container-lowest p-7 rounded-3xl border-2 border-[#00236f] shadow-lg hover:shadow-2xl transition-all group flex flex-col h-full overflow-hidden">
+              {/* Nhãn PHỔ BIẾN ở góc trên bên phải */}
+              <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
+                Phổ Biến
+              </div>
+              <div className="mb-5 text-primary">
+                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  cool_to_dry
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline mb-2">
+                <h3 className="font-bold text-lg text-on-surface">Nâng cao</h3>
+                <span className="text-[10px] text-outline font-bold">~20 phút</span>
+              </div>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
+                Tất cả gói Cơ bản và Rửa gầm xe.
+              </p>
+              <div className="mt-auto">
+                <p className="text-2xl font-black text-primary mb-5">250.000đ</p>
+                <button 
+                  onClick={() => handleActionClick('Nâng cao')}
+                  className="w-full py-3 bg-[#00236f] hover:bg-primary-container text-white font-bold rounded-xl transition-all text-sm shadow-md hover:shadow-lg active:scale-95"
+                >
+                  Chọn ngay
+                </button>
+              </div>
             </div>
-            <div className="flex justify-between items-baseline mb-2">
-              <h3 className="font-bold text-lg text-on-surface">Cao cấp</h3>
-              <span className="text-[10px] text-outline font-bold">~30 phút</span>
-            </div>
-            <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-              Dịch vụ cả 2 gói trên kèm đánh bóng.
-            </p>
-            <div className="mt-auto">
-              <p className="text-2xl font-black text-primary mb-5">500.000đ</p>
-              <button 
-                onClick={() => handleActionClick('Cao cấp')}
-                className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-              >
-                Chọn ngay
-              </button>
-            </div>
-          </div>
 
+            {/* GÓI 3: Cao cấp */}
+            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
+              <div className="mb-5 text-primary">
+                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  diamond
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline mb-2">
+                <h3 className="font-bold text-lg text-on-surface">Cao cấp</h3>
+                <span className="text-[10px] text-outline font-bold">~30 phút</span>
+              </div>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
+                Dịch vụ cả 2 gói trên kèm đánh bóng.
+              </p>
+              <div className="mt-auto">
+                <p className="text-2xl font-black text-primary mb-5">500.000đ</p>
+                <button 
+                  onClick={() => handleActionClick('Cao cấp')}
+                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
+                >
+                  Chọn ngay
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
