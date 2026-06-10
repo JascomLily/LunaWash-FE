@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 /**
  * Trang Đăng nhập - LunaWash.
@@ -11,7 +12,6 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
     setLoading(true);
 
     try {
@@ -83,6 +82,7 @@ export default function Login() {
         email: data.email,
         tier: tier,
         branchId: data.branchId || null,
+        branchName: data.branchName || null,
         token: data.token,
         avatarUrl: null
       };
@@ -90,17 +90,19 @@ export default function Login() {
       // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
       localStorage.setItem('user', JSON.stringify(loggedInUser));
 
-      alert(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName} quay lại với LunaWash.`);
+      toast.success(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName}`);
       
       // Chuyển hướng trực tiếp dựa trên vai trò để tránh hiện trang chủ
       if (loggedInUser.tier === 'Staff' || loggedInUser.tier === 'BranchManager') {
         window.location.href = '/staff/queue';
+      } else if (loggedInUser.tier === 'TechnicalStaff') {
+        window.location.href = '/staff/technical';
       } else {
         window.location.href = '/';
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || 'Không thể kết nối đến máy chủ Backend.');
+      toast.error(err.message || 'Không thể kết nối đến máy chủ Backend.');
     } finally {
       setLoading(false);
     }
@@ -124,13 +126,6 @@ export default function Login() {
           <h1 className="font-headline-lg text-headline-lg text-primary mb-2">Đăng nhập</h1>
           <p className="font-body-md text-body-md text-on-surface-variant">Chào mừng bạn quay trở lại với LunaWash.</p>
         </div>
-
-        {errorMsg && (
-          <div className="mb-6 p-4 bg-error-container/20 border border-error/30 rounded-xl text-error text-sm font-medium flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">error</span>
-            {errorMsg}
-          </div>
-        )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
