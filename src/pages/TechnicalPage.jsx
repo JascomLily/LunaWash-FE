@@ -82,8 +82,12 @@ export default function TechnicalPage() {
   const [incidentPriority, setIncidentPriority] = useState('Bình thường');
   const [incidentDesc, setIncidentDesc] = useState('');
 
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isReadOnly = storedUser?.tier === 'BranchManager' || storedUser?.tier === 'Admin';
+
   // 1. Toggle Task Status
   const toggleTaskStatus = (id) => {
+    if (isReadOnly) return;
     setTasks(tasks.map(task => {
       if (task.id === id) {
         let newStatus = '';
@@ -105,6 +109,7 @@ export default function TechnicalPage() {
 
   // Change Priority Status
   const handleChangePriority = (id, newPriority) => {
+    if (isReadOnly) return;
     setEquipments(equipments.map(eq => {
       if (eq.id === id) {
         let pColor = 'text-slate-600 bg-slate-100';
@@ -119,6 +124,7 @@ export default function TechnicalPage() {
 
   // Change Next Maintenance Date
   const handleChangeNextDate = (id, newDateStr) => {
+    if (isReadOnly) return;
     if (!newDateStr) return;
     const [year, month, day] = newDateStr.split('-');
     const formattedDate = `${day}/${month}/${year}`;
@@ -133,6 +139,7 @@ export default function TechnicalPage() {
 
   // 2. Change Equipment Status
   const handleChangeEqStatus = (id) => {
+    if (isReadOnly) return;
     const states = ['Hoạt động', 'Cần kiểm tra', 'Đang bảo trì', 'Lỗi'];
     
     setEquipments(equipments.map(eq => {
@@ -154,6 +161,7 @@ export default function TechnicalPage() {
   // 3. Handle Submit Incident Ticket
   const handleCreateIncident = (e) => {
     e.preventDefault();
+    if (isReadOnly) return;
     if (!incidentEqId || !incidentDesc) return;
     
     const targetEq = equipments.find(eq => eq.id === incidentEqId);
@@ -216,13 +224,15 @@ export default function TechnicalPage() {
               Theo dõi tình trạng, lịch bảo trì và sự cố thiết bị tại chi nhánh
             </p>
           </div>
-          <button 
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#001f3f] text-white font-bold rounded-lg hover:bg-slate-800 transition-all active:scale-95 shadow-md"
-          >
-            <span className="material-symbols-outlined text-xl">add_circle</span>
-            Tạo phiếu sự cố
-          </button>
+          {!isReadOnly && (
+            <button 
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#001f3f] text-white font-bold rounded-lg hover:bg-slate-800 transition-all active:scale-95 shadow-md"
+            >
+              <span className="material-symbols-outlined text-xl">add_circle</span>
+              Tạo phiếu sự cố
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -275,7 +285,7 @@ export default function TechnicalPage() {
                 <li key={task.id} className="flex items-start gap-3">
                   <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${task.status === 'Hoàn thành' ? 'bg-emerald-500' : task.status === 'Trễ hạn' ? 'bg-rose-500' : task.status === 'Đang làm' ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
                   <div 
-                    className="cursor-pointer group flex-1"
+                    className={`${isReadOnly ? 'cursor-default' : 'cursor-pointer'} group flex-1`}
                     onClick={() => toggleTaskStatus(task.id)}
                     title="Nhấn để đổi trạng thái công việc"
                   >
@@ -344,7 +354,7 @@ export default function TechnicalPage() {
                     <td className="px-6 py-4 text-xs font-semibold text-slate-600">
                       {eq.lastMaintenance}
                     </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-slate-600 relative group cursor-pointer hover:bg-blue-50/50 transition-colors" title="Nhấn để đổi ngày">
+                    <td className={`px-6 py-4 text-xs font-semibold text-slate-600 relative group ${isReadOnly ? '' : 'cursor-pointer hover:bg-blue-50/50'} transition-colors`} title={isReadOnly ? '' : 'Nhấn để đổi ngày'}>
                       <div className="flex items-center gap-2">
                         <span className={eq.nextMaintenanceColor || ''}>{eq.nextMaintenance}</span>
                         <span className="material-symbols-outlined text-[14px] text-slate-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">edit_calendar</span>
@@ -352,14 +362,16 @@ export default function TechnicalPage() {
                       <input 
                         type="date"
                         onChange={(e) => handleChangeNextDate(eq.id, e.target.value)}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        disabled={isReadOnly}
+                        className={`absolute inset-0 opacity-0 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} w-full h-full`}
                       />
                     </td>
                     <td className="px-6 py-4">
                       <select 
                         value={eq.priority}
                         onChange={(e) => handleChangePriority(eq.id, e.target.value)}
-                        className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold outline-none cursor-pointer border-none appearance-none text-center ${eq.priorityColor}`}
+                        disabled={isReadOnly}
+                        className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold outline-none border-none appearance-none text-center ${eq.priorityColor} ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
                       >
                         <option value="Bình thường" className="text-slate-600 bg-white">Bình thường</option>
                         <option value="Trung bình" className="text-sky-700 bg-white">Trung bình</option>
@@ -368,13 +380,15 @@ export default function TechnicalPage() {
                       </select>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button 
-                        onClick={() => handleChangeEqStatus(eq.id)}
-                        className="text-slate-400 hover:text-[#00236f] hover:bg-slate-100 p-2 rounded-full transition-all active:scale-90"
-                        title="Đổi trạng thái bảo trì"
-                      >
-                        <span className="material-symbols-outlined text-xl">published_with_changes</span>
-                      </button>
+                      {!isReadOnly && (
+                        <button 
+                          onClick={() => handleChangeEqStatus(eq.id)}
+                          className="text-slate-400 hover:text-[#00236f] hover:bg-slate-100 p-2 rounded-full transition-all active:scale-90"
+                          title="Đổi trạng thái bảo trì"
+                        >
+                          <span className="material-symbols-outlined text-xl">swap_horiz</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

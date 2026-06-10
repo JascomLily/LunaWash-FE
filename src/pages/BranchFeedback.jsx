@@ -76,7 +76,19 @@ export default function BranchFeedback() {
   if (!user) return null;
 
   const branchId = user.branchId || 'BRN-BT-01';
-  const branchName = BRANCH_NAMES[branchId] || 'Chi nhánh LunaWash';
+  const getShortBranch = (id) => {
+    switch(id) {
+      case 'BRN-Q1-01': return 'Q1';
+      case 'BRN-TTH-01': return 'Tân Thới Hiệp';
+      case 'BRN-LD-01': return 'Thủ Đức';
+      case 'BRN-Q7-01': return 'Quận 7';
+      case 'BRN-TB-01': return 'Tân Bình';
+      case 'BRN-BT-01': return 'Bình Thạnh';
+      default: return '';
+    }
+  };
+  const shortBranch = getShortBranch(branchId);
+  const branchName = user.tier === 'BranchManager' ? `Quản lí chi nhánh - ${shortBranch}` : `Nhân viên chi nhánh - ${shortBranch}`;
 
   // Filter reviews belonging to this branch
   const branchReviews = reviews.filter(r => r.branchId === branchId);

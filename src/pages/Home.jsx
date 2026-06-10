@@ -35,6 +35,7 @@ export default function Home() {
   }
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -86,11 +87,11 @@ export default function Home() {
   }, []);
 
   const handleActionClick = (packageName) => {
-    if (isLoggedIn) {
-      navigate('/booking');
-    } else {
-      navigate('/login');
-    }
+    let packageId = 'PK-CB';
+    if (packageName === 'Nâng cao') packageId = 'PK-NC';
+    if (packageName === 'Cao cấp') packageId = 'PK-CC';
+
+    navigate('/booking', { state: { packageId, branchId: selectedBranchId } });
   };
 
   return (
@@ -134,7 +135,10 @@ export default function Home() {
                 {HOME_BRANCHES.map((b) => (
                   <li 
                     key={b.id}
-                    onClick={() => setSelectedBranchId(b.id)}
+                    onClick={() => {
+
+                      setSelectedBranchId(b.id);
+                    }}
                     className={`flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer group ${
                       selectedBranchId === b.id 
                         ? 'bg-[#00236f]/10 border-l-4 border-[#00236f] pl-1.5' 
@@ -355,6 +359,42 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-[24px] w-full max-w-sm shadow-2xl overflow-hidden animate-slideUp border border-outline-variant/20 flex flex-col relative">
+            <button 
+              onClick={() => setShowLoginPrompt(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+            <div className="p-6 text-center mt-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-blue-600 text-3xl">login</span>
+              </div>
+              <h3 className="font-black text-xl text-primary mb-2">Yêu cầu đăng nhập</h3>
+              <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                Bạn cần đăng nhập tài khoản để có thể tiếp tục thao tác.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="flex-1 py-3 bg-surface-container hover:bg-outline-variant/20 text-on-surface font-bold rounded-xl transition-all"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-[#001d5c] shadow-md hover:shadow-lg transition-all"
+                >
+                  Đăng nhập ngay
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

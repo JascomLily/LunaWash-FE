@@ -46,6 +46,8 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
+import { Toaster } from 'react-hot-toast';
+
 /**
  * App component chinh de thiet lap dinh tuyen (Routing) cac trang giao dien
  * va ap dung Navbar / Footer dong bo cho toan bo he thong.
@@ -53,6 +55,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="flex flex-col min-h-screen bg-background text-on-background">
         {/* Thanh dieu huong dinh kem */}
         <Navbar />
