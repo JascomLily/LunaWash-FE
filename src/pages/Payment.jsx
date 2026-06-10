@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 /**
  * Trang Thanh Toán QR VNPay (Payment) - LunaWash.
@@ -45,8 +46,35 @@ export default function Payment() {
   const timeFormatted = formatTime(timeLeft);
 
   // Nhấn xác nhận thanh toán (Mô phỏng thành công)
-  const handlePaymentSuccess = () => {
-    alert('Thanh toán qua VNPay thành công! Hệ thống đang chuyển hướng tới trang quản lý lịch đặt...');
+  const handlePaymentSuccess = async () => {
+    if (bookingData.bookingPayload) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          toast.loading('Đang xử lý thanh toán...', { id: 'payment' });
+          const response = await fetch('http://localhost:5010/api/bookings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${parsed.token}`
+            },
+            body: JSON.stringify({ ...bookingData.bookingPayload, Notes: 'VNPay' })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Lỗi đặt lịch từ máy chủ.');
+          }
+          toast.success('Thanh toán VNPay thành công!', { id: 'payment' });
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Có lỗi xảy ra: ' + err.message, { id: 'payment' });
+        return;
+      }
+    } else {
+      toast.success('Thanh toán qua VNPay thành công! (Mô phỏng)');
+    }
     navigate('/history', { state: { ...bookingData, paymentMethod: 'vnpay' } });
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const BRANCH_NAMES = {
   'BRN-BT-01': 'LunaWash Bình Thạnh - Chi nhánh Bờ Sông',
@@ -9,10 +10,10 @@ const BRANCH_NAMES = {
 const DEFAULT_EMPLOYEES = [
   { id: 'EMP-001', fullName: 'Nguyễn Văn Nhân Viên', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 1, status: 'Active', checkIn: '07:55 AM', note: 'Đúng giờ' },
   { id: 'EMP-002', fullName: 'Phạm Hoàng Nam', role: 'Kỹ thuật', wages: '7.800.000đ', leaveDays: 0, status: 'Active', checkIn: '07:58 AM', note: 'Đúng giờ' },
-  { id: 'EMP-003', fullName: 'Nguyễn Thị Thu', role: 'Thu ngân', wages: '8.000.000đ', leaveDays: 2, status: 'Active', checkIn: '08:12 AM', note: 'Hỏng xe giữa đường' },
+  { id: 'EMP-003', fullName: 'Nguyễn Thị Thu', role: 'Chăm sóc xe', wages: '8.000.000đ', leaveDays: 2, status: 'Active', checkIn: '08:12 AM', note: 'Hỏng xe giữa đường' },
   { id: 'EMP-004', fullName: 'Lê Văn Tài', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 0, status: 'Active', checkIn: '08:00 AM', note: 'Đúng giờ' },
   { id: 'EMP-005', fullName: 'Hoàng Quốc Việt', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 1, status: 'Active', checkIn: '08:02 AM', note: 'Đúng giờ' },
-  { id: 'EMP-006', fullName: 'Đặng Minh Châu', role: 'Thu ngân', wages: '8.200.000đ', leaveDays: 3, status: 'Active', checkIn: null, note: 'Có phép (Khám bệnh)' },
+  { id: 'EMP-006', fullName: 'Đặng Minh Châu', role: 'Chăm sóc xe', wages: '8.200.000đ', leaveDays: 3, status: 'Active', checkIn: null, note: 'Có phép (Khám bệnh)' },
   { id: 'EMP-007', fullName: 'Vũ Quốc Bảo', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 0, status: 'Inactive', checkIn: null, note: 'Nghỉ không phép' }
 ];
 
@@ -20,15 +21,25 @@ export default function ManagerStaff() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('employees'); // 'employees' or 'attendance'
+  const [selectedShift, setSelectedShift] = useState('Ca sáng');
   const [employees, setEmployees] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+  const [scheduleTemplates, setScheduleTemplates] = useState([]);
+  
+  const DAYS_OFF = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật', 'Chưa xếp'];
+  const SHIFTS = ['Ca sáng', 'Ca chiều', 'Ca bảo trì', 'Chưa xếp'];
   const [incidentLog, setIncidentLog] = useState([
     { id: 'INC-001', title: 'Máy nén khí trạm 1 rò rỉ áp suất nhẹ', date: '05/06/2026', status: 'Đã khắc phục' },
     { id: 'INC-002', title: 'Thiếu hóa chất tạo bọt bóng Premium', date: '06/06/2026', status: 'Đang xử lý' }
   ]);
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyLogs, setHistoryLogs] = useState([]);
 
   useEffect(() => {
-    // Check auth
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       navigate('/login');
@@ -41,7 +52,6 @@ export default function ManagerStaff() {
     }
     setUser(parsedUser);
 
-    // Load employees
     const fetchEmployees = async () => {
       try {
         const res = await fetch(`http://localhost:5010/api/Users/branch/${parsedUser.branchId || 'BRN-BT-01'}`);
@@ -50,84 +60,138 @@ export default function ManagerStaff() {
           const mappedData = data.map(emp => ({
             id: emp.id,
             fullName: emp.fullName,
-            role: emp.roleName === 'TechnicalStaff' ? 'Kỹ thuật' : 'Thu ngân',
+            role: emp.roleName === 'TechnicalStaff' ? 'Kỹ thuật' : 'Chăm sóc xe',
             wages: emp.salary ? emp.salary.toLocaleString() + 'đ' : '0đ',
             leaveDays: emp.leaveDays || 0,
             status: emp.isActive ? 'Active' : 'Inactive',
-            checkIn: '08:00 AM', // Check in logic would go here
+            checkIn: null,
             note: ''
           }));
           setEmployees(mappedData);
-          initializeAttendance(mappedData);
-        } else {
-          console.error("Failed to fetch employees");
         }
       } catch (err) {
-        console.error("Error fetching employees:", err);
+        toast.error("Lỗi khi tải danh sách nhân viên: " + err.message);
       }
     };
 
     fetchEmployees();
   }, [navigate]);
 
-  const initializeAttendance = (empList) => {
-    const todayAtt = empList.map(emp => ({
-      employeeId: emp.id,
-      fullName: emp.fullName,
-      role: emp.role,
-      shift: 'Ca sáng (08:00 - 12:00)',
-      status: emp.checkIn ? (parseInt(emp.checkIn.split(':')[1]) > 0 ? 'Vào muộn' : 'Có mặt') : (emp.note && emp.note.includes('Có phép') ? 'Có phép' : 'Vắng mặt'),
-      checkInTime: emp.checkIn || '--:--',
-      note: emp.note || ''
-    }));
-    localStorage.setItem('lunaWash_attendance', JSON.stringify(todayAtt));
-    setAttendanceData(todayAtt);
-  };
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      if (!user?.branchId) return;
+      setIsAttendanceLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5010/api/StaffManagement/branch/${user.branchId}/attendance?date=${selectedDate}&shift=${selectedShiftFilter}`);
+        if (response.ok) {
+          const data = await response.json();
+          const mapped = data.map(item => ({
+            id: item.employeeId,
+            fullName: item.fullName,
+            role: item.roleName,
+            status: item.status,
+            checkInTime: item.checkInTime,
+            note: item.notes
+          }));
+          setAttendanceData(mapped);
+        }
+      } catch (error) {
+        toast.error("Lỗi khi tải điểm danh: " + error.message);
+      } finally {
+        setIsAttendanceLoading(false);
+      }
+    };
+    fetchAttendance();
+  }, [user?.branchId, selectedDate, selectedShiftFilter]);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (!user?.branchId) return;
+      try {
+        const response = await fetch(`http://localhost:5010/api/StaffManagement/branch/${user.branchId}/templates`);
+        if (response.ok) {
+          const data = await response.json();
+          setScheduleTemplates(data.map(t => ({
+            employeeId: t.id,
+            shift: t.shift || 'Ca sáng',
+            dayOff: t.dayOff || 'Thứ Hai'
+          })));
+        }
+      } catch (error) {
+        toast.error("Lỗi khi tải khuôn mẫu lịch: " + error.message);
+      }
+    };
+    fetchTemplates();
+  }, [user?.branchId]);
 
   if (!user) return null;
 
   const branchId = user.branchId || 'BRN-BT-01';
-  const branchName = BRANCH_NAMES[branchId] || 'Chi nhánh LunaWash';
+  const shortBranch = branchId.split('-')[1];
+  const branchName = `Quản lí chi nhánh - ${shortBranch}`;
 
-  // Stats tab 1
   const totalEmployees = employees.length;
   const activeEmployees = employees.filter(e => e.status === 'Active').length;
   const totalLeaveDays = employees.reduce((sum, e) => sum + e.leaveDays, 0);
 
-  // Stats tab 2
-  const attTotal = attendanceData.length;
-  const attPresent = attendanceData.filter(a => a.status === 'Có mặt' || a.status === 'Vào muộn').length;
-  const attLate = attendanceData.filter(a => a.status === 'Vào muộn').length;
-  const attAbsent = attendanceData.filter(a => a.status === 'Vắng mặt' || a.status === 'Có phép').length;
-
-  const handleUpdateStatus = (empId, newStatus) => {
-    const updated = attendanceData.map(a => {
-      if (a.employeeId === empId) {
-        return {
-          ...a,
-          status: newStatus,
-          checkInTime: newStatus === 'Có mặt' ? '07:55 AM' : newStatus === 'Vào muộn' ? '08:15 AM' : '--:--'
-        };
-      }
-      return a;
-    });
-    setAttendanceData(updated);
-    localStorage.setItem('lunaWash_attendance', JSON.stringify(updated));
+  const getTemplateForEmployee = (empId) => {
+    return scheduleTemplates.find(t => t.employeeId === empId) || { shift: 'Ca sáng', dayOff: 'Thứ Hai' };
   };
 
-  const handleUpdateNote = (empId, text) => {
-    const updated = attendanceData.map(a => {
-      if (a.employeeId === empId) {
-        return { ...a, note: text };
+  const updateScheduleTemplate = (empId, field, value) => {
+    setScheduleTemplates(prev => {
+      const exists = prev.find(t => t.employeeId === empId);
+      if (exists) {
+        return prev.map(t => t.employeeId === empId ? { ...t, [field]: value } : t);
       }
-      return a;
+      return [...prev, { employeeId: empId, shift: 'Ca sáng', dayOff: 'Thứ Hai', [field]: value }];
     });
-    setAttendanceData(updated);
-    localStorage.setItem('lunaWash_attendance', JSON.stringify(updated));
   };
 
-  const handleSaveAttendance = (type) => {
-    alert(`Đã ${type === 'draft' ? 'lưu nháp' : 'xác nhận gửi'} bảng điểm danh ca sáng của chi nhánh ${branchName}!`);
+  const handleSaveTemplates = async () => {
+    try {
+      const response = await fetch(`http://localhost:5010/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templates: scheduleTemplates })
+      });
+      if (response.ok) {
+        toast.success("Lưu khuôn mẫu lịch thành công!");
+        setIsEditingSchedule(false);
+      } else {
+        toast.error("Lưu thất bại: " + response.statusText);
+      }
+    } catch (error) {
+      toast.error("Lỗi khi lưu khuôn mẫu: " + error.message);
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch(`http://localhost:5010/api/StaffManagement/branch/${branchId}/history`);
+      if (response.ok) setHistoryLogs(await response.json());
+    } catch (error) { toast.error("Lỗi khi tải lịch sử sửa đổi: " + error.message); }
+  };
+
+  const handleSaveAttendance = async () => {
+    try {
+      const response = await fetch('http://localhost:5010/api/StaffManagement/attendance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchId: branchId,
+          shift: selectedShiftFilter,
+          attendances: attendanceData.map(a => ({ employeeId: a.id, status: a.status, note: a.note }))
+        })
+      });
+      if (response.ok) {
+        toast.success("Xác nhận điểm danh thành công!");
+      } else {
+        toast.error("Có lỗi xảy ra khi lưu điểm danh!");
+      }
+    } catch (error) { 
+      toast.error("Lỗi khi lưu điểm danh: " + error.message);
+    }
   };
 
   const handleAddIncident = () => {
@@ -142,6 +206,25 @@ export default function ManagerStaff() {
     const updated = [newIncident, ...incidentLog];
     setIncidentLog(updated);
     alert('Đã thêm báo cáo sự cố thành công!');
+  };
+
+  const attTotal = attendanceData.length;
+  const attPresent = attendanceData.filter(a => a.status === 'Có mặt').length;
+  const attLate = attendanceData.filter(a => a.status === 'Vào muộn').length;
+  const attAbsent = attendanceData.filter(a => a.status === 'Vắng mặt' || a.status === 'Có phép').length;
+  const currentAttendance = attendanceData;
+
+  const handleUpdateStatus = (empId, newStatus) => {
+    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, status: newStatus } : a));
+  };
+
+  const handleUpdateNote = (empId, newNote) => {
+    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, note: newNote } : a));
+  };
+
+  const handleRealtimeCheckIn = (empId) => {
+    const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, status: 'Có mặt' } : a));
   };
 
   return (
@@ -358,12 +441,130 @@ export default function ManagerStaff() {
               </div>
             </div>
 
+            {/* Fixed Schedule Template Setup */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Thiết lập Khuôn mẫu Lịch làm việc</h2>
+                  <p className="text-sm text-slate-500 mt-1">Chọn ca làm và ngày nghỉ cố định hàng tuần cho từng nhân viên.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowHistoryModal(true)}
+                    className="px-4 py-2 bg-white text-primary border border-primary/50 font-bold rounded-xl hover:bg-blue-50 text-xs shadow-sm transition-all flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">history</span>
+                    Lịch sử sửa đổi
+                  </button>
+                  {isEditingSchedule ? (
+                    <>
+                      <button 
+                        onClick={() => setIsEditingSchedule(false)}
+                        className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 text-xs shadow-sm transition-all flex items-center gap-2"
+                      >
+                        Hủy
+                      </button>
+                      <button 
+                        onClick={handleSaveTemplates}
+                        className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs shadow-sm transition-all flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-sm">save</span>
+                        Lưu thay đổi
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => setIsEditingSchedule(true)}
+                      className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs shadow-sm transition-all flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                      Chỉnh sửa lịch
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-[20px] shadow-sm border border-outline-variant/30 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="border-b border-outline-variant/20 bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-slate-500">Mã NV</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-slate-500">Họ & Tên</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-slate-500">Vai trò</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-slate-500">Ca cố định</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-slate-500">Ngày nghỉ (1 buổi/tuần)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {employees.map(emp => {
+                        const template = scheduleTemplates.find(t => t.employeeId === emp.id) || { shift: 'Chưa xếp', dayOff: 'Chưa xếp' };
+                        return (
+                          <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-slate-500 text-sm">{emp.id}</td>
+                            <td className="px-6 py-4 font-bold text-slate-800 text-sm">{emp.fullName}</td>
+                            <td className="px-6 py-4 text-slate-600 text-sm">
+                              <span className={`px-2.5 py-1 text-[10px] font-bold rounded-md ${
+                                emp.role.includes('Kỹ thuật') ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {emp.role}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              {isEditingSchedule ? (
+                                <select 
+                                  value={template.shift}
+                                  onChange={(e) => updateScheduleTemplate(emp.id, 'shift', e.target.value)}
+                                  className="bg-white border border-outline-variant/40 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary outline-none cursor-pointer hover:border-primary/50 transition-colors w-full max-w-[150px]"
+                                >
+                                  {SHIFTS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                              ) : (
+                                <span className="font-medium text-slate-700 text-sm px-3 py-2 inline-block border border-transparent">{template.shift}</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              {isEditingSchedule ? (
+                                <select 
+                                  value={template.dayOff}
+                                  onChange={(e) => updateScheduleTemplate(emp.id, 'dayOff', e.target.value)}
+                                  className="bg-white border border-outline-variant/40 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary outline-none cursor-pointer hover:border-primary/50 transition-colors w-full max-w-[150px]"
+                                >
+                                  {DAYS_OFF.map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                              ) : (
+                                <span className="font-medium text-slate-700 text-sm px-3 py-2 inline-block border border-transparent">{template.dayOff}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
             {/* Attendance Table & Checklist Grid */}
             <div className="glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md mb-8">
               <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
                 <div>
-                  <h3 className="font-bold text-primary text-base">Điểm danh ca sáng hôm nay</h3>
+                  <h3 className="font-bold text-primary text-base">Điểm danh {selectedShift.toLowerCase()} hôm nay</h3>
                   <p className="text-xs text-outline mt-0.5">Chọn trạng thái điểm danh và điền ghi chú thích hợp.</p>
+                </div>
+                <div className="flex bg-white rounded-lg p-1 border border-outline-variant/30 shadow-sm mx-auto md:mx-4 hidden md:flex">
+                  {['Ca sáng', 'Ca chiều', 'Ca bảo trì'].map(shift => (
+                    <button
+                      key={shift}
+                      onClick={() => setSelectedShift(shift)}
+                      className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${
+                        selectedShift === shift
+                          ? 'bg-blue-100 text-blue-700 shadow-sm'
+                          : 'text-outline hover:text-slate-800 hover:bg-slate-50'
+                      }`}
+                    >
+                      {shift}
+                    </button>
+                  ))}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleSaveAttendance('draft')} className="px-3.5 py-2 bg-white text-on-surface border border-outline-variant/50 hover:bg-surface-container-low font-bold rounded-xl text-xs shadow-sm transition-all">
@@ -388,11 +589,13 @@ export default function ManagerStaff() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/10">
-                    {attendanceData.map((a) => (
+                    {currentAttendance.map((a) => (
                       <tr key={a.employeeId} className="hover:bg-surface-container-low/30 transition-colors">
                         <td className="px-6 py-4 font-bold text-on-surface">{a.fullName}</td>
                         <td className="px-6 py-4 text-on-surface-variant">{a.role}</td>
-                        <td className="px-6 py-4 font-medium text-outline">{a.shift}</td>
+                        <td className="px-6 py-4 font-medium text-outline">
+                          {selectedShift === 'Ca chiều' ? 'Ca chiều (14:30 - 00:15)' : selectedShift === 'Ca bảo trì' ? 'Ca bảo trì (00:15 - 04:00)' : 'Ca sáng (04:00 - 14:30)'}
+                        </td>
                         <td className="px-6 py-4">
                           <select
                             value={a.status}
@@ -405,7 +608,18 @@ export default function ManagerStaff() {
                             <option value="Có phép">Nghỉ có phép</option>
                           </select>
                         </td>
-                        <td className="px-6 py-4 font-mono font-bold text-on-surface-variant">{a.checkInTime}</td>
+                        <td className="px-6 py-4 font-mono font-bold text-on-surface-variant">
+                          {a.checkInTime === '--:--' ? (
+                            <button 
+                              onClick={() => handleRealtimeCheckIn(a.employeeId)}
+                              className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                            >
+                              Điểm danh
+                            </button>
+                          ) : (
+                            a.checkInTime
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           <input
                             type="text"
@@ -577,6 +791,53 @@ export default function ManagerStaff() {
         )}
 
       </div>
+      {/* Assign Shift Modal Removed */}
+
+      {/* History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
+            <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
+              <h2 className="text-lg font-bold text-[#00236f] flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">history</span>
+                Lịch sử sửa đổi lịch làm việc
+              </h2>
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto bg-slate-50">
+              <div className="space-y-4">
+                {historyLogs.length === 0 ? (
+                  <p className="text-center text-slate-500 py-4">Chưa có lịch sử thay đổi nào.</p>
+                ) : (
+                  historyLogs.map((log, index) => (
+                    <div key={log.id} className="bg-white p-4 rounded-2xl border border-outline-variant/20 shadow-sm relative pl-10">
+                      <div className={`absolute left-4 top-5 w-2 h-2 rounded-full ${index === 0 ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                      {index !== historyLogs.length - 1 && (
+                        <div className="absolute left-[19px] top-8 bottom-[-24px] w-[2px] bg-slate-100"></div>
+                      )}
+                      <p className="text-xs text-slate-500 font-bold mb-1">{new Date(log.createdAt).toLocaleString('vi-VN')}</p>
+                      <p className="text-sm text-slate-800">
+                        <span className="font-bold text-primary">{log.modifiedByFullName}</span> đã <span className="font-bold">{log.action.toLowerCase()}</span> của <span className="font-bold">{log.employeeFullName}</span>
+                        {log.oldValue && log.newValue ? (
+                          <> từ <span className="text-rose-600 line-through">{log.oldValue}</span> thành <span className="text-emerald-600 font-bold">{log.newValue}</span>.</>
+                        ) : (
+                          <> thành <span className="text-emerald-600 font-bold">{log.newValue}</span>.</>
+                        )}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

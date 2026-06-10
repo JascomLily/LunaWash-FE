@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
  * Trang thông tin cá nhân (UserProfile) - Hệ thống Rửa xe Thông minh LunaWash.
@@ -7,6 +7,24 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function UserProfile() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [highlightHistorySection, setHighlightHistorySection] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.scrollToHistory) {
+      setTimeout(() => {
+        const el = document.getElementById('history-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightHistorySection(true);
+          setTimeout(() => setHighlightHistorySection(false), 2000);
+          
+          // Clear state so it doesn't re-trigger on refresh
+          window.history.replaceState({}, document.title);
+        }
+      }, 300);
+    }
+  }, [location]);
   const [user, setUser] = useState({
     fullName: 'Nguyễn Văn A',
     email: 'nguyenvan@example.com',
@@ -21,6 +39,16 @@ export default function UserProfile() {
   const [bookings] = useState([]);
 
   const [showTierRulesModal, setShowTierRulesModal] = useState(false);
+
+  // Edit Profile states
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [editProfileForm, setEditProfileForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
 
   // Modal thêm xe states
   const [showAddCarModal, setShowAddCarModal] = useState(false);
@@ -85,6 +113,54 @@ export default function UserProfile() {
       }
     }
   }, []);
+
+  const openEditProfileModal = () => {
+    setEditProfileForm({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || ''
+    });
+    setShowEditProfileModal(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const updatedUser = {
+        ...user,
+        fullName: editProfileForm.fullName,
+        email: editProfileForm.email,
+        phone: editProfileForm.phone,
+        address: editProfileForm.address
+      };
+      
+      setUser(updatedUser);
+      
+      // Update local storage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        localStorage.setItem('user', JSON.stringify({
+          ...parsed,
+          fullName: updatedUser.fullName,
+          email: updatedUser.email
+        }));
+      }
+      
+      setShowEditProfileModal(false);
+      alert('Đã cập nhật thông tin cá nhân thành công!');
+    } catch (error) {
+      console.error(error);
+      alert('Có lỗi xảy ra khi cập nhật thông tin.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleDeleteCar = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa xe này khỏi danh sách?')) {
@@ -241,7 +317,7 @@ export default function UserProfile() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-xl text-primary">Thông tin cá nhân</h3>
               <button 
-                onClick={() => alert('Chức năng cập nhật thông tin cá nhân đang phát triển.')}
+                onClick={openEditProfileModal}
                 className="flex items-center gap-1.5 text-primary hover:text-primary-container font-bold text-sm transition-colors select-none"
               >
                 <span className="material-symbols-outlined text-base">edit</span>
@@ -372,7 +448,14 @@ export default function UserProfile() {
           </article>
 
           {/* PHẦN 3: LỊCH SỬ ĐẶT LỊCH GẦN ĐÂY */}
-          <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
+          <article 
+            id="history-section"
+            className={`bg-surface-container-lowest border rounded-[32px] p-8 transition-all duration-500 ${
+              highlightHistorySection
+                ? 'border-[#00236f] shadow-[0_0_20px_rgba(0,35,111,0.3)] ring-2 ring-[#00236f]/20'
+                : 'border-outline-variant/30 shadow-xl'
+            }`}
+          >
             {/* Header lịch sử */}
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-xl text-primary">Lịch sử đặt lịch gần đây</h3>
@@ -726,6 +809,104 @@ export default function UserProfile() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Pop-up modal chỉnh sửa thông tin cá nhân */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => !isSavingProfile && setShowEditProfileModal(false)}
+          ></div>
+          
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
+              <h3 className="font-extrabold text-base text-[#00236f]">Chỉnh sửa thông tin cá nhân</h3>
+              <button
+                type="button"
+                disabled={isSavingProfile}
+                onClick={() => setShowEditProfileModal(false)}
+                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
+              >
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-outline uppercase tracking-wider ml-1">Họ và tên</label>
+                <input
+                  type="text"
+                  required
+                  disabled={isSavingProfile}
+                  placeholder="e.g., Nguyễn Văn A"
+                  value={editProfileForm.fullName}
+                  onChange={(e) => setEditProfileForm({...editProfileForm, fullName: e.target.value})}
+                  className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/60 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-outline uppercase tracking-wider ml-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  disabled={isSavingProfile}
+                  placeholder="e.g., example@gmail.com"
+                  value={editProfileForm.email}
+                  onChange={(e) => setEditProfileForm({...editProfileForm, email: e.target.value})}
+                  className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/60 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-outline uppercase tracking-wider ml-1">Số điện thoại</label>
+                <input
+                  type="tel"
+                  required
+                  disabled={isSavingProfile}
+                  placeholder="e.g., 0901 234 567"
+                  value={editProfileForm.phone}
+                  onChange={(e) => setEditProfileForm({...editProfileForm, phone: e.target.value})}
+                  className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/60 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-outline uppercase tracking-wider ml-1">Địa chỉ</label>
+                <input
+                  type="text"
+                  required
+                  disabled={isSavingProfile}
+                  placeholder="e.g., Quận 1, TP. Hồ Chí Minh"
+                  value={editProfileForm.address}
+                  onChange={(e) => setEditProfileForm({...editProfileForm, address: e.target.value})}
+                  className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/60 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-semibold"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-outline-variant/20 flex gap-3">
+                <button
+                  type="button"
+                  disabled={isSavingProfile}
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="flex-1 px-4 py-3 bg-surface-container-low hover:bg-surface-container-high text-on-surface font-bold rounded-xl transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="flex-1 px-4 py-3 bg-primary hover:bg-primary-container text-white font-bold rounded-xl transition-colors shadow-md flex items-center justify-center gap-2"
+                >
+                  {isSavingProfile ? (
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  ) : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

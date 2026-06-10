@@ -277,7 +277,7 @@ export default function Navbar() {
                 {dropdownOpen && (
                   <div 
                     onMouseLeave={() => setDropdownOpen(false)}
-                    className="absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-2xl border border-outline-variant/30 z-50 glass-card animate-fadeIn"
+                    className="absolute right-0 mt-3 w-64 bg-white rounded-2xl p-4 shadow-2xl border border-outline-variant/30 z-50 animate-fadeIn"
                   >
                     {/* User info header */}
                     <div className="flex items-center gap-3 pb-3 mb-2 border-b border-outline-variant/20">
@@ -313,7 +313,7 @@ export default function Navbar() {
                       </button>
                       {isCustomer && (
                         <button 
-                          onClick={() => { setDropdownOpen(false); navigate('/user'); }} 
+                          onClick={() => { setDropdownOpen(false); navigate('/user', { state: { scrollToHistory: true } }); }} 
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-all font-medium text-left"
                         >
                           <span className="material-symbols-outlined text-lg">calendar_month</span>

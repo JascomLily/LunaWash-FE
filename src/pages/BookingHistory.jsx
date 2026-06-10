@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 // CẤU HÌNH DỮ LIỆU TẬP TRUNG - Phục vụ nâng cấp & kết nối API sau này
 const INITIAL_ACTIVE_BOOKING = {
@@ -56,42 +57,148 @@ export default function BookingHistory() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [activeBooking, setActiveBooking] = useState(() => {
-    if (location.state && location.state.paymentMethod) {
-      const newBooking = {
-        id: `BKG-${Date.now().toString().slice(-4)}`,
-        packageName: location.state.packageName,
-        services: location.state.services,
-        price: location.state.formattedPrice,
-        branch: location.state.activeBranchName,
-        address: location.state.address,
-        slot: location.state.activeSlotName,
-        timeRange: location.state.expectedTimeRange,
-        date: 'Hôm nay',
-        vehicle: location.state.vehicleLicense,
-        paymentMethod: location.state.paymentMethod
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [historyList, setHistoryList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // States for Modals
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [serviceRating, setServiceRating] = useState(5);
+  const [staffRating, setStaffRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsBooking, setDetailsBooking] = useState(null);
+
+  const handleOpenReview = (booking) => {
+    setReviewBooking(booking);
+    setServiceRating(5);
+    setStaffRating(5);
+    setReviewComment('');
+    setShowReviewModal(true);
+  };
+
+  const handleSubmitReview = async () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      
+      const payload = {
+        bookingId: reviewBooking.id || 'BKG-MOCK',
+        serviceRating,
+        staffRating,
+        comment: reviewComment
       };
-      localStorage.setItem('lunaWash_activeBooking', JSON.stringify(newBooking));
-      return newBooking;
-    }
-    const saved = localStorage.getItem('lunaWash_activeBooking');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
+
+      const res = await fetch('http://localhost:5010/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${parsed.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        toast.success('Cảm ơn bạn đã đánh giá dịch vụ!');
+      } else {
+        // Tạm báo thành công vì BE đang làm
+        toast.success('Cảm ơn bạn đã đánh giá dịch vụ! (Pending BE)');
       }
+    } catch(err) {
+      toast.success('Cảm ơn bạn đã đánh giá! (Pending BE)');
+    } finally {
+      setShowReviewModal(false);
     }
-    return INITIAL_ACTIVE_BOOKING;
-  });
+  };
 
-  const [historyList] = useState(COMPLETED_BOOKINGS);
+  const handleOpenDetails = (booking) => {
+    setDetailsBooking(booking);
+    setShowDetailsModal(true);
+  };
 
-  const handleCancelBooking = () => {
+  const fetchBookings = async () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      const res = await fetch('http://localhost:5010/api/bookings/history', {
+        headers: { 'Authorization': `Bearer ${parsed.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Find the first "Sắp đến" booking
+        const active = data.find(b => b.status === 'Sắp đến');
+        if (active) {
+          const parts = active.timeRange ? active.timeRange.split('\\n') : ['', ''];
+          setActiveBooking({
+            id: active.id,
+            packageName: active.packageName,
+            services: active.services,
+            price: active.totalPrice,
+            branch: active.branchInfo,
+            address: '',
+            slot: active.slotName,
+            timeRange: parts[0],
+            date: parts[1] || '',
+            vehicle: active.vehicleInfo,
+            paymentMethod: active.paymentMethod
+          });
+        } else {
+          setActiveBooking(null);
+        }
+
+        // Map the rest to historyList
+        const history = data.filter(b => b.status !== 'Sắp đến').map(b => ({
+          id: b.id,
+          packageName: b.packageName,
+          vehicle: b.vehicleInfo,
+          extras: b.extras,
+          branch: b.branchInfo,
+          slot: b.slotName,
+          time: b.timeRange,
+          totalPrice: b.totalPrice,
+          status: b.status
+        }));
+        setHistoryList(history);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const handleCancelBooking = async () => {
+    if (!activeBooking) return;
     if (window.confirm('Bạn có chắc chắn muốn hủy lịch đặt xe này không? (Hủy trước 30 phút hoàn toàn miễn phí)')) {
-      alert('Đã hủy lịch đặt thành công. Chúng tôi sẽ hoàn tiền nếu quý khách đã thanh toán trước.');
-      setActiveBooking(null);
-      localStorage.removeItem('lunaWash_activeBooking');
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const parsed = JSON.parse(storedUser);
+        
+        const res = await fetch(`http://localhost:5010/api/bookings/${activeBooking.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${parsed.token}` }
+        });
+        
+        if (res.ok) {
+          toast.success('Đã hủy lịch đặt thành công.');
+          fetchBookings();
+        } else {
+          const errData = await res.json();
+          toast.error(errData.message || 'Không thể hủy lịch đặt.');
+        }
+      } catch(err) {
+        toast.error('Lỗi kết nối đến máy chủ.');
+      }
     }
   };
 
@@ -234,23 +341,24 @@ export default function BookingHistory() {
           </div>
         </section>
 
-        {/* 2. LỊCH SỬ ĐÃ HOÀN THÀNH */}
+        {/* 2. LỊCH SỬ */}
         <section className="space-y-4">
           <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-1.5">
             <span className="material-symbols-outlined text-base font-bold">history</span>
-            Lịch Sử Đã Hoàn Thành
+            Lịch Sử
           </h2>
 
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl overflow-hidden shadow-md">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left min-w-[750px]">
+              <table className="w-full border-collapse text-left min-w-[850px]">
                 <thead>
                   <tr className="bg-surface-container-low/40 border-b border-outline-variant/50 text-outline text-xs font-bold uppercase tracking-wider">
                     <th className="py-4 px-6">Dịch vụ & Phương tiện</th>
                     <th className="py-4 px-6">Địa điểm & Trạm</th>
-                    <th className="py-4 px-6">Thời gian (Bắt đầu - Kết thúc)</th>
+                    <th className="py-4 px-6">Thời gian</th>
                     <th className="py-4 px-6">Tổng tiền</th>
                     <th className="py-4 px-6">Trạng thái</th>
+                    <th className="py-4 px-6 text-center">Đánh giá</th>
                     <th className="py-4 px-6 text-center">Hành động</th>
                   </tr>
                 </thead>
@@ -284,10 +392,20 @@ export default function BookingHistory() {
                           • {item.status}
                         </span>
                       </td>
+                      {/* Đánh giá */}
+                      <td className="py-5 px-6 text-center">
+                        <button 
+                          onClick={() => handleOpenReview(item)}
+                          className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 mx-auto transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">star</span>
+                          Đánh giá
+                        </button>
+                      </td>
                       {/* Chi tiết */}
                       <td className="py-5 px-6 text-center">
                         <button 
-                          onClick={() => alert(`Xem chi tiết mã đặt chỗ: ${activeBooking?.id || 'BKG-202410-008'}`)}
+                          onClick={() => handleOpenDetails(item)}
                           className="text-primary hover:underline font-bold text-xs"
                         >
                           Chi tiết
@@ -324,6 +442,139 @@ export default function BookingHistory() {
         </section>
 
       </div>
+
+      {/* MODAL ĐÁNH GIÁ */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden p-6 relative">
+            <button 
+              onClick={() => setShowReviewModal(false)}
+              className="absolute top-4 right-4 text-outline hover:text-on-surface bg-surface-container-low rounded-full w-8 h-8 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h3 className="text-xl font-extrabold text-[#00236f] mb-2">Đánh giá dịch vụ</h3>
+            <p className="text-sm text-on-surface-variant mb-6">Đánh giá của bạn giúp chúng tôi cải thiện chất lượng tốt hơn.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2">Đánh giá dịch vụ</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span 
+                      key={star} 
+                      onClick={() => setServiceRating(star)}
+                      className={`material-symbols-outlined text-3xl cursor-pointer transition-all ${star <= serviceRating ? 'text-amber-400 fill-current' : 'text-outline-variant/40'}`}
+                      style={{ fontVariationSettings: star <= serviceRating ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                      star
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2">Nhận xét thêm</label>
+                <textarea 
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Chia sẻ thêm trải nghiệm của bạn..."
+                  className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none h-24"
+                ></textarea>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleSubmitReview}
+              className="w-full mt-6 bg-[#00236f] text-white font-bold py-3.5 rounded-xl hover:bg-indigo-800 transition-colors shadow-md"
+            >
+              Gửi Đánh Giá
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHI TIẾT LỊCH ĐẶT */}
+      {showDetailsModal && detailsBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button 
+              onClick={() => setShowDetailsModal(false)}
+              className="absolute top-4 right-4 text-outline hover:text-on-surface bg-surface-container-low rounded-full w-8 h-8 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h3 className="text-2xl font-extrabold text-[#00236f] mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-3xl">receipt_long</span>
+              Chi tiết lịch đặt
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="space-y-4">
+                <h4 className="font-bold text-outline uppercase text-xs tracking-widest border-b border-outline-variant/20 pb-2">Thông tin dịch vụ</h4>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Dịch vụ & Gói</p>
+                  <p className="font-extrabold text-primary">{detailsBooking.packageName}</p>
+                  {detailsBooking.extras && <p className="text-xs text-on-surface-variant font-medium mt-1">Kèm: {detailsBooking.extras}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Phương tiện</p>
+                  <p className="font-bold text-on-surface">{detailsBooking.vehicle}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Chi nhánh & Trạm</p>
+                  <p className="font-bold text-on-surface">{detailsBooking.branch}</p>
+                  <p className="text-xs text-on-surface-variant">{detailsBooking.slot}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-outline uppercase text-xs tracking-widest border-b border-outline-variant/20 pb-2">Thời gian thực tế</h4>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Lịch hẹn</p>
+                  <p className="font-bold text-on-surface whitespace-pre-line">{detailsBooking.time}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Check-in (Đang cập nhật BE)</p>
+                  <p className="font-bold text-emerald-600">--:--</p>
+                </div>
+                <div>
+                  <p className="text-xs text-outline mb-0.5">Check-out (Đang cập nhật BE)</p>
+                  <p className="font-bold text-blue-600">--:--</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-low/30 rounded-2xl p-5 border border-outline-variant/30">
+              <h4 className="font-bold text-outline uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">payments</span>
+                Hóa đơn thanh toán
+              </h4>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-on-surface-variant font-medium">Tạm tính:</span>
+                  <span className="font-bold text-on-surface">{detailsBooking.totalPrice}</span>
+                </div>
+                <div className="flex justify-between items-center text-emerald-600">
+                  <span className="font-medium">Giảm giá:</span>
+                  <span className="font-bold">- 0đ</span>
+                </div>
+                <div className="pt-3 border-t border-outline-variant/20 flex justify-between items-center mt-3">
+                  <span className="font-extrabold text-on-surface text-base">Tổng thanh toán:</span>
+                  <span className="font-black text-xl text-[#00236f]">{detailsBooking.totalPrice}</span>
+                </div>
+                <div className="mt-4 flex justify-between items-center bg-surface-container-lowest p-3 rounded-xl text-xs font-bold">
+                  <span className="text-outline">Phương thức: <span className="text-on-surface ml-1">{detailsBooking.paymentMethod || 'Tiền mặt'}</span></span>
+                  <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Đã thanh toán</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
