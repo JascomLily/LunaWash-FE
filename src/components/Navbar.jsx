@@ -259,8 +259,12 @@ export default function Navbar() {
                           {tierInfo.icon}
                         </span>
                         {tierInfo.label}
+                        <span className="text-white/80 px-1">|</span>
+                        <span className="text-amber-300 flex items-center gap-0.5">
+                          {user.points || 0} pt
+                        </span>
                         {/* Trailing spacer to account for clip-path arrow */}
-                        <span className="w-1.5 inline-block" />
+                        <span className="w-2.5 inline-block" />
                       </span>
                     ) : (
                       <span className="text-[9px] font-extrabold uppercase tracking-wide text-primary">

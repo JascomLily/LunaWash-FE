@@ -133,7 +133,20 @@ export default function BookingHistory() {
         // Find the first "Sắp đến" booking
         const active = data.find(b => b.status === 'Sắp đến');
         if (active) {
-          const parts = active.timeRange ? active.timeRange.split('\\n') : ['', ''];
+          let timeVal = '';
+          let dateVal = '';
+          if (active.timeRange) {
+            if (active.timeRange.includes('\n')) {
+              const parts = active.timeRange.split('\n');
+              timeVal = parts[0];
+              dateVal = parts[1] || '';
+            } else {
+              const parts = active.timeRange.trim().split(' ');
+              dateVal = parts.pop() || '';
+              timeVal = parts.join(' ');
+            }
+          }
+
           setActiveBooking({
             id: active.id,
             packageName: active.packageName,
@@ -142,8 +155,8 @@ export default function BookingHistory() {
             branch: active.branchInfo,
             address: '',
             slot: active.slotName,
-            timeRange: parts[0],
-            date: parts[1] || '',
+            timeRange: timeVal,
+            date: dateVal,
             vehicle: active.vehicleInfo,
             paymentMethod: active.paymentMethod
           });
@@ -244,10 +257,7 @@ export default function BookingHistory() {
                   {/* Tên gói & Giá tiền */}
                   <div className="flex justify-between items-start border-b border-outline-variant/20 pb-4">
                     <div>
-                      <span className="text-[10px] font-black text-primary tracking-widest uppercase block mb-1">
-                        {activeBooking.packageName}
-                      </span>
-                      <h3 className="font-extrabold text-xl text-primary">{activeBooking.services}</h3>
+                      <h3 className="font-extrabold text-xl text-primary uppercase">{activeBooking.packageName}</h3>
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-black text-[#0d2e61]">{activeBooking.price}</p>
@@ -279,16 +289,22 @@ export default function BookingHistory() {
                     </div>
 
                     <div className="flex items-start gap-2.5">
-                      <span className="material-symbols-outlined text-primary font-bold">schedule</span>
+                      <span className="material-symbols-outlined text-primary font-bold mt-0.5">schedule</span>
                       <div>
-                        <p className="font-extrabold text-on-surface">Khung giờ (Bắt đầu - Kết thúc)</p>
-                        <p className="text-xs text-on-surface-variant font-medium">
-                          {activeBooking.timeRange}
-                          <span className="block text-[11px] text-primary font-bold">{activeBooking.date}</span>
-                          <span className="block text-[10px] text-amber-600 font-extrabold mt-1 leading-snug">
-                            * Khuyên quý khách nên đến sớm, không nên trễ quá 10 phút!
+                        <p className="font-extrabold text-on-surface mb-2">Khung giờ (Dự kiến)</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-50 text-sky-800 font-bold text-xs rounded-full border border-sky-200">
+                            <span className="material-symbols-outlined text-[12px]">schedule</span>
+                            {activeBooking.timeRange}
                           </span>
-                        </p>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-800 font-bold text-xs rounded-full border border-indigo-200">
+                            <span className="material-symbols-outlined text-[12px]">calendar_month</span>
+                            {activeBooking.date}
+                          </span>
+                        </div>
+                        <span className="block text-[10px] text-amber-600 font-extrabold mt-2 leading-snug">
+                          * Khuyên quý khách nên đến sớm, không nên trễ quá 10 phút!
+                        </span>
                       </div>
                     </div>
 

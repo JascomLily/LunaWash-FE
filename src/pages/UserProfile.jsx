@@ -36,7 +36,7 @@ export default function UserProfile() {
 
   const [cars, setCars] = useState([]);
 
-  const [bookings] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
   const [showTierRulesModal, setShowTierRulesModal] = useState(false);
 
@@ -88,7 +88,8 @@ export default function UserProfile() {
               ...prev,
               fullName: data.fullName || prev.fullName,
               email: data.email || prev.email,
-              tier: data.role === 'Customer' ? (data.tier || prev.tier) : data.role
+              tier: data.role === 'Customer' ? (data.tier || prev.tier) : data.role,
+              points: data.currentPoints || 0
             }));
           })
           .catch(err => console.warn('Lỗi đồng bộ user:', err));
@@ -107,6 +108,30 @@ export default function UserProfile() {
             setCars(data); // Expects array of { id, name, license, color, ... }
           })
           .catch(err => console.warn('Lỗi lấy xe:', err));
+
+          // 3. Fetch bookings (/api/bookings/history)
+          fetch('http://localhost:5010/api/bookings/history', {
+            headers: { 'Authorization': `Bearer ${parsed.token}` }
+          })
+          .then(res => res.ok ? res.json() : [])
+          .then(data => {
+            if (Array.isArray(data)) {
+              // Map data similar to BookingHistory.jsx
+              const mapped = data.slice(0, 3).map(b => ({
+                id: b.id,
+                packageName: b.packageName,
+                vehicle: b.vehicleInfo,
+                extras: b.extras,
+                branch: b.branchInfo,
+                slot: b.slotName,
+                time: b.timeRange,
+                totalPrice: b.totalPrice,
+                status: b.status
+              }));
+              setBookings(mapped);
+            }
+          })
+          .catch(err => console.warn('Lỗi lấy lịch sử:', err));
         }
       } catch (e) {
         console.error(e);
@@ -350,6 +375,17 @@ export default function UserProfile() {
                       {tierInfo.label}
                     </span>
                   </div>
+                  
+                  {/* Điểm tích luỹ */}
+                  <div className="ml-4 pl-4 border-l border-outline-variant/30 flex flex-col justify-center">
+                    <p className="text-[10px] font-bold text-outline tracking-widest uppercase mb-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">stars</span>
+                      Điểm tích lũy
+                    </p>
+                    <p className={`font-black text-lg leading-none ${tierInfo.textColor}`}>
+                      {user.points || 0} <span className="text-[11px] font-bold text-outline">pt</span>
+                    </p>
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <button 
@@ -472,33 +508,61 @@ export default function UserProfile() {
               <table className="w-full border-collapse text-left min-w-[600px]">
                 <thead>
                   <tr className="border-b border-outline-variant/50">
-                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Ngày</th>
-                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Dịch vụ</th>
-                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Địa điểm</th>
+                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Dịch vụ & Phương tiện</th>
+                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Địa điểm & Trạm</th>
+                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Thời gian</th>
+                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Tổng tiền</th>
                     <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Trạng thái</th>
-                    <th className="pb-3 text-xs font-bold text-outline uppercase tracking-wider">Số tiền</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
-                  {bookings.map((booking, index) => (
+                  {bookings.length > 0 ? bookings.map((item, index) => (
                     <tr key={index} className="hover:bg-surface-container-low/20 transition-colors">
-                      <td className="py-4 text-on-surface font-semibold text-sm">{booking.date}</td>
-                      <td className="py-4 text-on-surface font-semibold text-sm">{booking.service}</td>
-                      <td className="py-4 text-on-surface-variant font-medium text-sm">{booking.location}</td>
-                      <td className="py-4">
-                        {booking.status === 'Hoàn thành' ? (
-                          <span className="inline-flex items-center px-3 py-1 bg-emerald-100/70 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-sm select-none">
-                            • Hoàn thành
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 bg-sky-100/70 text-sky-800 border border-sky-200 rounded-full text-xs font-bold shadow-sm select-none">
-                            • Đang chờ
+                      {/* Dịch vụ & xe */}
+                      <td className="py-4 pr-4">
+                        <p className="font-extrabold text-primary">{item.packageName}</p>
+                        <p className="text-xs text-on-surface-variant font-medium mt-1">{item.vehicle}</p>
+                        {item.extras && (
+                          <span className="inline-block bg-sky-100 text-sky-800 text-[9px] font-black px-2 py-0.5 rounded mt-1.5">
+                            {item.extras}
                           </span>
                         )}
                       </td>
-                      <td className="py-4 font-black text-primary text-base">{booking.price}</td>
+                      {/* Vị trí */}
+                      <td className="py-4 pr-4 font-medium text-on-surface-variant">
+                        <p className="font-semibold text-on-surface">{item.branch}</p>
+                        <p className="text-xs text-outline">{item.slot}</p>
+                      </td>
+                      {/* Thời gian */}
+                      <td className="py-4 pr-4 font-semibold text-on-surface whitespace-pre-line text-xs">
+                        {item.time}
+                      </td>
+                      {/* Tiền */}
+                      <td className="py-4 pr-4 font-black text-primary text-base">{item.totalPrice}</td>
+                      {/* Trạng thái */}
+                      <td className="py-4">
+                        {item.status === 'Completed' || item.status === 'Hoàn thành' ? (
+                          <span className="inline-flex items-center px-3 py-1 bg-emerald-100/70 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • Đã xong
+                          </span>
+                        ) : item.status === 'Cancelled' || item.status === 'Đã hủy' ? (
+                          <span className="inline-flex items-center px-3 py-1 bg-rose-100/70 text-rose-800 border border-rose-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • Đã hủy
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 bg-sky-100/70 text-sky-800 border border-sky-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • {item.status}
+                          </span>
+                        )}
+                      </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-on-surface-variant font-medium">
+                        Không có lịch đặt nào gần đây.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -716,12 +780,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 400.000đ
+                          Từ 1.000 pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 300.000đ
+                          Từ 800 pt
                         </span>
                       </td>
                     </tr>
@@ -746,12 +810,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 1.200.000đ
+                          Từ 3.000 pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 900.000đ
+                          Từ 2.400 pt
                         </span>
                       </td>
                     </tr>
@@ -776,12 +840,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 3.000.000đ
+                          Từ 5.000 pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 2.400.000đ
+                          Từ 4.000 pt
                         </span>
                       </td>
                     </tr>
