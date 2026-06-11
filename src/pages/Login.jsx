@@ -84,6 +84,7 @@ export default function Login() {
         branchId: data.branchId || null,
         branchName: data.branchName || null,
         token: data.token,
+        points: data.currentPoints || 0,
         avatarUrl: null
       };
 

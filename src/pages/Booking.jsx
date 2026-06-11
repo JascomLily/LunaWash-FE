@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 const BRANCHES = [
   { id: 'BRN-LD-01', name: 'LunaWash Linh Đông', address: 'Thủ Đức, HCM' },
   { id: 'BRN-TTH-01', name: 'LunaWash Tân Thới Hiệp', address: 'Quận 12, HCM' },
-  { id: 'BRN-Q1-01', name: 'LunaWash Quan 1 - Chi nhanh Trung Tam', address: '123 Nguyen Hue, Quan 1, TP HCM' },
+  { id: 'BRN-Q1-01', name: 'LunaWash Quận 1', address: '123 Nguyen Hue, Quan 1, TP HCM' },
   { id: 'BRN-Q7-01', name: 'LunaWash Quận 7', address: '456 Nguyễn Văn Linh' },
   { id: 'BRN-TB-01', name: 'LunaWash Tân Bình', address: '789 Cộng Hòa, Phường 13' }
 ];
@@ -297,10 +297,61 @@ export default function Booking() {
     return parts[1] ? parseInt(parts[1], 10) - 1 : new Date().getMonth();
   });
 
-  // Tính toán danh sách các slot đã bị chiếm cho ngày và trạm hiện tại (được để trống để các slot đều trống theo yêu cầu của bạn)
-  const occupiedSlots = React.useMemo(() => {
-    return new Set();
-  }, [selectedDate, selectedWashSlot]);
+  const [occupiedSlotsSet, setOccupiedSlotsSet] = useState(new Map());
+
+  useEffect(() => {
+    const fetchOccupied = async () => {
+      try {
+        const slotNumber = selectedWashSlot.split('-')[1];
+        const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
+        const res = await fetch(`http://localhost:5010/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const blocked = new Map();
+        
+        // 1. Chặn các slot giờ đã qua trong ngày hôm nay
+        const now = new Date();
+        const tzOffset = now.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(now - tzOffset)).toISOString().split('T')[0];
+        const isToday = selectedDate === localISOTime;
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        TIME_SLOTS.forEach((slot, index) => {
+          if (isToday) {
+            const [slotHour, slotMin] = slot.time.split(':').map(Number);
+            if (slotHour < currentHour || (slotHour === currentHour && slotMin <= currentMinute)) {
+              blocked.set(index, 'past');
+            }
+          }
+        });
+
+        // 2. Chặn các slot đã có người đặt từ Database
+        data.forEach(booking => {
+            const startD = new Date(booking.startTime);
+            const startTotal = startD.getHours() * 60 + startD.getMinutes();
+            
+            const endD = new Date(booking.endTime);
+            const endTotal = endD.getHours() * 60 + endD.getMinutes();
+            
+            TIME_SLOTS.forEach((slot, i) => {
+               const [slotH, slotM] = slot.time.split(':').map(Number);
+               const slotTotal = slotH * 60 + slotM;
+               
+               if (slotTotal >= startTotal && slotTotal < endTotal) {
+                   blocked.set(i, 'booked');
+               }
+            });
+        });
+        
+        setOccupiedSlotsSet(blocked);
+      } catch(e) { console.error(e); }
+    };
+    fetchOccupied();
+  }, [selectedDate, selectedWashSlot, selectedBranch]);
+
+  const occupiedSlots = React.useMemo(() => occupiedSlotsSet, [occupiedSlotsSet]);
 
   // Tự động chuyển slot giờ được chọn sang slot còn trống đầu tiên nếu bị trùng vào slot đã đặt
   useEffect(() => {
@@ -334,6 +385,8 @@ export default function Booking() {
       }
       if (foundSlotId) {
         setSelectedTimeSlotId(foundSlotId);
+      } else {
+        setSelectedTimeSlotId(null);
       }
     }
   }, [selectedDate, selectedWashSlot, occupiedSlots, numSlots]);
@@ -431,16 +484,7 @@ export default function Booking() {
     }
   }, [selectedBranch]);
 
-  // Đảm bảo slot đã chọn không vượt quá số slot còn lại khi thay đổi số slot yêu cầu (khi chọn vệ sinh nội thất)
-  useEffect(() => {
-    const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
-    if (startIndex !== -1 && startIndex + numSlots > TIME_SLOTS.length) {
-      const lastValidIndex = TIME_SLOTS.length - numSlots;
-      if (lastValidIndex >= 0) {
-        setSelectedTimeSlotId(TIME_SLOTS[lastValidIndex].id);
-      }
-    }
-  }, [includeInteriorClean, selectedTimeSlotId, numSlots]);
+
 
   // TÍNH TOÁN DỮ LIỆU TÓM TẮT DỊCH VỤ ĐỘNG
   const activePackage = SERVICE_PACKAGES.find(p => p.id === selectedPackage) || SERVICE_PACKAGES[0];
@@ -473,7 +517,7 @@ export default function Booking() {
   // Tính khoảng thời gian dự kiến
   const expectedTimeRange = (() => {
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
-    if (startIndex === -1) return '08:00 - 08:40';
+    if (startIndex === -1) return 'Chưa chọn';
     
     const endIdx = Math.min(startIndex + numSlots - 1, TIME_SLOTS.length - 1);
     const startStr = TIME_SLOTS[startIndex].time;
@@ -513,18 +557,27 @@ export default function Booking() {
     if (includeInteriorClean) serviceIds.push('PRC-INT-01');
 
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
-    const startStr = startIndex !== -1 ? TIME_SLOTS[startIndex].time : '08:00';
-    const scheduledStartTime = `${selectedDate}T${startStr}:00.000Z`;
+    if (startIndex === -1) {
+      toast.error('Vui lòng chọn khung giờ hợp lệ!');
+      return;
+    }
+    const startStr = TIME_SLOTS[startIndex].time;
+    const scheduledStartTime = `${selectedDate}T${startStr}:00`;
     
     const notesStr = paymentMethod === 'vnpay' ? 'VNPay' : '';
 
+    const slotNumber = selectedWashSlot.split('-')[1];
+    const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
+
     const bookingPayload = {
       BranchId: selectedBranch,
+      WashSlotId: washSlotId,
       VehicleTypeId: activeVeh.vehicleTypeId || 'VT-OTO-4C',
       LicensePlate: activeVeh.license,
       VehicleBrand: activeVeh.brand || '',
       VehicleModel: activeVeh.model || '',
       ScheduledStartTime: scheduledStartTime,
+      Duration: totalDuration,
       Notes: notesStr,
       ServicePriceIds: serviceIds
     };
@@ -1050,26 +1103,29 @@ export default function Booking() {
                     }
                   }
                 }
-                const isSlotBooked = occupiedSlots.has(idx);
+                
+                const isSlotBooked = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'booked';
+                const isSlotPast = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'past';
+                const isSlotUnavailable = isSlotBooked || isSlotPast;
                 
                 let btnClasses = "py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ";
-                if (isSlotBooked) {
+                if (isSlotUnavailable) {
                   btnClasses += "border-outline-variant/30 bg-surface-container-low/40 text-outline/30 cursor-not-allowed opacity-60";
                 } else if (isStart) {
                   btnClasses += "bg-[#00236f] text-white border-[#00236f] shadow-lg ring-2 ring-primary/20 scale-105 z-10";
                 } else if (isOccupied) {
                   btnClasses += "bg-[#00236f]/10 text-[#00236f] border-[#00236f]/40 border-dashed";
                 } else if (isDisabled) {
-                  btnClasses += "border-outline-variant/40 bg-surface-container-low/20 text-outline/50 cursor-pointer hover:border-amber-300/80 opacity-70";
+                  btnClasses += "border-outline-variant/50 text-outline-variant/70 cursor-not-allowed opacity-80 hover:bg-red-50";
                 } else {
-                  btnClasses += "border-outline-variant/60 hover:border-primary/50 text-on-surface hover:bg-surface-container-low/30";
+                  btnClasses += "border-outline-variant hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant";
                 }
 
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    disabled={isSlotBooked}
+                    disabled={isSlotUnavailable}
                     onClick={() => {
                       if (isDisabled) {
                         const errorMsg = getSlotSelectionError(idx);
@@ -1079,10 +1135,10 @@ export default function Booking() {
                       }
                     }}
                     className={btnClasses}
-                    title={isSlotBooked ? "Khung giờ này đã được đặt" : isDisabled ? "Không đủ slot liền kề còn lại trong ngày" : `Lượt thứ ${idx + 1}`}
+                    title={isSlotBooked ? "Khung giờ này đã được đặt" : isSlotPast ? "Khung giờ này đã qua" : isDisabled ? "Không đủ slot liền kề còn lại trong ngày" : `Lượt thứ ${idx + 1}`}
                   >
                     <span className={`text-[9px] font-bold ${
-                      isSlotBooked ? 'text-outline/40' : 
+                      isSlotUnavailable ? 'text-outline/40' : 
                       isStart ? 'text-white/80' : 
                       isOccupied ? 'text-primary/70' : 
                       'text-outline/80'
