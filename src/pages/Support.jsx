@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 // CẤU HÌNH DỮ LIỆU TẬP TRUNG - Dễ dàng bảo trì và mở rộng sau này
+// DEMO: Bộ dữ liệu giả để chạy giao diện. Sau này đổ dữ liệu từ DB.
 const HELPDESK_TAGS = ['#Booking', '#Payment', '#Packages'];
 
 const HELPDESK_TOPICS = [

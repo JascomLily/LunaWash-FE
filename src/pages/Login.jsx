@@ -46,6 +46,7 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // GỌI API XUỐNG BACKEND: Gửi yêu cầu đăng nhập (POST) đến Endpoint /api/Auth/login
       const response = await fetch('http://localhost:5010/api/Auth/login', {
         method: 'POST',
         headers: {
@@ -185,7 +186,7 @@ export default function Login() {
                 Ghi nhớ đăng nhập
               </label>
             </div>
-            <a className="text-sm text-primary font-bold hover:underline" href="#">Quên mật khẩu?</a>
+            <Link className="text-sm text-primary font-bold hover:underline" to="/forgot-password">Quên mật khẩu?</Link>
           </div>
 
           <button 

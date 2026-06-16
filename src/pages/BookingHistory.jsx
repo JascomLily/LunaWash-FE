@@ -2,52 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-// CẤU HÌNH DỮ LIỆU TẬP TRUNG - Phục vụ nâng cấp & kết nối API sau này
-const INITIAL_ACTIVE_BOOKING = {
-  id: 'BKG-202410-0988',
-  packageName: 'GÓI CAO CẤP',
-  services: 'Rửa xe & Đánh bóng',
-  price: '450.000đ',
-  branch: 'LunaWash Linh Đông',
-  address: 'Thủ Đức, HCM',
-  slot: 'Trạm 1',
-  timeRange: '09:00 - 09:40',
-  date: 'Ngày mai',
-  vehicle: 'Mercedes GLC 300 - 51K-999.88'
-};
-
-const COMPLETED_BOOKINGS = [
-  {
-    packageName: 'Gói Cao Cấp ~30 phút',
-    vehicle: 'Toyota Camry (4 chỗ) • 51H-123.45',
-    extras: 'KÈM VỆ SINH NỘI THẤT',
-    branch: 'Chi nhánh Linh Đông, Thủ Đức',
-    slot: 'Trạm 1',
-    time: 'Lượt 15 (14:00 - 14:40)\n22/10/2024',
-    totalPrice: '250.000đ',
-    status: 'Hoàn thành'
-  },
-  {
-    packageName: 'Gói Cơ Bản ~15 phút',
-    vehicle: 'Honda CR-V (7 chỗ) • 51G-555.66',
-    extras: null,
-    branch: 'Chi nhánh Linh Đông, Thủ Đức',
-    slot: 'Trạm 2',
-    time: 'Lượt 08 (09:00 - 09:40)\n15/10/2024',
-    totalPrice: '150.000đ',
-    status: 'Hoàn thành'
-  },
-  {
-    packageName: 'Gói Nâng Cao ~20 phút',
-    vehicle: 'Mazda 3 (5 chỗ) • 60A-888.88',
-    extras: null,
-    branch: 'Chi nhánh Linh Đông, Thủ Đức',
-    slot: 'Trạm 1',
-    time: '16:30 - 17:10\n08/10/2024',
-    totalPrice: '800.000đ',
-    status: 'Hoàn thành'
-  }
-];
 
 /**
  * Trang Lịch Sử Rửa Xe / Quản lý lịch rửa xe (BookingHistory) - LunaWash.
@@ -174,7 +128,8 @@ export default function BookingHistory() {
           slot: b.slotName,
           time: b.timeRange,
           totalPrice: b.totalPrice,
-          status: b.status
+          status: b.status,
+          rating: b.rating
         }));
         setHistoryList(history);
       }
@@ -219,8 +174,37 @@ export default function BookingHistory() {
     navigate('/booking');
   };
 
+  const handleDeleteReview = async (bookingId) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không?')) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const parsed = JSON.parse(storedUser);
+        
+        const res = await fetch(`http://localhost:5010/api/reviews/${bookingId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${parsed.token}` }
+        });
+        
+        if (res.ok) {
+          toast.success('Đã xóa đánh giá thành công.');
+          fetchBookings();
+        } else {
+          toast.error('Không thể xóa đánh giá.');
+        }
+      } catch (err) {
+        toast.error('Lỗi kết nối máy chủ.');
+      }
+    }
+  };
+
   const handleReviewClick = () => {
-    navigate('/feedback');
+    const unratedBooking = historyList.find(b => b.status === 'Hoàn thành' && !b.rating);
+    if (!unratedBooking) {
+      toast.error('Bạn đã đánh giá tất cả các chuyến đi hoàn thành.');
+      return;
+    }
+    navigate('/feedback', { state: { bookingId: unratedBooking.id, booking: unratedBooking } });
   };
 
   return (
@@ -410,13 +394,28 @@ export default function BookingHistory() {
                       </td>
                       {/* Đánh giá */}
                       <td className="py-5 px-6 text-center">
-                        <button 
-                          onClick={() => handleOpenReview(item)}
-                          className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 mx-auto transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-sm">star</span>
-                          Đánh giá
-                        </button>
+                        {item.rating ? (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-bold text-xs flex items-center gap-1 shadow-sm">
+                              ⭐ {item.rating}.0
+                            </span>
+                            <button 
+                              onClick={() => handleDeleteReview(item.id)} 
+                              className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-full transition-colors" 
+                              title="Xóa đánh giá"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => navigate('/feedback', { state: { bookingId: item.id, booking: item } })}
+                            className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 mx-auto transition-colors shadow-sm"
+                          >
+                            <span className="material-symbols-outlined text-sm">star</span>
+                            Đánh giá
+                          </button>
+                        )}
                       </td>
                       {/* Chi tiết */}
                       <td className="py-5 px-6 text-center">
