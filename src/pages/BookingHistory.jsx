@@ -46,7 +46,7 @@ export default function BookingHistory() {
         comment: reviewComment
       };
 
-      const res = await fetch('http://localhost:5010/api/reviews', {
+      const res = await fetch('http://192.168.1.219:5010/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,14 +78,14 @@ export default function BookingHistory() {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
-      const res = await fetch('http://localhost:5010/api/bookings/history', {
+      const res = await fetch('http://192.168.1.219:5010/api/bookings/history', {
         headers: { 'Authorization': `Bearer ${parsed.token}` }
       });
       if (res.ok) {
         const data = await res.json();
         
-        // Find the first "Sắp đến" booking
-        const active = data.find(b => b.status === 'Sắp đến');
+        // Find the first "Sắp đến" or "Đang rửa" booking
+        const active = data.find(b => b.status === 'Sắp đến' || b.status === 'Đang rửa');
         if (active) {
           let timeVal = '';
           let dateVal = '';
@@ -112,14 +112,15 @@ export default function BookingHistory() {
             timeRange: timeVal,
             date: dateVal,
             vehicle: active.vehicleInfo,
-            paymentMethod: active.paymentMethod
+            paymentMethod: active.paymentMethod,
+            status: active.status
           });
         } else {
           setActiveBooking(null);
         }
 
         // Map the rest to historyList
-        const history = data.filter(b => b.status !== 'Sắp đến').map(b => ({
+        const history = data.filter(b => !active || b.id !== active.id).map(b => ({
           id: b.id,
           packageName: b.packageName,
           vehicle: b.vehicleInfo,
@@ -152,7 +153,7 @@ export default function BookingHistory() {
         if (!storedUser) return;
         const parsed = JSON.parse(storedUser);
         
-        const res = await fetch(`http://localhost:5010/api/bookings/${activeBooking.id}`, {
+        const res = await fetch(`http://192.168.1.219:5010/api/bookings/${activeBooking.id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
@@ -181,7 +182,7 @@ export default function BookingHistory() {
         if (!storedUser) return;
         const parsed = JSON.parse(storedUser);
         
-        const res = await fetch(`http://localhost:5010/api/reviews/${bookingId}`, {
+        const res = await fetch(`http://192.168.1.219:5010/api/reviews/${bookingId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
@@ -233,8 +234,8 @@ export default function BookingHistory() {
             {/* Thẻ lịch đặt xe đang hoạt động */}
             {activeBooking ? (
               <div className="lg:col-span-2 border-2 border-primary bg-surface-container-lowest rounded-3xl p-6 flex flex-col justify-between shadow-lg relative overflow-hidden group">
-                <span className="absolute top-0 right-0 bg-sky-500 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl select-none">
-                  Sắp đến
+                <span className={`absolute top-0 right-0 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl select-none ${activeBooking.status === 'Đang rửa' ? 'bg-amber-500 animate-pulse' : 'bg-sky-500'}`}>
+                  {activeBooking.status}
                 </span>
 
                 <div className="space-y-6">
@@ -304,13 +305,19 @@ export default function BookingHistory() {
 
                 {/* Nút hủy lịch */}
                 <div className="border-t border-outline-variant/20 pt-5 mt-6">
-                  <button 
-                    onClick={handleCancelBooking}
-                    className="w-full py-3.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-2xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-95 shadow-inner"
-                  >
-                    <span className="material-symbols-outlined text-lg">cancel</span>
-                    Hủy Lịch
-                  </button>
+                  <button                        onClick={handleCancelBooking}
+                        disabled={activeBooking.status === 'Đang rửa'}
+                        className={`w-full py-3.5 font-bold rounded-xl transition-all shadow-sm flex justify-center items-center gap-2 ${
+                          activeBooking.status === 'Đang rửa' 
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                            : 'bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 active:scale-[0.98]'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          {activeBooking.status === 'Đang rửa' ? 'lock' : 'cancel'}
+                        </span>
+                        {activeBooking.status === 'Đang rửa' ? 'Không thể hủy khi đang rửa' : 'Hủy Lịch'}
+                      </button>
                 </div>
 
               </div>

@@ -74,7 +74,7 @@ export default function UserProfile() {
 
         if (parsed.token) {
           // 1. Fetch user profile (/me)
-          fetch('http://localhost:5010/api/Auth/me', {
+          fetch('http://192.168.1.219:5010/api/Auth/me', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -97,7 +97,7 @@ export default function UserProfile() {
           .catch(err => console.warn('Lỗi đồng bộ user:', err));
 
           // 2. Fetch user's cars
-          fetch('http://localhost:5010/api/Vehicles', {
+          fetch('http://192.168.1.219:5010/api/Vehicles', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -112,7 +112,7 @@ export default function UserProfile() {
           .catch(err => console.warn('Lỗi lấy xe:', err));
 
           // 3. Fetch bookings (/api/bookings/history)
-          fetch('http://localhost:5010/api/bookings/history', {
+          fetch('http://192.168.1.219:5010/api/bookings/history', {
             headers: { 'Authorization': `Bearer ${parsed.token}` }
           })
           .then(res => res.ok ? res.json() : [])
@@ -160,7 +160,7 @@ export default function UserProfile() {
 
       if (!token) throw new Error("No token found");
 
-      const res = await fetch('http://localhost:5010/api/Auth/me', {
+      const res = await fetch('http://192.168.1.219:5010/api/Auth/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -212,7 +212,7 @@ export default function UserProfile() {
         const token = storedUser ? JSON.parse(storedUser).token : null;
         if (!token) return;
 
-        const res = await fetch(`http://localhost:5010/api/Vehicles/${id}`, {
+        const res = await fetch(`http://192.168.1.219:5010/api/Vehicles/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -238,7 +238,7 @@ export default function UserProfile() {
       const token = storedUser ? JSON.parse(storedUser).token : null;
       if (!token) return;
 
-      const res = await fetch('http://localhost:5010/api/Vehicles', {
+      const res = await fetch('http://192.168.1.219:5010/api/Vehicles', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
