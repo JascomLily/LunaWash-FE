@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Seed data for bookings if not already in localStorage
+// DEMO: Dữ liệu mẫu tạm thời. Đợi BE viết API trả về danh sách lịch hẹn của trạm
 const DEFAULT_BOOKINGS = [
   // Binh Thanh Branch (BRN-BT-01)
   {

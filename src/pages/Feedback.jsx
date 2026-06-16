@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
  * Trang Đánh Giá Dịch Vụ (Feedback) - LunaWash.
@@ -7,6 +7,9 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function Feedback() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const booking = location.state?.booking;
+  const bookingId = location.state?.bookingId;
 
   // Trạng thái các mục đánh giá
   const [overallRating, setOverallRating] = useState(0);
@@ -26,19 +29,52 @@ export default function Feedback() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!bookingId) {
+      alert('Không tìm thấy thông tin chuyến xe hợp lệ để đánh giá!');
+      return;
+    }
     if (overallRating === 0) {
       alert('Vui lòng chọn mức độ trải nghiệm tổng thể của bạn!');
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      
+      const payload = {
+        bookingId: bookingId,
+        serviceRating: overallRating,
+        cleanlinessRating,
+        speedRating,
+        staffRating,
+        comment: comment
+      };
+
+      const res = await fetch('http://localhost:5010/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${parsed.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        alert('Cảm ơn đóng góp của bạn! Đánh giá đã được gửi đi thành công.');
+        navigate('/history');
+      } else {
+        alert('Không thể gửi đánh giá, vui lòng thử lại sau.');
+      }
+    } catch(err) {
+      alert('Lỗi kết nối đến máy chủ.');
+    } finally {
       setIsSubmitting(false);
-      alert('Cảm ơn đóng góp của bạn! Đánh giá đã được gửi đi thành công. Bạn sẽ nhận được mã giảm giá 15% gửi về ví voucher.');
-      navigate('/history');
-    }, 1500);
+    }
   };
 
   // Component phụ trợ cho phần chọn ngôi sao
@@ -79,6 +115,30 @@ export default function Feedback() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           
+          {/* INFO CARD: CHI TIẾT CUỐC XE */}
+          {booking && (
+            <div className="bg-white border border-[#e2e8f0] rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+              <div>
+                <h3 className="font-extrabold text-[#00236f] text-lg uppercase">{booking.packageName}</h3>
+                <p className="text-sm font-bold text-[#1e293b] mt-1">{booking.vehicle}</p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-slate-500 font-medium">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px] text-emerald-600">location_on</span> 
+                    {booking.branch}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px] text-blue-600">schedule</span> 
+                    <span className="whitespace-pre-line">{booking.time}</span>
+                  </span>
+                </div>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 px-5 py-3 rounded-2xl text-center shadow-inner min-w-[120px]">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mã cuốc xe</p>
+                <p className="font-black text-[#00236f] text-sm">{bookingId.split('-')[0].toUpperCase()}</p>
+              </div>
+            </div>
+          )}
+
           {/* BOX 1: TRẢI NGHIỆM TỔNG THỂ */}
           <div className="bg-white border border-[#e2e8f0] rounded-3xl p-6 shadow-sm text-center space-y-4">
             <h3 className="font-extrabold text-[#1e293b] text-sm tracking-wide uppercase">
