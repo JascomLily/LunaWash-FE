@@ -11,7 +11,7 @@ const DEFAULT_REVIEWS = [
     rating: 5,
     comment: 'Dịch vụ rất tốt, nhân viên nhiệt tình, rửa xe sạch bóng loáng!',
     createdAt: '06/06/2026',
-    branchId: 'BRN-BT-01',
+    branchId: 'BRN-LD-01',
     reply: 'Cảm ơn anh Trường đã tin tưởng dịch vụ LunaWash! Rất hân hạnh được phục vụ anh lần sau.'
   },
   {
@@ -22,7 +22,7 @@ const DEFAULT_REVIEWS = [
     rating: 4,
     comment: 'Rửa xe kỹ, vệ sinh nội thất sạch sẽ. Tuy nhiên thời gian chờ hơi lâu hơn dự kiến 5 phút.',
     createdAt: '06/06/2026',
-    branchId: 'BRN-BT-01',
+    branchId: 'BRN-LD-01',
     reply: null
   },
   {
@@ -39,7 +39,7 @@ const DEFAULT_REVIEWS = [
 ];
 
 const BRANCH_NAMES = {
-  'BRN-BT-01': 'LunaWash Bình Thạnh - Chi nhánh Bờ Sông',
+  'BRN-LD-01': 'LunaWash Bình Thạnh - Chi nhánh Bờ Sông',
   'BRN-Q1-01': 'LunaWash Quận 1 - Chi nhánh Trung Tâm'
 };
 
@@ -76,15 +76,14 @@ export default function BranchFeedback() {
 
   if (!user) return null;
 
-  const branchId = user.branchId || 'BRN-BT-01';
+  const branchId = user.branchId || 'BRN-LD-01';
   const getShortBranch = (id) => {
     switch(id) {
-      case 'BRN-Q1-01': return 'Q1';
+      case 'BRN-Q1-01': return 'Quận 1';
       case 'BRN-TTH-01': return 'Tân Thới Hiệp';
-      case 'BRN-LD-01': return 'Thủ Đức';
+      case 'BRN-LD-01': return 'Linh Đông';
       case 'BRN-Q7-01': return 'Quận 7';
       case 'BRN-TB-01': return 'Tân Bình';
-      case 'BRN-BT-01': return 'Bình Thạnh';
       default: return '';
     }
   };

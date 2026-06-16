@@ -47,7 +47,7 @@ export default function Login() {
 
     try {
       // GỌI API XUỐNG BACKEND: Gửi yêu cầu đăng nhập (POST) đến Endpoint /api/Auth/login
-      const response = await fetch('http://localhost:5010/api/Auth/login', {
+      const response = await fetch('http://192.168.1.219:5010/api/Auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -55,7 +55,7 @@ export default function Feedback() {
         comment: comment
       };
 
-      const res = await fetch('http://localhost:5010/api/reviews', {
+      const res = await fetch('http://192.168.1.219:5010/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

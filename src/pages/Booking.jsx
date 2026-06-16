@@ -27,7 +27,7 @@ const BRANCHES = [
   { 
     id: 'BRN-Q1-01', 
     name: 'LunaWash Quận 1', 
-    address: '123 Nguyễn Huệ, Quận 1, TP HCM',
+    address: '123 Lê Lợi, Bến Thành',
     phone: '090 345 6789',
     hours: '07:00 - 23:00',
     description: 'Vị trí đắc địa ngay trung tâm thành phố. Chi nhánh Quận 1 cung cấp dịch vụ rửa xe kết hợp đánh bóng nhanh và sáp phủ bóng Ceramic cao cấp.',
@@ -37,7 +37,7 @@ const BRANCHES = [
   { 
     id: 'BRN-Q7-01', 
     name: 'LunaWash Quận 7', 
-    address: '456 Nguyễn Văn Linh, Quận 7, TP HCM',
+    address: '456 Nguyễn Văn Linh',
     phone: '090 456 7890',
     hours: '06:00 - 22:00',
     description: 'Trạm rửa siêu rộng rãi tại khu đô thị Phú Mỹ Hưng với 3 làn rửa chạy song song, rút ngắn tối đa thời gian chờ đợi của quý khách.',
@@ -47,7 +47,7 @@ const BRANCHES = [
   { 
     id: 'BRN-TB-01', 
     name: 'LunaWash Tân Bình', 
-    address: '789 Cộng Hòa, Phường 13, Quận Tân Bình, TP HCM',
+    address: '789 Cộng Hòa, Phường 13',
     phone: '090 567 8901',
     hours: '06:00 - 22:30',
     description: 'Chi nhánh Cộng Hòa nổi bật với khu vực chăm sóc nội thất chuyên sâu và hệ thống lọc nước RO tiêu chuẩn, bảo vệ tối đa lớp sơn bóng của xe.',
@@ -250,7 +250,7 @@ export default function Booking() {
         const parsed = JSON.parse(storedUser);
         if (parsed.token) {
           setIsLoadingVehicles(true);
-          fetch('http://localhost:5010/api/vehicles', {
+          fetch('http://192.168.1.219:5010/api/vehicles', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -285,7 +285,7 @@ export default function Booking() {
         const parsed = JSON.parse(storedUser);
         if (parsed.token) {
           setIsAddingCar(true);
-          fetch('http://localhost:5010/api/vehicles', {
+          fetch('http://192.168.1.219:5010/api/vehicles', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -386,7 +386,7 @@ export default function Booking() {
         const slotNumber = selectedWashSlot.split('-')[1];
         if (!slotNumber) return;
         const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
-        const res = await fetch(`http://localhost:5010/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
+        const res = await fetch(`http://192.168.1.219:5010/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
         if (!res.ok) return;
         const data = await res.json();
         
@@ -715,7 +715,7 @@ export default function Booking() {
       const parsed = JSON.parse(storedUser);
 
       toast.loading('Đang xử lý đặt lịch...', { id: 'booking' });
-      const response = await fetch('http://localhost:5010/api/bookings', {
+      const response = await fetch('http://192.168.1.219:5010/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
