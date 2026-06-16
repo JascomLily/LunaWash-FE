@@ -87,11 +87,7 @@ export default function Home() {
   }, []);
 
   const handleActionClick = (packageName) => {
-    let packageId = 'PK-CB';
-    if (packageName === 'Nâng cao') packageId = 'PK-NC';
-    if (packageName === 'Cao cấp') packageId = 'PK-CC';
-
-    navigate('/booking', { state: { packageId, branchId: selectedBranchId } });
+    navigate('/booking');
   };
 
   return (
@@ -136,7 +132,6 @@ export default function Home() {
                   <li 
                     key={b.id}
                     onClick={() => {
-
                       setSelectedBranchId(b.id);
                     }}
                     className={`flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer group ${

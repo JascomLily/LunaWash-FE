@@ -4,11 +4,56 @@ import toast from 'react-hot-toast';
 
 // CẤU HÌNH DỮ LIỆU TẬP TRUNG - Cực kỳ dễ sửa đổi, nâng cấp và tích hợp API BE
 const BRANCHES = [
-  { id: 'BRN-LD-01', name: 'LunaWash Linh Đông', address: 'Thủ Đức, HCM' },
-  { id: 'BRN-TTH-01', name: 'LunaWash Tân Thới Hiệp', address: 'Quận 12, HCM' },
-  { id: 'BRN-Q1-01', name: 'LunaWash Quận 1', address: '123 Nguyen Hue, Quan 1, TP HCM' },
-  { id: 'BRN-Q7-01', name: 'LunaWash Quận 7', address: '456 Nguyễn Văn Linh' },
-  { id: 'BRN-TB-01', name: 'LunaWash Tân Bình', address: '789 Cộng Hòa, Phường 13' }
+  { 
+    id: 'BRN-LD-01', 
+    name: 'LunaWash Linh Đông', 
+    address: 'Thủ Đức, HCM',
+    phone: '090 123 4567',
+    hours: '06:00 - 22:00',
+    description: 'Chi nhánh Linh Đông sở hữu hệ thống rửa xe tự động vòi phun đa điểm hiện đại bậc nhất Thủ Đức, công suất lớn, phòng chờ lạnh và quầy café phục vụ khách.',
+    image: '/linh-dong-branch.jpg',
+    mapUrl: 'https://maps.google.com/maps?q=10.852445,106.748364&z=16&ie=UTF8&iwloc=&output=embed'
+  },
+  { 
+    id: 'BRN-TTH-01', 
+    name: 'LunaWash Tân Thới Hiệp', 
+    address: 'Quận 12, HCM',
+    phone: '090 234 5678',
+    hours: '06:00 - 22:00',
+    description: 'Chi nhánh Quận 12 trang bị máy sấy phản lực gió siêu tốc và quy trình rửa gầm chuyên sâu, tối ưu cho dòng xe SUV và xe bán tải.',
+    image: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=400&q=80',
+    mapUrl: 'https://maps.google.com/maps?q=10.861789,106.657512&z=16&ie=UTF8&iwloc=&output=embed'
+  },
+  { 
+    id: 'BRN-Q1-01', 
+    name: 'LunaWash Quận 1', 
+    address: '123 Nguyễn Huệ, Quận 1, TP HCM',
+    phone: '090 345 6789',
+    hours: '07:00 - 23:00',
+    description: 'Vị trí đắc địa ngay trung tâm thành phố. Chi nhánh Quận 1 cung cấp dịch vụ rửa xe kết hợp đánh bóng nhanh và sáp phủ bóng Ceramic cao cấp.',
+    image: 'https://images.unsplash.com/photo-1552930294-6b595f4c2974?auto=format&fit=crop&w=400&q=80',
+    mapUrl: 'https://maps.google.com/maps?q=10.772564,106.698047&z=16&ie=UTF8&iwloc=&output=embed'
+  },
+  { 
+    id: 'BRN-Q7-01', 
+    name: 'LunaWash Quận 7', 
+    address: '456 Nguyễn Văn Linh, Quận 7, TP HCM',
+    phone: '090 456 7890',
+    hours: '06:00 - 22:00',
+    description: 'Trạm rửa siêu rộng rãi tại khu đô thị Phú Mỹ Hưng với 3 làn rửa chạy song song, rút ngắn tối đa thời gian chờ đợi của quý khách.',
+    image: 'https://images.unsplash.com/photo-1528190336454-13cd56b45b5a?auto=format&fit=crop&w=400&q=80',
+    mapUrl: 'https://maps.google.com/maps?q=10.729351,106.702983&z=16&ie=UTF8&iwloc=&output=embed'
+  },
+  { 
+    id: 'BRN-TB-01', 
+    name: 'LunaWash Tân Bình', 
+    address: '789 Cộng Hòa, Phường 13, Quận Tân Bình, TP HCM',
+    phone: '090 567 8901',
+    hours: '06:00 - 22:30',
+    description: 'Chi nhánh Cộng Hòa nổi bật với khu vực chăm sóc nội thất chuyên sâu và hệ thống lọc nước RO tiêu chuẩn, bảo vệ tối đa lớp sơn bóng của xe.',
+    image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80',
+    mapUrl: 'https://maps.google.com/maps?q=10.801648,106.640954&z=16&ie=UTF8&iwloc=&output=embed'
+  }
 ];
 
 const WASH_SLOTS = [
@@ -95,9 +140,9 @@ export default function Booking() {
   }, [location.pathname]);
 
   // BƯỚC THIẾT LẬP STATE
-  const [selectedBranch, setSelectedBranch] = useState(navState.branchId || 'BRN-LD-01');
-  const [selectedWashSlot, setSelectedWashSlot] = useState('SL-01');
-  const [selectedPackage, setSelectedPackage] = useState(navState.packageId || 'PK-CB');
+  const [selectedBranch, setSelectedBranch] = useState(navState.branchId || '');
+  const [selectedWashSlot, setSelectedWashSlot] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState(navState.packageId || '');
   const [includeInteriorClean, setIncludeInteriorClean] = useState(false);
 
   // Xe và Thông tin xe (lấy từ Backend)
@@ -147,8 +192,9 @@ export default function Booking() {
   const [isAddingCar, setIsAddingCar] = useState(false);
 
   // Khung giờ và Phụ trội
-  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('T-0900');
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('tien-mat');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const [showNoVehicleAlert, setShowNoVehicleAlert] = useState(false);
   const [highlightVehicleSection, setHighlightVehicleSection] = useState(false);
@@ -162,6 +208,39 @@ export default function Booking() {
     }
     setTimeout(() => setHighlightVehicleSection(false), 2000);
   };
+
+  const [activeStep, setActiveStep] = useState('step-1');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (window.scrollY < 20) {
+        setActiveStep('step-1');
+        return;
+      }
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveStep(entry.target.id);
+        }
+      });
+    }, { rootMargin: '-25% 0px -45% 0px' });
+
+    ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    const handleScroll = () => {
+      if (window.scrollY < 20) {
+        setActiveStep('step-1');
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Lấy danh sách xe thật của người dùng từ BE khi mount
   useEffect(() => {
@@ -182,9 +261,7 @@ export default function Booking() {
           })
           .then(data => {
             setUserVehicles(data);
-            if (data.length > 0) {
-              setSelectedVehicleId(data[0].id);
-            }
+            setSelectedVehicleId(''); // Bắt buộc người dùng tự chọn xe
           })
           .catch(err => console.error('Lỗi lấy danh sách xe:', err))
           .finally(() => setIsLoadingVehicles(false));
@@ -300,9 +377,14 @@ export default function Booking() {
   const [occupiedSlotsSet, setOccupiedSlotsSet] = useState(new Map());
 
   useEffect(() => {
+    if (!selectedBranch || !selectedWashSlot) {
+      setOccupiedSlotsSet(new Map());
+      return;
+    }
     const fetchOccupied = async () => {
       try {
         const slotNumber = selectedWashSlot.split('-')[1];
+        if (!slotNumber) return;
         const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
         const res = await fetch(`http://localhost:5010/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
         if (!res.ok) return;
@@ -355,6 +437,7 @@ export default function Booking() {
 
   // Tự động chuyển slot giờ được chọn sang slot còn trống đầu tiên nếu bị trùng vào slot đã đặt
   useEffect(() => {
+    if (!selectedTimeSlotId) return; // Không tự chọn khi chưa chọn gì
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
     const isSlotOccupied = (idx) => occupiedSlots.has(idx);
     
@@ -461,8 +544,8 @@ export default function Booking() {
     setShowCalendarPopup(false);
   };
 
-  // Cấu hình số lượng trạm theo từng chi nhánh
   const getBranchSlots = (branchId) => {
+    if (!branchId) return [];
     switch (branchId) {
       case 'BRN-LD-01': // LunaWash Linh Đông: 3 trạm
       case 'BRN-Q1-01': // LunaWash Quận 1: 3 trạm
@@ -478,30 +561,36 @@ export default function Booking() {
 
   // Tự động chuyển trạm về trạm hợp lệ đầu tiên nếu trạm hiện tại không thuộc chi nhánh mới chọn
   useEffect(() => {
+    if (!selectedBranch) {
+      setSelectedWashSlot('');
+      return;
+    }
     const validSlots = getBranchSlots(selectedBranch);
-    if (!validSlots.some(s => s.id === selectedWashSlot)) {
-      setSelectedWashSlot(validSlots[0]?.id || 'SL-01');
+    if (selectedWashSlot && !validSlots.some(s => s.id === selectedWashSlot)) {
+      setSelectedWashSlot(validSlots[0]?.id || '');
     }
   }, [selectedBranch]);
 
 
 
   // TÍNH TOÁN DỮ LIỆU TÓM TẮT DỊCH VỤ ĐỘNG
-  const activePackage = SERVICE_PACKAGES.find(p => p.id === selectedPackage) || SERVICE_PACKAGES[0];
+  const activePackage = SERVICE_PACKAGES.find(p => p.id === selectedPackage) || null;
+  const baseCost = activePackage ? activePackage.price : 0;
   const interiorCost = includeInteriorClean ? interiorSpecs.price : 0;
-  const baseCost = activePackage.price;
   const totalCost = baseCost + interiorCost;
   
-  const totalDuration = activePackage.time + (includeInteriorClean ? interiorSpecs.duration : 0);
-  const displayDuration = numSlots * 45 - 5; // mỗi slot 40 phút, break 5 phút
-  const activeBranchName = BRANCHES.find(b => b.id === selectedBranch)?.name || 'Linh Đông';
-  const activeSlotName = WASH_SLOTS.find(s => s.id === selectedWashSlot)?.name || 'Trạm 1';
-  const activeTimeStr = TIME_SLOTS.find(t => t.id === selectedTimeSlotId)?.time || '08:00';
+  const totalDuration = (activePackage ? activePackage.time : 0) + (includeInteriorClean ? interiorSpecs.duration : 0);
+  const displayDuration = selectedPackage ? (numSlots * 45 - 5) : 0;
+  const activeBranchName = BRANCHES.find(b => b.id === selectedBranch)?.name || 'Chưa chọn';
+  const activeSlotName = selectedWashSlot ? (WASH_SLOTS.find(s => s.id === selectedWashSlot)?.name || 'Chưa chọn') : 'Chưa chọn';
+  const selectedBranchData = BRANCHES.find(b => b.id === selectedBranch) || null;
+  const selectedBranchIdx = BRANCHES.findIndex(b => b.id === selectedBranch);
+  const allStepsCompleted = !!selectedBranch && !!selectedWashSlot && !!selectedPackage && !!selectedVehicleId && !!selectedTimeSlotId;
 
   // Định dạng danh sách slot được chọn
   const getSelectedSlotsDisplay = () => {
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
-    if (startIndex === -1) return '';
+    if (startIndex === -1) return 'Chưa chọn';
     
     if (numSlots === 1) {
       return `Lượt ${startIndex + 1} (${TIME_SLOTS[startIndex].time})`;
@@ -540,13 +629,38 @@ export default function Booking() {
   // Định dạng hiển thị tiền VNĐ
   const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
-  const handleCheckout = async () => {
+  const handleOpenPaymentModal = () => {
     if (requireLogin()) return;
+    if (!selectedBranch) {
+      toast.error('Vui lòng chọn chi nhánh!');
+      return;
+    }
+    if (!selectedWashSlot) {
+      toast.error('Vui lòng chọn trạm rửa!');
+      return;
+    }
+    if (!selectedPackage) {
+      toast.error('Vui lòng chọn gói dịch vụ!');
+      return;
+    }
     if (!selectedVehicleId) {
       setShowNoVehicleAlert(true);
       return;
     }
 
+    const activeVeh = userVehicles.find(v => v.id === selectedVehicleId);
+    if (!activeVeh) return;
+
+    const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
+    if (startIndex === -1) {
+      toast.error('Vui lòng chọn khung giờ hợp lệ!');
+      return;
+    }
+
+    setShowPaymentModal(true);
+  };
+
+  const handleExecuteCheckout = async (selectedMethod) => {
     const activeVeh = userVehicles.find(v => v.id === selectedVehicleId);
     if (!activeVeh) return;
 
@@ -564,7 +678,7 @@ export default function Booking() {
     const startStr = TIME_SLOTS[startIndex].time;
     const scheduledStartTime = `${selectedDate}T${startStr}:00`;
     
-    const notesStr = paymentMethod === 'vnpay' ? 'VNPay' : '';
+    const notesStr = selectedMethod === 'vnpay' ? 'VNPay' : '';
 
     const slotNumber = selectedWashSlot.split('-')[1];
     const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
@@ -583,9 +697,9 @@ export default function Booking() {
     };
 
     const bookingState = {
-      paymentMethod,
-      packageName: `GÓI ${activePackage.name.toUpperCase()}${includeInteriorClean ? ' + VỆ SINH NỘI THẤT' : ''}`,
-      services: `${activePackage.name}${includeInteriorClean ? ' + Vệ sinh nội thất' : ''}`,
+      paymentMethod: selectedMethod,
+      packageName: `GÓI ${activePackage.name.toUpperCase()}${includeInteriorClean === true ? ' + VỆ SINH NỘI THẤT' : ''}`,
+      services: `${activePackage.name}${includeInteriorClean === true ? ' + Vệ sinh nội thất' : ''}`,
       formattedPrice: formatCurrency(totalCost),
       activeBranchName,
       address: BRANCHES.find(b => b.id === selectedBranch)?.address || 'Thủ Đức, HCM',
@@ -595,56 +709,150 @@ export default function Booking() {
       bookingDate: selectedDate,
       bookingPayload
     };
-    
-    if (paymentMethod === 'vnpay') {
-      navigate('/payment', { state: bookingState });
-    } else {
-      try {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) return;
-        const parsed = JSON.parse(storedUser);
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
 
-        toast.loading('Đang xử lý đặt lịch...', { id: 'booking' });
-        const response = await fetch('http://localhost:5010/api/bookings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${parsed.token}`
-          },
-          body: JSON.stringify(bookingPayload)
-        });
+      toast.loading('Đang xử lý đặt lịch...', { id: 'booking' });
+      const response = await fetch('http://localhost:5010/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${parsed.token}`
+        },
+        body: JSON.stringify(bookingPayload)
+      });
 
-        if (!response.ok) {
-          let errText = 'Không thể tạo lịch đặt.';
-          try {
-            const errData = await response.json();
-            if (errData.message) errText = errData.message;
-          } catch(e){}
-          throw new Error(errText);
-        }
-
-        toast.success('Đặt lịch thành công!', { id: 'booking' });
-        navigate('/history', { state: bookingState });
-      } catch (err) {
-        console.error(err);
-        toast.error(err.message, { id: 'booking' });
+      if (!response.ok) {
+        let errText = 'Không thể tạo lịch đặt.';
+        try {
+          const errData = await response.json();
+          if (errData.message) errText = errData.message;
+        } catch {}
+        throw new Error(errText);
       }
+
+      const responseData = await response.json();
+      toast.success('Đặt lịch thành công!', { id: 'booking' });
+      
+      if (selectedMethod === 'vnpay') {
+        // Redirect to mock VNPay payment with real booking ID and cost
+        navigate(`/payment?status=success&bookingId=${responseData.id}&amount=${totalCost}`);
+      } else {
+        navigate('/history', { state: bookingState });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message, { id: 'booking' });
     }
   };
 
   return (
-    <main className="min-h-screen bg-background pt-24 pb-16 text-on-background">
-      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop space-y-8">
-        
-        {/* TIÊU ĐỀ */}
-        <div className="text-center py-6">
+    <main className="min-h-screen bg-background relative w-full pt-[80px]">
+      <style>{`
+        @keyframes shimmer-glow {
+          0% {
+            background-position: -200% center;
+          }
+          100% {
+            background-position: 200% center;
+          }
+        }
+        @keyframes gentle-bounce {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 20px -5px rgba(6, 182, 212, 0.45), 0 8px 8px -5px rgba(6, 182, 212, 0.4);
+          }
+        }
+        .shimmer-bounce-btn {
+          background: linear-gradient(90deg, #4cd7f6 0%, #a5f3fc 25%, #4cd7f6 50%, #a5f3fc 75%, #4cd7f6 100%);
+          background-size: 200% auto;
+          animation: shimmer-glow 1.8s linear infinite, gentle-bounce 2s ease-in-out infinite;
+        }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
+      <div className="flex w-full min-h-[calc(100vh-80px)] justify-between">
+      
+      {/* NARROW LEFT SIDEBAR (PROGRESS) */}
+      <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[120px] shrink-0 bg-background z-[40] flex-col items-center py-8 border-r border-outline-variant/30">
+        <div className="flex-1 flex flex-col items-center gap-12 relative w-full pt-4">
+          <div className="absolute left-1/2 -translate-x-1/2 top-4 bottom-12 w-[2px] bg-outline-variant/30"></div>
+          {['1', '2', '3', '4', '5'].map((num) => {
+             const stepId = `step-${num}`;
+             const isActive = activeStep === stepId;
+             const labels = ['Chi nhánh', 'Trạm rửa', 'Gói dịch vụ', 'Thông tin xe', 'Khung giờ'];
+             const isCompleted = (() => {
+               if (num === '1') return !!selectedBranch;
+               if (num === '2') return !!selectedWashSlot;
+               if (num === '3') return !!selectedPackage;
+               if (num === '4') return !!selectedVehicleId;
+               if (num === '5') return !!selectedTimeSlotId;
+               return false;
+             })();
+             return (
+               <div 
+                 key={stepId}
+                 onClick={() => document.getElementById(stepId)?.scrollIntoView({behavior: 'smooth', block: 'center'})}
+                 className="flex flex-col items-center gap-2 relative z-10 cursor-pointer group"
+               >
+                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${
+                   isCompleted 
+                     ? `bg-emerald-500 text-white shadow-md ${isActive ? 'scale-125 ring-4 ring-emerald-500/30' : 'ring-2 ring-emerald-500/20'}`
+                     : isActive 
+                       ? 'bg-[#00236f] text-white scale-125 shadow-lg ring-4 ring-[#00236f]/20' 
+                       : 'bg-surface-container text-outline ring-2 ring-outline-variant/50 group-hover:ring-[#00236f]/50'
+                 }`}>
+                   {isCompleted ? (
+                     <span className="material-symbols-outlined text-xl font-bold block select-none">check</span>
+                   ) : (
+                     num
+                   )}
+                 </div>
+                 <span className={`text-[10px] font-bold text-center px-1 leading-tight transition-all duration-300 ${
+                   isActive 
+                     ? 'text-[#00236f] mt-1' 
+                     : isCompleted 
+                       ? 'text-emerald-600' 
+                       : 'text-outline-variant group-hover:text-outline'
+                 }`}>
+                   {labels[num-1]}
+                 </span>
+               </div>
+             )
+          })}
+        </div>
+      </div>
+
+      {/* CỘT GIỮA (MAIN CONTENT) */}
+      <div className="flex-1 w-full min-w-0 flex flex-col relative">
+        {/* MOBILE PROGRESS BAR (NẾU CẦN) */}
+        <div className="lg:hidden text-center py-6 px-margin-mobile">
           <h1 className="text-2xl md:text-3xl font-black text-[#00236f] uppercase tracking-tight">
-            LunaWash - Đặt Lịch Rửa Xe Thông Minh
+            LunaWash - Đặt Lịch
           </h1>
         </div>
 
+        <div className="pt-4 lg:pt-8 pb-16 px-margin-mobile md:px-12 relative z-10 w-full max-w-[1000px] mx-auto">
+          <div className="space-y-8 pb-32">
+
         {/* 1. CHỌN CHI NHÁNH */}
-        <section className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-sm space-y-4">
+        <section id="step-1" className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${activeStep === 'step-1' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
           <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-base">location_on</span>
             Chọn chi nhánh
@@ -657,7 +865,7 @@ export default function Booking() {
                 className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
                   selectedBranch === b.id 
                     ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/20' 
-                    : 'border-outline-variant hover:border-primary/50'
+                    : 'border-outline-variant hover:border-primary/50 bg-surface-container-lowest'
                 }`}
               >
                 <div>
@@ -670,10 +878,74 @@ export default function Booking() {
               </div>
             ))}
           </div>
+
+          {selectedBranchData && (
+            <div className="bg-[#00236f] text-white rounded-2xl p-5 mt-4 grid grid-cols-1 md:grid-cols-3 gap-6 shadow-inner animate-fade-in">
+              {/* 1. Ảnh chi nhánh */}
+              <div className="relative w-full min-h-[12rem] rounded-xl overflow-hidden shadow-md group">
+                <img 
+                  src={selectedBranchData.image} 
+                  alt={selectedBranchData.name} 
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3.5 pointer-events-none">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-[#4cd7f6] text-[#001f26] px-2 py-0.5 rounded pointer-events-auto">
+                    Hình ảnh thực tế
+                  </span>
+                </div>
+              </div>
+
+              {/* 2. Thông tin chi nhánh */}
+              <div className="flex flex-col justify-between space-y-3">
+                <div>
+                  <h3 className="font-extrabold text-base text-[#4cd7f6] uppercase tracking-wide">
+                    {selectedBranchData.name}
+                  </h3>
+                  <p className="text-white/80 text-xs mt-1.5 leading-relaxed font-medium">
+                    {selectedBranchData.description}
+                  </p>
+                </div>
+                <div className="space-y-1.5 text-xs border-t border-white/10 pt-3">
+                  <p className="flex items-center gap-2 text-white/90">
+                    <span className="material-symbols-outlined text-sm text-[#4cd7f6] font-bold">location_on</span>
+                    <span>{selectedBranchData.address}</span>
+                  </p>
+                  <p className="flex items-center gap-2 text-white/90">
+                    <span className="material-symbols-outlined text-sm text-[#4cd7f6] font-bold">call</span>
+                    <span>Hotline: {selectedBranchData.phone}</span>
+                  </p>
+                  <p className="flex items-center gap-2 text-white/90">
+                    <span className="material-symbols-outlined text-sm text-[#4cd7f6] font-bold">schedule</span>
+                    <span>Giờ mở cửa: {selectedBranchData.hours}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Bản đồ */}
+              <div className="relative w-full min-h-[12rem] rounded-xl overflow-hidden shadow-md border border-white/10 group z-10">
+                <iframe
+                  title={`Bản đồ ${selectedBranchData.name}`}
+                  src={selectedBranchData.mapUrl}
+                  className="absolute inset-0 w-full h-full border-0 filter brightness-95 z-0"
+                  allowFullScreen=""
+                  loading="lazy"
+                ></iframe>
+                <a
+                  href={selectedBranchData.mapUrl.replace('&output=embed', '').replace('output=embed', '')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-3 left-3 bg-white hover:bg-slate-100 text-[#00236f] hover:text-primary text-[10px] md:text-[11px] font-black px-3.5 py-2 rounded-xl shadow-md transition-all flex items-center gap-1.5 active:scale-95 z-20"
+                >
+                  <span>Mở trong Maps</span>
+                  <span className="material-symbols-outlined text-[13px] font-bold">open_in_new</span>
+                </a>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 2. CHỌN TRẠM RỬA */}
-        <section className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-sm space-y-4">
+        <section id="step-2" className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${activeStep === 'step-2' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
           <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-base">local_laundry_service</span>
             Chọn trạm rửa
@@ -682,32 +954,36 @@ export default function Booking() {
           <div className={`grid grid-cols-1 gap-4 ${
             availableSlots.length === 3 ? 'sm:grid-cols-3' : availableSlots.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-1 max-w-sm'
           }`}>
-            {availableSlots.map((s) => (
-              <div 
-                key={s.id}
-                onClick={() => { setSelectedWashSlot(s.id); }}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all flex justify-between items-center ${
-                  selectedWashSlot === s.id 
-                    ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/20' 
-                    : 'border-outline-variant hover:border-primary/50'
-                }`}
-              >
-                <div>
-                  <p className="font-extrabold text-sm">{s.name}</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded mt-1.5 inline-block ${s.color}`}>
-                    {s.status}
-                  </span>
+            {availableSlots.length > 0 ? (
+              availableSlots.map((s) => (
+                <div 
+                  key={s.id}
+                  onClick={() => { setSelectedWashSlot(s.id); }}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex justify-between items-center ${
+                    selectedWashSlot === s.id 
+                      ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/20' 
+                      : 'border-outline-variant hover:border-primary/50'
+                  }`}
+                >
+                  <div>
+                    <p className="font-extrabold text-sm">{s.name}</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded mt-1.5 inline-block ${s.color}`}>
+                      {s.status}
+                    </span>
+                  </div>
+                  {selectedWashSlot === s.id && (
+                    <span className="material-symbols-outlined text-sm font-bold text-primary">check_circle</span>
+                  )}
                 </div>
-                {selectedWashSlot === s.id && (
-                  <span className="material-symbols-outlined text-sm font-bold text-primary">check_circle</span>
-                )}
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-on-surface-variant italic py-2">Vui lòng chọn chi nhánh trước.</p>
+            )}
           </div>
         </section>
 
         {/* 3. CHỌN GÓI DỊCH VỤ */}
-        <section className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-sm space-y-4">
+        <section id="step-3" className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${activeStep === 'step-3' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
           <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-base">cleaning_services</span>
             Chọn gói dịch vụ
@@ -777,12 +1053,12 @@ export default function Booking() {
 
         {/* 4. THÔNG TIN XE */}
         <section 
-          id="vehicle-section"
-          className={`bg-surface-container-lowest border rounded-3xl p-6 transition-all duration-500 space-y-4 ${
-            highlightVehicleSection 
-              ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
-              : 'border-outline-variant/40 shadow-sm'
-          }`}
+          id="step-4"
+          className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${
+            activeStep === 'step-4' 
+              ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' 
+              : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'
+          } ${highlightVehicleSection ? 'ring-4 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : ''}`}
         >
           <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-base">directions_car</span>
@@ -801,6 +1077,7 @@ export default function Booking() {
                     onChange={(e) => setSelectedVehicleId(e.target.value)}
                     className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/60 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-semibold text-on-surface"
                   >
+                    <option value="">-- Chọn xe của bạn --</option>
                     {userVehicles.map((v) => (
                       <option key={v.id} value={v.id}>
                         {v.name} - {v.license} ({v.color || 'Không có màu'})
@@ -836,13 +1113,17 @@ export default function Booking() {
           </div>
         </section>
 
-        {/* DỊCH VỤ VỆ SINH NỘI THẤT */}
-        <section className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-sm space-y-6">
+        {/* DỊCH VỤ VỆ SINH NỘI THẤT KÈM THEO (KHÔNG PHẢI LÀ TIẾN TRÌNH CỐ ĐỊNH) */}
+        <section 
+          id="interior-section"
+          className="border border-outline-variant/40 shadow-sm rounded-3xl p-6 space-y-6 bg-surface-container-lowest"
+        >
           <div className="mb-6 border-b border-outline-variant/20 pb-4">
-            <h2 className="text-sm font-extrabold text-outline uppercase tracking-widest flex items-center gap-2">
+            <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-base">cleaning_services</span>
               Dịch vụ vệ sinh nội thất kèm theo
             </h2>
+            <p className="text-xs text-on-surface-variant mt-1">Dịch vụ bổ sung vệ sinh nội thất chuyên sâu tùy chọn.</p>
           </div>
 
           <div className="space-y-4">
@@ -903,7 +1184,7 @@ export default function Booking() {
                 </p>
               </div>
             </div>
-            
+
             {/* Nút chọn đồng ý vệ sinh nội thất (chuyển xuống dưới cùng, căn trái) */}
             <div className="flex justify-start pt-2">
               <div 
@@ -939,10 +1220,10 @@ export default function Booking() {
         </section>
 
         {/* 5. CHỌN KHUNG GIỜ VÀ TÓM TẮT DỊCH VỤ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter items-start">
+        <div className="flex flex-col gap-gutter items-start">
           
-          {/* Chọn khung giờ (2 cột rộng) */}
-          <div className="lg:col-span-2 bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-sm space-y-6">
+          {/* Chọn khung giờ */}
+          <section id="step-5" className={`w-full transition-all duration-500 rounded-3xl p-6 space-y-6 scroll-m-24 ${activeStep === 'step-5' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
             <div className="flex justify-between items-center border-b border-outline-variant/20 pb-4">
               <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">schedule</span>
@@ -955,22 +1236,26 @@ export default function Booking() {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant/20 pb-4 relative">
               {/* Trạm TAB selector */}
-              <div className="flex gap-2 bg-surface-container-low/60 p-1 rounded-2xl border border-outline-variant/30">
-                {availableSlots.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => { setSelectedWashSlot(s.id); }}
-                    className={`px-5 py-2 rounded-xl font-extrabold text-xs transition-all ${
-                      selectedWashSlot === s.id 
-                        ? 'bg-white text-[#00236f] shadow' 
-                        : 'text-on-surface-variant hover:bg-white/40'
-                    }`}
-                  >
-                    {s.name}
-                  </button>
-                ))}
-              </div>
+              {availableSlots.length > 0 ? (
+                <div className="flex gap-2 bg-surface-container-low/60 p-1 rounded-2xl border border-outline-variant/30">
+                  {availableSlots.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => { setSelectedWashSlot(s.id); }}
+                      className={`px-5 py-2 rounded-xl font-extrabold text-xs transition-all ${
+                        selectedWashSlot === s.id 
+                          ? 'bg-white text-[#00236f] shadow' 
+                          : 'text-on-surface-variant hover:bg-white/40'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-on-surface-variant italic font-semibold">Chưa có trạm (vui lòng chọn chi nhánh)</span>
+              )}
 
               {/* Date Picker Input & Pop-up */}
               <div className="relative">
@@ -1085,198 +1370,266 @@ export default function Booking() {
             </div>
 
             {/* Danh sách khung giờ */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-              {TIME_SLOTS.map((t, idx) => {
-                const startIndex = TIME_SLOTS.findIndex(item => item.id === selectedTimeSlotId);
-                const isStart = selectedTimeSlotId === t.id;
-                const isOccupied = startIndex !== -1 && idx >= startIndex && idx < startIndex + numSlots;
-                
-                // Trạng thái bị disabled nếu:
-                // 1. Không đủ số slot đến hết ngày (vượt quá độ dài TIME_SLOTS)
-                // 2. Hoặc CÓ BẤT KỲ slot nào trong số các slot liên tiếp đó đã bị đặt trước
-                let isDisabled = idx + numSlots > TIME_SLOTS.length;
-                if (!isDisabled) {
-                  for (let i = 0; i < numSlots; i++) {
-                    if (occupiedSlots.has(idx + i)) {
-                      isDisabled = true;
-                      break;
+            {!selectedBranch || !selectedWashSlot ? (
+              <div className="py-8 text-center border border-dashed border-outline-variant/60 rounded-2xl w-full">
+                <span className="material-symbols-outlined text-4xl text-outline-variant/60 mb-2 block">schedule</span>
+                <p className="text-xs text-on-surface-variant font-bold italic">Vui lòng chọn Chi nhánh và Trạm rửa ở các bước trước để xem danh sách khung giờ.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {TIME_SLOTS.map((t, idx) => {
+                  const startIndex = TIME_SLOTS.findIndex(item => item.id === selectedTimeSlotId);
+                  const isStart = selectedTimeSlotId === t.id;
+                  const isOccupied = startIndex !== -1 && idx >= startIndex && idx < startIndex + numSlots;
+                  
+                  // Trạng thái bị disabled nếu:
+                  // 1. Không đủ số slot đến hết ngày (vượt quá độ dài TIME_SLOTS)
+                  // 2. Hoặc CÓ BẤT KỲ slot nào trong số các slot liên tiếp đó đã bị đặt trước
+                  let isDisabled = idx + numSlots > TIME_SLOTS.length;
+                  if (!isDisabled) {
+                    for (let i = 0; i < numSlots; i++) {
+                      if (occupiedSlots.has(idx + i)) {
+                        isDisabled = true;
+                        break;
+                      }
                     }
                   }
-                }
-                
-                const isSlotBooked = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'booked';
-                const isSlotPast = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'past';
-                const isSlotUnavailable = isSlotBooked || isSlotPast;
-                
-                let btnClasses = "py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ";
-                if (isSlotUnavailable) {
-                  btnClasses += "border-outline-variant/30 bg-surface-container-low/40 text-outline/30 cursor-not-allowed opacity-60";
-                } else if (isStart) {
-                  btnClasses += "bg-[#00236f] text-white border-[#00236f] shadow-lg ring-2 ring-primary/20 scale-105 z-10";
-                } else if (isOccupied) {
-                  btnClasses += "bg-[#00236f]/10 text-[#00236f] border-[#00236f]/40 border-dashed";
-                } else if (isDisabled) {
-                  btnClasses += "border-outline-variant/50 text-outline-variant/70 cursor-not-allowed opacity-80 hover:bg-red-50";
-                } else {
-                  btnClasses += "border-outline-variant hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant";
-                }
+                  
+                  const isSlotBooked = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'booked';
+                  const isSlotPast = occupiedSlots.has(idx) && occupiedSlots.get(idx) === 'past';
+                  const isSlotUnavailable = isSlotBooked || isSlotPast;
+                  
+                  let btnClasses = "py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ";
+                  if (isSlotUnavailable) {
+                    btnClasses += "border-outline-variant/30 bg-surface-container-low/40 text-outline/30 cursor-not-allowed opacity-60";
+                  } else if (isStart) {
+                    btnClasses += "bg-[#00236f] text-white border-[#00236f] shadow-lg ring-2 ring-primary/20 scale-105 z-10";
+                  } else if (isOccupied) {
+                    btnClasses += "bg-[#00236f]/10 text-[#00236f] border-[#00236f]/40 border-dashed";
+                  } else if (isDisabled) {
+                    btnClasses += "border-outline-variant/50 text-outline-variant/70 cursor-not-allowed opacity-80 hover:bg-red-50";
+                  } else {
+                    btnClasses += "border-outline-variant hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant";
+                  }
 
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    disabled={isSlotUnavailable}
-                    onClick={() => {
-                      if (isDisabled) {
-                        const errorMsg = getSlotSelectionError(idx);
-                        setSlotError(errorMsg);
-                      } else {
-                        setSelectedTimeSlotId(t.id);
-                      }
-                    }}
-                    className={btnClasses}
-                    title={isSlotBooked ? "Khung giờ này đã được đặt" : isSlotPast ? "Khung giờ này đã qua" : isDisabled ? "Không đủ slot liền kề còn lại trong ngày" : `Lượt thứ ${idx + 1}`}
-                  >
-                    <span className={`text-[9px] font-bold ${
-                      isSlotUnavailable ? 'text-outline/40' : 
-                      isStart ? 'text-white/80' : 
-                      isOccupied ? 'text-primary/70' : 
-                      'text-outline/80'
-                    }`}>
-                      Lượt {idx + 1}
-                    </span>
-                    <span className="text-sm font-extrabold">{t.time}</span>
-                    <span className={`text-[9px] font-bold ${
-                      isSlotBooked ? 'text-red-500/80' : 
-                      isStart ? 'text-white font-black' : 
-                      isOccupied ? 'text-[#00236f] font-black' : 
-                      isDisabled ? 'text-amber-600/80 font-bold' :
-                      'text-emerald-600/80'
-                    }`}>
-                      {isSlotBooked ? 'Đã đặt' : 
-                       isStart ? 'Bắt đầu' : 
-                       isOccupied ? 'Đang giữ' : 
-                       isDisabled ? 'Không khả dụng' :
-                       'Còn trống'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-
-          </div>
-
-          {/* Tóm tắt dịch vụ (1 cột) */}
-          <div className="bg-[#00236f] text-white rounded-3xl p-6 shadow-xl flex flex-col justify-between min-h-[450px]">
-            <div className="space-y-6">
-              <h3 className="font-black text-lg border-b border-white/20 pb-4 tracking-tight">Tóm tắt dịch vụ</h3>
-              
-              <div className="space-y-4 text-xs font-semibold text-white/80">
-                <div className="flex justify-between">
-                  <p>Tổng thời gian</p>
-                  <p className="text-white font-extrabold">{displayDuration} phút</p>
-                </div>
-                <div className="flex justify-between">
-                  <p>Số lượng slot đặt</p>
-                  <p className="text-white font-extrabold">{numSlots} slot</p>
-                </div>
-                <div className="flex justify-between items-center border-t border-white/10 pt-3">
-                  <p className="font-bold text-white">Tổng tiền dịch vụ</p>
-                  <p className="text-[#4cd7f6] text-xl font-black">{formatCurrency(totalCost)}</p>
-                </div>
-                
-                <div className="border-t border-white/10 pt-4 space-y-3">
-                  <div className="flex justify-between">
-                    <p>Địa điểm & Trạm</p>
-                    <p className="text-white font-extrabold text-right">{activeBranchName}<br /><span className="text-[10px] text-white/60">{activeSlotName}</span></p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p>Số Slot</p>
-                    <p className="text-white font-extrabold text-right">{getSelectedSlotsDisplay()}</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p>Thời gian dự kiến</p>
-                    <p className="text-[#4cd7f6] font-extrabold text-right">
-                      {expectedTimeRange}
-                    </p>
-                  </div>
-                </div>
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={isSlotUnavailable}
+                      onClick={() => {
+                        if (isDisabled) {
+                          const errorMsg = getSlotSelectionError(idx);
+                          setSlotError(errorMsg);
+                        } else {
+                          setSelectedTimeSlotId(t.id);
+                        }
+                      }}
+                      className={btnClasses}
+                      title={isSlotBooked ? "Khung giờ này đã được đặt" : isSlotPast ? "Khung giờ này đã qua" : isDisabled ? "Không đủ slot liền kề còn lại trong ngày" : `Lượt thứ ${idx + 1}`}
+                    >
+                      <span className={`text-[9px] font-bold ${
+                        isSlotUnavailable ? 'text-outline/40' : 
+                        isStart ? 'text-white/80' : 
+                        isOccupied ? 'text-primary/70' : 
+                        'text-outline/80'
+                      }`}>
+                        Lượt {idx + 1}
+                      </span>
+                      <span className="text-sm font-extrabold">{t.time}</span>
+                      <span className={`text-[9px] font-bold ${
+                        isSlotBooked ? 'text-red-500/80' : 
+                        isStart ? 'text-white font-black' : 
+                        isOccupied ? 'text-[#00236f] font-black' : 
+                        isDisabled ? 'text-amber-600/80 font-bold' :
+                        'text-emerald-600/80'
+                      }`}>
+                        {isSlotBooked ? 'Đã đặt' : 
+                         isStart ? 'Bắt đầu' : 
+                         isOccupied ? 'Đang giữ' : 
+                         isDisabled ? 'Không khả dụng' :
+                         'Còn trống'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            )}
 
-            <div className="mt-8 space-y-4">
-              {/* Ô NHẬP MÃ GIẢM GIÁ */}
-              <div className="space-y-2 border-b border-white/10 pb-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Mã giảm giá</p>
-                  <div className="text-[10px] text-[#4cd7f6] font-bold flex items-center gap-1 cursor-default select-none">
-                    <span className="material-symbols-outlined text-xs">local_activity</span>
-                    <span>Xem thêm mã giảm giá</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nhập mã giảm giá..."
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#4cd7f6] text-xs font-semibold text-white placeholder-white/30"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => alert("Tính năng áp dụng mã giảm giá đang được phát triển.")}
-                    className="px-4 py-2 bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-bold rounded-xl text-xs uppercase transition-all whitespace-nowrap active:scale-95"
-                  >
-                    Áp mã
-                  </button>
-                </div>
-              </div>
 
-              {/* Lựa chọn phương thức thanh toán */}
-              <div className="space-y-2">
-                <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Phương thức thanh toán</p>
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('tien-mat')}
-                    className={`py-2 px-3 rounded-xl font-bold border transition-all text-center flex flex-col items-center justify-center gap-1.5 ${
-                      paymentMethod === 'tien-mat'
-                        ? 'bg-[#4cd7f6] text-[#001f26] border-[#4cd7f6] shadow-md'
-                        : 'bg-white/5 text-white/80 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-base">payments</span>
-                    <span>Tiền mặt tại quầy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('vnpay')}
-                    className={`py-2 px-3 rounded-xl font-bold border transition-all text-center flex flex-col items-center justify-center gap-1.5 ${
-                      paymentMethod === 'vnpay'
-                        ? 'bg-[#4cd7f6] text-[#001f26] border-[#4cd7f6] shadow-md'
-                        : 'bg-white/5 text-white/80 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-base font-bold">qr_code_2</span>
-                    <span>Thanh toán VN Pay</span>
-                  </button>
-                </div>
-              </div>
-
-              <button 
-                onClick={handleCheckout}
-                className="w-full py-4 bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] rounded-2xl font-black text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-cyan-400/25 active:scale-95"
-              >
-                Thanh toán ngay
-              </button>
-              <p className="text-[10px] text-center text-white/50 italic">
-                Giao dịch được bảo mật bởi Luna Gateway
-              </p>
-            </div>
-          </div>
+          </section>
 
         </div>
-
       </div>
+      </div>
+      </div> {/* End Center Content Wrapper */}
+
+      {/* RIGHT SIDEBAR (ORDER SUMMARY) */}
+      <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[350px] shrink-0 bg-[#00236f] z-[40] flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.1)] text-white overflow-hidden">
+        <div className="p-6 flex-1 flex flex-col overflow-hidden">
+          
+          <h2 className="font-black text-2xl tracking-tight mb-4">Tóm tắt dịch vụ</h2>
+          
+          {/* Main Info */}
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between items-center text-sm font-semibold">
+              <span className="text-white/80">Tổng thời gian</span>
+              <span className="text-white font-bold">
+                {selectedPackage ? `${displayDuration} phút` : 'Chưa chọn'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm font-semibold">
+              <span className="text-white/80">Số lượng slot đặt</span>
+              <span className="text-white font-bold">
+                {selectedPackage ? `${numSlots} slot` : 'Chưa chọn'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center py-3.5 border-y border-white/10 mb-4">
+            <span className="text-sm font-bold text-white">Tổng tiền dịch vụ</span>
+            <span className="text-[#4cd7f6] text-2xl font-black">
+              {selectedPackage ? formatCurrency(totalCost) : 'Chưa chọn'}
+            </span>
+          </div>
+
+          {/* Details */}
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between items-start text-sm font-semibold">
+              <span className="text-white/80">Địa điểm & Trạm</span>
+              <div className="text-right">
+                <p className="text-white font-bold">{activeBranchName}</p>
+                {selectedWashSlot ? (
+                  <p className="text-white/60 text-xs mt-1">{activeSlotName}</p>
+                ) : (
+                  <p className="text-white/40 text-xs mt-1 italic">Chưa chọn trạm</p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-sm font-semibold">
+              <span className="text-white/80">Số Slot</span>
+              <span className="text-white font-bold">{getSelectedSlotsDisplay()}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm font-semibold">
+              <span className="text-white/80">Thời gian dự kiến</span>
+              <span className="text-[#4cd7f6] font-bold">{expectedTimeRange}</span>
+            </div>
+          </div>
+
+          {/* Discount Code */}
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-white/60">Mã giảm giá</span>
+              <button className="flex items-center gap-0.5 text-[10px] font-bold text-[#4cd7f6] hover:underline">
+                <span className="material-symbols-outlined text-[12px]">local_activity</span>
+                Xem thêm mã giảm giá
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              <input 
+                type="text" 
+                placeholder="Nhập mã giảm giá..." 
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#4cd7f6]/50 transition-colors"
+              />
+              <button className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
+                ÁP MÃ
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-4 space-y-3">
+            <button 
+              onClick={handleOpenPaymentModal}
+              className={`w-full py-3.5 rounded-2xl font-black text-[15px] transition-all active:scale-95 ${
+                allStepsCompleted 
+                  ? 'shimmer-bounce-btn text-[#001f26]' 
+                  : 'bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] shadow-lg hover:shadow-cyan-400/25'
+              }`}
+            >
+              Thanh toán
+            </button>
+            <p className="text-[10px] text-center text-white/40 italic">
+              Giao dịch được bảo mật bởi Luna Gateway
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      </div> {/* End Flex Wrapper */}
+
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" 
+            onClick={() => setShowPaymentModal(false)}
+          ></div>
+          <div className="relative bg-white rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl text-[#081b3e] z-50 p-6 flex flex-col border border-slate-100">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"
+            >
+              <span className="material-symbols-outlined text-base block font-bold">close</span>
+            </button>
+
+            {/* Icon & Title */}
+            <div className="text-center mb-5 mt-2">
+              <span className="material-symbols-outlined text-4xl text-[#00236f] bg-slate-100 p-3.5 rounded-2xl mb-3 inline-block">account_balance_wallet</span>
+              <h3 className="font-extrabold text-lg text-[#00236f]">Phương thức thanh toán</h3>
+              <p className="text-xs text-slate-500 mt-1">Vui lòng chọn phương thức thanh toán của bạn</p>
+            </div>
+
+            {/* Options */}
+            <div className="space-y-3">
+              {/* Option 1: VNPay */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMethod('vnpay');
+                  handleExecuteCheckout('vnpay');
+                }}
+                className="w-full group p-3.5 border border-slate-100 hover:border-[#4cd7f6] hover:bg-[#4cd7f6]/5 rounded-2xl flex items-center justify-between transition-all duration-300 active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-[#4cd7f6]/20 transition-colors">
+                    <span className="material-symbols-outlined text-xl block">qr_code_scanner</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-extrabold text-sm text-[#00236f]">Thanh toán VN Pay</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">Ví điện tử, Thẻ nội địa/Quốc tế</p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-slate-300 group-hover:text-[#4cd7f6] text-lg transition-colors">chevron_right</span>
+              </button>
+
+              {/* Option 2: Cash */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMethod('tien-mat');
+                  handleExecuteCheckout('tien-mat');
+                }}
+                className="w-full group p-3.5 border border-slate-100 hover:border-[#4cd7f6] hover:bg-[#4cd7f6]/5 rounded-2xl flex items-center justify-between transition-all duration-300 active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-[#4cd7f6]/20 transition-colors">
+                    <span className="material-symbols-outlined text-xl block">payments</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-extrabold text-sm text-[#00236f]">Tiền mặt tại quầy</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">Thanh toán trực tiếp sau dịch vụ</p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-slate-300 group-hover:text-[#4cd7f6] text-lg transition-colors">chevron_right</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      )}
 
       {showNoVehicleAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

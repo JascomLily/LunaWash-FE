@@ -31,7 +31,7 @@ export default function UserProfile() {
     phone: '0901 234 567',
     address: 'Quận 1, TP. Hồ Chí Minh',
     tier: 'Gold',
-    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuANzqhG_Tzu8OPe4kgRPOywPIRx3IZFdjvUn5hGcksArjuRtsGdOvyGOjMyk9BFyyFr2vLUCVMouY3q8wRveQC3s2LPKiw7c6VR4dD9A3CFojp1p_2U_lYE6dJhj8sqSk-SIz6KUe0cfqKDNcTagXJQRrbYBpotUQWDzpjwHi_P1pAGTmj1P08bKe-N3if7guTZt3GBGRaAOCHecxkxamD5LnlRv1F-ireaAdO8OjaO414aab20qz85EZT6YVtpAiTUc8YJsTaC8a8'
+    avatarUrl: ''
   });
 
   const [cars, setCars] = useState([]);
@@ -89,7 +89,9 @@ export default function UserProfile() {
               fullName: data.fullName || prev.fullName,
               email: data.email || prev.email,
               tier: data.role === 'Customer' ? (data.tier || prev.tier) : data.role,
-              points: data.currentPoints || 0
+              points: data.currentPoints || 0,
+              address: data.address || prev.address,
+              phone: data.phone || data.phoneNumber || prev.phone
             }));
           })
           .catch(err => console.warn('Lỗi đồng bộ user:', err));
@@ -153,9 +155,26 @@ export default function UserProfile() {
     e.preventDefault();
     setIsSavingProfile(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
+      const storedUserString = localStorage.getItem('user');
+      const token = storedUserString ? JSON.parse(storedUserString).token : null;
+
+      if (!token) throw new Error("No token found");
+
+      const res = await fetch('http://localhost:5010/api/Auth/me', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: editProfileForm.fullName,
+          phone: editProfileForm.phone,
+          address: editProfileForm.address
+        })
+      });
+
+      if (!res.ok) throw new Error('Không thể cập nhật hồ sơ');
+
       const updatedUser = {
         ...user,
         fullName: editProfileForm.fullName,
@@ -167,9 +186,8 @@ export default function UserProfile() {
       setUser(updatedUser);
       
       // Update local storage
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
+      if (storedUserString) {
+        const parsed = JSON.parse(storedUserString);
         localStorage.setItem('user', JSON.stringify({
           ...parsed,
           fullName: updatedUser.fullName,
@@ -281,7 +299,7 @@ export default function UserProfile() {
           {/* Avatar với nút Chỉnh sửa */}
           <div className="relative w-32 h-32 mb-6">
             <img 
-              src={user.avatarUrl} 
+              src={user.avatarUrl || '/default-avatar.svg'} 
               alt={user.fullName}
               className="w-full h-full rounded-full object-cover border-4 border-primary/10 shadow-lg"
             />

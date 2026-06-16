@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// DEMO: Đợi Backend viết API xong thì thay thế cục mảng này
 const DEFAULT_REVIEWS = [
   {
     id: 'REV-001',

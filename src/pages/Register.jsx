@@ -60,6 +60,7 @@ export default function Register() {
     setLoading(true);
 
     try {
+      // GỌI API XUỐNG BACKEND: Đẩy thông tin form đăng ký lên Server qua hàm fetch
       const response = await fetch('http://localhost:5010/api/Auth/register', {
         method: 'POST',
         headers: {

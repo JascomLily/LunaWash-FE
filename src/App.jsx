@@ -17,6 +17,8 @@ import BranchFeedback from './pages/BranchFeedback';
 import ManagerStaff from './pages/ManagerStaff';
 import TechnicalPage from './pages/TechnicalPage';
 
+import ForgotPassword from './pages/ForgotPassword';
+
 /**
  * Route guard để bảo vệ các tuyến đường Staff và Manager
  */
@@ -66,6 +68,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/user" element={<UserProfile />} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/history" element={<BookingHistory />} />

@@ -65,11 +65,9 @@ export default function Navbar() {
       const header = document.querySelector('header');
       if (!header) return;
       if (window.scrollY > 20) {
-        header.classList.add('shadow-lg', 'h-16');
-        header.classList.remove('h-20');
+        header.classList.add('shadow-md');
       } else {
-        header.classList.remove('shadow-lg', 'h-16');
-        header.classList.add('h-20');
+        header.classList.remove('shadow-md');
       }
     };
 
@@ -94,7 +92,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 h-20 shadow-sm border-b border-outline-variant/20 transition-all duration-300 ease-in-out">
+    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 h-20 shadow-sm border-b border-outline-variant/20">
       <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
         {/* Logo */}
         {/* Logo */}
@@ -232,17 +230,11 @@ export default function Navbar() {
                   aria-haspopup="true"
                 >
                   {/* Avatar tròn */}
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt={user.fullName}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-outline-variant/40 shadow-sm flex-shrink-0"
-                    />
-                  ) : (
-                    <div className={`w-8 h-8 rounded-full font-extrabold text-xs flex items-center justify-center select-none flex-shrink-0 shadow-sm text-white bg-gradient-to-br ${tierInfo.bg}`}>
-                      {getInitials(user.fullName)}
-                    </div>
-                  )}
+                  <img
+                    src={user.avatarUrl || '/default-avatar.svg'}
+                    alt={user.fullName}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-outline-variant/40 shadow-sm flex-shrink-0"
+                  />
 
                   {/* Tên + Badge vai trò dạng ribbon */}
                   <div className="flex flex-col text-left leading-tight gap-0.5">
@@ -285,17 +277,11 @@ export default function Navbar() {
                   >
                     {/* User info header */}
                     <div className="flex items-center gap-3 pb-3 mb-2 border-b border-outline-variant/20">
-                      {user.avatarUrl ? (
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.fullName}
-                          className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-secondary text-white font-extrabold text-xl flex-shrink-0 flex items-center justify-center shadow-sm select-none">
-                          {getInitials(user.fullName)}
-                        </div>
-                      )}
+                      <img
+                        src={user.avatarUrl || '/default-avatar.svg'}
+                        alt={user.fullName}
+                        className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 shadow-sm"
+                      />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-primary text-base truncate leading-tight">
                           {user.fullName}

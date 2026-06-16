@@ -15,14 +15,14 @@ export default function Footer() {
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
               alt="LunaWash Logo"
-              className="h-12 w-auto object-contain brightness-0 invert"
+              className="h-12 w-auto object-contain"
             />
           </div>
           <p className="text-white/60 text-sm leading-relaxed">
             Hệ thống chăm sóc xe thông minh hàng đầu Việt Nam, ứng dụng công nghệ tự động hóa và quản lý tối ưu.
           </p>
           <p className="text-white/40 text-xs mt-4">
-            © 2024 LunaWash. All rights reserved.
+            © 2026 LunaWash. All rights reserved.
           </p>
         </div>
 
