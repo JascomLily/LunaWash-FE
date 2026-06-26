@@ -214,7 +214,7 @@ export default function StaffQueue() {
     try {
       const branchId = parsedUser.branchId || 'BRN-LD-01';
       const targetDate = date || selectedDate;
-      const res = await fetch(`http://192.168.1.219:5010/api/staff/bookings/today/${branchId}?date=${targetDate}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/today/${branchId}?date=${targetDate}`, {
         headers: { 'Authorization': `Bearer ${parsedUser.token}` }
       });
       if (res.ok) {
@@ -334,7 +334,7 @@ export default function StaffQueue() {
 
   const updateBookingStatus = async (id, newStatus) => {
     try {
-      const res = await fetch(`http://192.168.1.219:5010/api/staff/bookings/${id}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -359,7 +359,7 @@ export default function StaffQueue() {
   const handleConfirmAddInterior = async () => {
     if (!addingInteriorBooking) return;
     try {
-      const res = await fetch(`http://192.168.1.219:5010/api/staff/bookings/${addingInteriorBooking.id}/add-interior-cleaning`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/${addingInteriorBooking.id}/add-interior-cleaning`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -16,8 +17,8 @@ import BranchHistory from './pages/BranchHistory';
 import BranchFeedback from './pages/BranchFeedback';
 import ManagerStaff from './pages/ManagerStaff';
 import TechnicalPage from './pages/TechnicalPage';
-
 import ForgotPassword from './pages/ForgotPassword';
+import FloatingChatWidget from './components/FloatingChatWidget';
 
 /**
  * Route guard để bảo vệ các tuyến đường Staff và Manager
@@ -55,9 +56,12 @@ import { Toaster } from 'react-hot-toast';
  * va ap dung Navbar / Footer dong bo cho toan bo he thong.
  */
 function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "DUMMY_CLIENT_ID";
+
   return (
-    <Router>
-      <Toaster position="top-right" reverseOrder={false} />
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <Router>
+        <Toaster position="top-right" reverseOrder={false} />
       <div className="flex flex-col min-h-screen bg-background text-on-background">
         {/* Thanh dieu huong dinh kem */}
         <Navbar />
@@ -107,8 +111,12 @@ function App() {
 
         {/* Chan trang dong bo */}
         <Footer />
+        
+        {/* Global AI Chat Widget */}
+        <FloatingChatWidget />
       </div>
-    </Router>
+      </Router>
+    </GoogleOAuthProvider>
   );
 }
 

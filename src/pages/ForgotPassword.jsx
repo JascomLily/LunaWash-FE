@@ -8,6 +8,9 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -19,28 +22,59 @@ export default function ForgotPassword() {
     setErrorMsg('');
     setSuccessMsg('');
     
-    // Giả lập gọi API gửi OTP
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      if (!response.ok) {
+        throw new Error('Email không tồn tại trong hệ thống.');
+      }
       setOtpSent(true);
       setSuccessMsg(`Mã OTP đã được gửi đến email ${email}. Vui lòng kiểm tra hộp thư.`);
-    }, 1500);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    if (!otp) {
-      setErrorMsg('Vui lòng nhập mã OTP.');
+    if (!otp || !newPassword || !confirmPassword) {
+      setErrorMsg('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Mật khẩu xác nhận không trùng khớp.');
+      return;
+    }
+    
     setLoading(true);
     setErrorMsg('');
+    setSuccessMsg('');
     
-    // Giả lập gọi API xác thực OTP
-    setTimeout(() => {
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, otp: otp, newPassword: newPassword })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Mã OTP không hợp lệ hoặc đã hết hạn.');
+      }
+      
+      setSuccessMsg('Đổi mật khẩu thành công! Bạn có thể quay lại đăng nhập.');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
       setLoading(false);
-      setSuccessMsg('Xác minh OTP thành công! Bạn có thể đặt lại mật khẩu mới.');
-    }, 1500);
+    }
   };
 
   return (
@@ -93,21 +127,57 @@ export default function ForgotPassword() {
           </div>
 
           {otpSent && (
-            <div className="space-y-2 animate-fade-in">
-              <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="otp">Mã OTP</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">pin</span>
-                <input 
-                  className="w-full pl-12 pr-4 py-4 tracking-[0.5em] font-bold bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface text-center disabled:opacity-50" 
-                  id="otp" 
-                  placeholder="------" 
-                  type="text"
-                  maxLength="6"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  disabled={loading}
-                />
+            <div className="space-y-6 animate-fade-in">
+              <div className="space-y-2">
+                <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="otp">Mã OTP</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">pin</span>
+                  <input 
+                    className="w-full pl-12 pr-4 py-4 tracking-[0.5em] font-bold bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface text-center disabled:opacity-50" 
+                    id="otp" 
+                    placeholder="------" 
+                    type="text"
+                    maxLength="6"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    disabled={loading || successMsg.includes('thành công')}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="newPassword">Mật khẩu mới</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">lock</span>
+                  <input 
+                    className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
+                    id="newPassword" 
+                    placeholder="••••••••" 
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={loading || successMsg.includes('thành công')}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block font-title-md text-sm text-on-surface-variant ml-1" htmlFor="confirmPassword">Xác nhận mật khẩu</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">lock_reset</span>
+                  <input 
+                    className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
+                    id="confirmPassword" 
+                    placeholder="••••••••" 
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading || successMsg.includes('thành công')}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -127,10 +197,10 @@ export default function ForgotPassword() {
               className="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-xl shadow-lg hover:shadow-primary/20 transition-all duration-300 transform active:scale-[0.98] hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
               type="button"
               onClick={handleVerifyOtp}
-              disabled={loading || otp.length < 4}
+              disabled={loading || otp.length < 4 || !newPassword || successMsg.includes('thành công')}
             >
-              {loading ? 'Đang xác minh...' : 'Xác minh OTP'}
-              {!loading && <span className="material-symbols-outlined">verified</span>}
+              {loading ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
+              {!loading && <span className="material-symbols-outlined">save</span>}
             </button>
           )}
 

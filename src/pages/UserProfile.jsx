@@ -74,7 +74,7 @@ export default function UserProfile() {
 
         if (parsed.token) {
           // 1. Fetch user profile (/me)
-          fetch('http://192.168.1.219:5010/api/Auth/me', {
+          fetch(import.meta.env.VITE_API_URL + '/api/Auth/me', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -91,13 +91,14 @@ export default function UserProfile() {
               tier: data.role === 'Customer' ? (data.tier || prev.tier) : data.role,
               points: data.currentPoints || 0,
               address: data.address || prev.address,
-              phone: data.phone || data.phoneNumber || prev.phone
+              phone: data.phone || data.phoneNumber || prev.phone,
+              isActive: data.isActive
             }));
           })
           .catch(err => console.warn('Lỗi đồng bộ user:', err));
 
           // 2. Fetch user's cars
-          fetch('http://192.168.1.219:5010/api/Vehicles', {
+          fetch(import.meta.env.VITE_API_URL + '/api/Vehicles', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -112,7 +113,7 @@ export default function UserProfile() {
           .catch(err => console.warn('Lỗi lấy xe:', err));
 
           // 3. Fetch bookings (/api/bookings/history)
-          fetch('http://192.168.1.219:5010/api/bookings/history', {
+          fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
             headers: { 'Authorization': `Bearer ${parsed.token}` }
           })
           .then(res => res.ok ? res.json() : [])
@@ -160,7 +161,7 @@ export default function UserProfile() {
 
       if (!token) throw new Error("No token found");
 
-      const res = await fetch('http://192.168.1.219:5010/api/Auth/me', {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -212,7 +213,7 @@ export default function UserProfile() {
         const token = storedUser ? JSON.parse(storedUser).token : null;
         if (!token) return;
 
-        const res = await fetch(`http://192.168.1.219:5010/api/Vehicles/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Vehicles/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -238,7 +239,7 @@ export default function UserProfile() {
       const token = storedUser ? JSON.parse(storedUser).token : null;
       if (!token) return;
 
-      const res = await fetch('http://192.168.1.219:5010/api/Vehicles', {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/Vehicles', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -432,7 +433,20 @@ export default function UserProfile() {
                 <p className="font-bold text-on-surface text-base">{user.fullName}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-outline uppercase tracking-wider mb-1">Email</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs font-bold text-outline uppercase tracking-wider">Email</p>
+                  {user.isActive ? (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0 bg-green-100 text-green-700 text-[9px] font-bold rounded border border-green-200 uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-[10px]">verified</span>
+                      Đã xác minh
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0 bg-yellow-100 text-yellow-700 text-[9px] font-bold rounded border border-yellow-200 uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-[10px]">warning</span>
+                      Chưa xác minh
+                    </span>
+                  )}
+                </div>
                 <p className="font-bold text-on-surface text-base">{user.email}</p>
               </div>
               <div>
