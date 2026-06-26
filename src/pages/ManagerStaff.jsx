@@ -40,6 +40,10 @@ export default function ManagerStaff() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyLogs, setHistoryLogs] = useState([]);
 
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02' });
+
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
@@ -53,9 +57,9 @@ export default function ManagerStaff() {
     }
     setUser(parsedUser);
 
-    const fetchEmployees = async () => {
+  const fetchEmployees = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Users/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/Employees/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
         if (res.ok) {
           const data = await res.json();
           const mappedData = data.map(emp => ({
@@ -86,7 +90,7 @@ export default function ManagerStaff() {
       if (!user?.branchId) return;
       setIsAttendanceLoading(true);
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/attendance?date=${selectedDate}&shift=${selectedShiftFilter}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/Employees/attendance/branch/${user.branchId}?date=${selectedDate}&shift=${selectedShiftFilter}`);
         if (response.ok) {
           const data = await response.json();
           const mapped = data.map(item => ({
@@ -132,7 +136,7 @@ export default function ManagerStaff() {
     const fetchTemplates = async () => {
       if (!user?.branchId) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/templates`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/StaffManagement/branch/${user.branchId}/templates`);
         if (response.ok) {
           const data = await response.json();
           setScheduleTemplates(data.map(t => ({
@@ -174,7 +178,7 @@ export default function ManagerStaff() {
 
   const handleSaveTemplates = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ templates: scheduleTemplates })
@@ -192,14 +196,14 @@ export default function ManagerStaff() {
 
   const fetchHistory = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${branchId}/history`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/StaffManagement/branch/${branchId}/history`);
       if (response.ok) setHistoryLogs(await response.json());
     } catch (error) { toast.error("Lỗi khi tải lịch sử sửa đổi: " + error.message); }
   };
 
   const handleSaveAttendance = async () => {
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/api/StaffManagement/attendance', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/StaffManagement/attendance`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,12 +250,76 @@ export default function ManagerStaff() {
     setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, note: newNote } : a));
   };
 
-  const handleRealtimeCheckIn = (empId) => {
-    const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, status: 'Có mặt' } : a));
+const handleAddEmployee = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/Employees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newEmployee, branchId: user.branchId || 'BRN-LD-01' })
+      });
+      if (response.ok) {
+        toast.success("Thêm nhân viên thành công!");
+        setShowAddModal(false);
+        setNewEmployee({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02' });
+        
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/Employees/branch/${user.branchId || 'BRN-LD-01'}`);
+        if (res.ok) {
+            const data = await res.json();
+            setEmployees(data.map(emp => ({
+                id: emp.id,
+                fullName: emp.fullName,
+                role: emp.roleName === 'TechnicalStaff' ? 'Kỹ thuật' : 'Chăm sóc xe',
+                wages: '0đ',
+                leaveDays: 0,
+                status: emp.isActive ? 'Active' : 'Inactive',
+                checkIn: null,
+                note: ''
+            })));
+        }
+      } else {
+        toast.error("Thêm nhân viên thất bại");
+      }
+    } catch (err) {
+      toast.error("Lỗi: " + err.message);
+    }
   };
 
-  return (
+  const handleDeleteEmployee = async (id) => {
+    if(!confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/Employees/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success("Xóa nhân viên thành công!");
+        setEmployees(employees.filter(e => e.id !== id));
+      } else {
+        toast.error("Xóa thất bại!");
+      }
+    } catch (err) {
+      toast.error("Lỗi: " + err.message);
+    }
+  };
+
+  const handleRealtimeCheckIn = async (empId) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/Employees/checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeId: empId, branchId: user.branchId || 'BRN-LD-01' })
+      });
+      if (res.ok) {
+        toast.success("Điểm danh thành công!");
+        const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, status: 'Có mặt' } : a));
+      } else {
+        toast.error("Check-in thất bại (đã check-in rồi hoặc lỗi server)");
+      }
+    } catch (error) {
+      toast.error("Lỗi: " + error.message);
+    }
+  };  return (
     <main className="min-h-screen bg-background pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
       <div className="max-w-container-max mx-auto">
         
@@ -374,7 +442,7 @@ export default function ManagerStaff() {
               <div className="lg:col-span-2 glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
                 <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
                   <h3 className="font-bold text-primary text-base">Danh sách nhân viên trạm</h3>
-                  <button onClick={() => alert("Chức năng thêm tài khoản nhân sự mới sẽ kết nối DB.")} className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs transition-all shadow-sm flex items-center gap-1">
+                  <button onClick={() => setShowAddModal(true)} className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs transition-all shadow-sm flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">person_add</span>
                     Thêm nhân viên
                   </button>
