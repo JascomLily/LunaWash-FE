@@ -1,80 +1,9 @@
-import React, { useState } from 'react';
-
-const INITIAL_EQUIPMENTS = [
-  {
-    id: 'EQ-001',
-    name: 'Máy rửa tự động 01',
-    category: 'Máy rửa chính',
-    status: 'Hoạt động',
-    statusColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    statusIcon: 'check_circle',
-    lastMaintenance: '01/06/2026',
-    nextMaintenance: '08/06/2026',
-    priority: 'Bình thường',
-    priorityColor: 'text-slate-600 bg-slate-100'
-  },
-  {
-    id: 'EQ-002',
-    name: 'Máy bơm áp lực cao',
-    category: 'Bơm nước',
-    status: 'Cần kiểm tra',
-    statusColor: 'text-amber-700 bg-amber-50 border-amber-200',
-    statusIcon: 'build',
-    lastMaintenance: '30/05/2026',
-    nextMaintenance: 'Hôm nay',
-    nextMaintenanceColor: 'text-amber-600 font-bold',
-    priority: 'Cao',
-    priorityColor: 'text-blue-700 bg-blue-100'
-  },
-  {
-    id: 'EQ-003',
-    name: 'Cảm biến nhận diện xe',
-    category: 'Cảm biến',
-    status: 'Lỗi',
-    statusColor: 'text-rose-700 bg-rose-50 border-rose-200',
-    statusIcon: 'error',
-    lastMaintenance: '05/06/2026',
-    nextMaintenance: 'Ngay lập tức',
-    nextMaintenanceColor: 'text-rose-600 font-bold',
-    priority: 'Khẩn cấp',
-    priorityColor: 'text-white bg-rose-600'
-  },
-  {
-    id: 'EQ-004',
-    name: 'Hệ thống phun bọt',
-    category: 'Hóa chất',
-    status: 'Đang bảo trì',
-    statusColor: 'text-sky-700 bg-sky-50 border-sky-200',
-    statusIcon: 'settings',
-    lastMaintenance: '03/06/2026',
-    nextMaintenance: '10/06/2026',
-    priority: 'Trung bình',
-    priorityColor: 'text-sky-700 bg-sky-100'
-  },
-  {
-    id: 'EQ-005',
-    name: 'Máy sấy / quạt thổi khô',
-    category: 'Sấy khô',
-    status: 'Hoạt động',
-    statusColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    statusIcon: 'check_circle',
-    lastMaintenance: '02/06/2026',
-    nextMaintenance: '09/06/2026',
-    priority: 'Bình thường',
-    priorityColor: 'text-slate-600 bg-slate-100'
-  }
-];
-
-const INITIAL_TASKS = [
-  { id: 1, name: 'Kiểm tra máy bơm', status: 'Đang làm', statusColor: 'text-blue-600' },
-  { id: 2, name: 'Vệ sinh đầu phun', status: 'Chưa làm', statusColor: 'text-slate-400' },
-  { id: 3, name: 'Cảm biến nhận diện', status: 'Trễ hạn', statusColor: 'text-rose-600 font-bold' },
-  { id: 4, name: 'Kiểm tra hóa chất', status: 'Hoàn thành', statusColor: 'text-emerald-600' }
-];
+import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 export default function TechnicalPage() {
-  const [equipments, setEquipments] = useState(INITIAL_EQUIPMENTS);
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [equipments, setEquipments] = useState([]);
+  const [tasks, setTasks] = useState([]);
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -83,122 +12,209 @@ export default function TechnicalPage() {
   const [incidentDesc, setIncidentDesc] = useState('');
 
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const isReadOnly = storedUser?.tier === 'BranchManager' || storedUser?.tier === 'Admin';
+  const isReadOnly = storedUser?.tier !== 'BranchManager';
+
+  // Report Modal states
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportEqId, setReportEqId] = useState('');
+  const [reportIssueName, setReportIssueName] = useState('');
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportStatus, setReportStatus] = useState('Cần kiểm tra');
+  const [reportTaskStatus, setReportTaskStatus] = useState('Cần kiểm tra');
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const branchId = storedUser?.branchId || 'BR-HCM-01';
+  const baseUrl = `http://${window.location.hostname}:5010/api/equipments`;
+
+  const fetchData = async () => {
+    try {
+      await fetch(`${baseUrl}/seed?branchId=${branchId}`, { method: 'POST' });
+      const res = await fetch(`${baseUrl}/branch/${branchId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEquipments(data.equipments || []);
+        setTasks(data.tasks || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // 1. Toggle Task Status
-  const toggleTaskStatus = (id) => {
+  const toggleTaskStatus = async (id) => {
     if (isReadOnly) return;
-    setTasks(tasks.map(task => {
-      if (task.id === id) {
-        let newStatus = '';
-        let newColor = '';
-        if (task.status === 'Chưa làm') {
-          newStatus = 'Đang làm'; newColor = 'text-blue-600';
-        } else if (task.status === 'Đang làm') {
-          newStatus = 'Hoàn thành'; newColor = 'text-emerald-600';
-        } else if (task.status === 'Hoàn thành') {
-          newStatus = 'Trễ hạn'; newColor = 'text-rose-600 font-bold';
-        } else {
-          newStatus = 'Chưa làm'; newColor = 'text-slate-400';
-        }
-        return { ...task, status: newStatus, statusColor: newColor };
+    try {
+      const res = await fetch(`${baseUrl}/tasks/${id}/toggle?branchId=${branchId}`, { method: 'PUT' });
+      if (res.ok) {
+        fetchData();
+        toast.success("Đổi trạng thái công việc thành công");
       }
-      return task;
-    }));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Change Priority Status
-  const handleChangePriority = (id, newPriority) => {
+  const handleChangePriority = async (id, newPriority) => {
     if (isReadOnly) return;
-    setEquipments(equipments.map(eq => {
-      if (eq.id === id) {
-        let pColor = 'text-slate-600 bg-slate-100';
-        if (newPriority === 'Trung bình') pColor = 'text-sky-700 bg-sky-100';
-        if (newPriority === 'Cao') pColor = 'text-blue-700 bg-blue-100';
-        if (newPriority === 'Khẩn cấp') pColor = 'text-white bg-rose-600';
-        return { ...eq, priority: newPriority, priorityColor: pColor };
+    try {
+      const res = await fetch(`${baseUrl}/${id}/priority?branchId=${branchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority })
+      });
+      if (res.ok) {
+        fetchData();
+        toast.success("Đã lưu ưu tiên mới");
       }
-      return eq;
-    }));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Change Next Maintenance Date
-  const handleChangeNextDate = (id, newDateStr) => {
+  const handleChangeNextDate = async (id, newDateStr) => {
     if (isReadOnly) return;
     if (!newDateStr) return;
     const [year, month, day] = newDateStr.split('-');
     const formattedDate = `${day}/${month}/${year}`;
 
-    setEquipments(equipments.map(eq => {
-      if (eq.id === id) {
-        return { ...eq, nextMaintenance: formattedDate, nextMaintenanceColor: '' };
+    try {
+      const res = await fetch(`${baseUrl}/${id}/schedule?branchId=${branchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nextMaintenance: formattedDate })
+      });
+      if (res.ok) {
+        fetchData();
+        toast.success("Đã lưu ngày bảo trì");
       }
-      return eq;
-    }));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // 2. Change Equipment Status
-  const handleChangeEqStatus = (id) => {
+  const handleChangeEqStatus = async (id) => {
     if (isReadOnly) return;
+    const eq = equipments.find(e => e.id === id);
+    if (!eq) return;
+
     const states = ['Hoạt động', 'Cần kiểm tra', 'Đang bảo trì', 'Lỗi'];
-    
-    setEquipments(equipments.map(eq => {
-      if (eq.id === id) {
-        const currIdx = states.indexOf(eq.status);
-        const nextStatus = states[(currIdx + 1) % states.length];
-        let newColor = '';
-        if (nextStatus === 'Hoạt động') newColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
-        else if (nextStatus === 'Cần kiểm tra') newColor = 'text-amber-700 bg-amber-50 border-amber-200';
-        else if (nextStatus === 'Đang bảo trì') newColor = 'text-sky-700 bg-sky-50 border-sky-200';
-        else if (nextStatus === 'Lỗi') newColor = 'text-rose-700 bg-rose-50 border-rose-200';
-        
-        return { ...eq, status: nextStatus, statusColor: newColor };
+    const currIdx = states.indexOf(eq.status);
+    const nextStatus = states[(currIdx + 1) % states.length];
+
+    try {
+      const res = await fetch(`${baseUrl}/${id}/status?branchId=${branchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if (res.ok) {
+        fetchData();
+        toast.success("Cập nhật trạng thái thành công");
       }
-      return eq;
-    }));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // 3. Handle Submit Incident Ticket
-  const handleCreateIncident = (e) => {
+  const handleCreateIncident = async (e) => {
     e.preventDefault();
     if (isReadOnly) return;
     if (!incidentEqId || !incidentDesc) return;
     
-    const targetEq = equipments.find(eq => eq.id === incidentEqId);
-    if (!targetEq) return;
-
-    // Add new Task
-    const newTask = {
-      id: Date.now(),
-      name: `Khắc phục: ${targetEq.name}`,
-      status: 'Chưa làm',
-      statusColor: 'text-slate-400'
-    };
-    setTasks([...tasks, newTask]);
-
-    // Update Equipment to Error
-    setEquipments(equipments.map(eq => {
-      if (eq.id === incidentEqId) {
-        let pColor = 'text-slate-600 bg-slate-100';
-        if (incidentPriority === 'Trung bình') pColor = 'text-sky-700 bg-sky-100';
-        if (incidentPriority === 'Cao') pColor = 'text-blue-700 bg-blue-100';
-        if (incidentPriority === 'Khẩn cấp') pColor = 'text-white bg-rose-600';
-
-        return { 
-          ...eq, 
-          status: 'Lỗi', 
-          statusColor: 'text-rose-700 bg-rose-50 border-rose-200',
+    try {
+      const res = await fetch(`${baseUrl}/incidents?branchId=${branchId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          equipmentId: incidentEqId,
           priority: incidentPriority,
-          priorityColor: pColor
-        };
-      }
-      return eq;
-    }));
+          description: incidentDesc
+        })
+      });
 
-    setShowModal(false);
-    setIncidentEqId('');
-    setIncidentDesc('');
-    setIncidentPriority('Bình thường');
+      if (res.ok) {
+        fetchData();
+        toast.success("Tạo phiếu sự cố thành công");
+        setShowModal(false);
+        setIncidentEqId('');
+        setIncidentDesc('');
+        setIncidentPriority('Bình thường');
+      } else {
+        toast.error("Lỗi khi tạo phiếu");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối server");
+    }
+  };
+
+  const handleOpenReport = (eqId) => {
+    const eq = equipments.find(e => e.id === eqId);
+    setReportEqId(eqId);
+    setReportIssueName(`Báo cáo: ${eq?.name || eqId}`);
+    setReportDesc('');
+    setReportStatus(eq ? eq.status : 'Cần kiểm tra');
+    setReportTaskStatus('Cần kiểm tra');
+    setShowReportModal(true);
+  };
+
+  const handleOpenDetail = (task) => {
+    setSelectedTask(task);
+    setShowDetailModal(true);
+  };
+
+  const handleChangeTaskStatus = async (taskId, newStatus) => {
+    try {
+      const res = await fetch(`${baseUrl}/tasks/${taskId}/status?branchId=${branchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        fetchData();
+        toast.success("Cập nhật trạng thái báo cáo thành công");
+        setSelectedTask(prev => ({ ...prev, status: newStatus }));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleCreateReport = async (e) => {
+    e.preventDefault();
+    if (!reportEqId || !reportDesc) return;
+    
+    try {
+      const res = await fetch(`${baseUrl}/${reportEqId}/report?branchId=${branchId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ issueName: reportIssueName, description: reportDesc, status: reportStatus, taskStatus: reportTaskStatus })
+      });
+
+      if (res.ok) {
+        fetchData();
+        toast.success("Gửi báo cáo thành công");
+        setShowReportModal(false);
+        setReportEqId('');
+        setReportIssueName('');
+        setReportDesc('');
+      } else {
+        toast.error("Lỗi khi gửi báo cáo");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối server");
+    }
   };
 
   // Tính toán số lượng thống kê động dựa vào state
@@ -271,26 +287,26 @@ export default function TechnicalPage() {
             </div>
           </div>
 
-          {/* RIGHT: TODAY TASKS */}
+          {/* RIGHT: TODAY TASKS -> REPORTS */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 h-full">
             <div className="flex items-center gap-2 text-slate-700 mb-4 border-b border-slate-100 pb-3">
               <span className="material-symbols-outlined text-lg">assignment</span>
-              <h3 className="font-bold text-sm">Công việc hôm nay</h3>
+              <h3 className="font-bold text-sm">Danh sách Báo cáo</h3>
             </div>
-            <ul className="space-y-4">
+            <ul className="space-y-4 h-[250px] overflow-y-auto pr-2">
               {tasks.length === 0 && (
-                <p className="text-xs text-slate-400 italic">Không có công việc nào.</p>
+                <p className="text-xs text-slate-400 italic">Không có báo cáo nào.</p>
               )}
               {tasks.map((task) => (
                 <li key={task.id} className="flex items-start gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${task.status === 'Hoàn thành' ? 'bg-emerald-500' : task.status === 'Trễ hạn' ? 'bg-rose-500' : task.status === 'Đang làm' ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                  <div className="w-1.5 h-1.5 rounded-full mt-2 bg-slate-300"></div>
                   <div 
-                    className={`${isReadOnly ? 'cursor-default' : 'cursor-pointer'} group flex-1`}
-                    onClick={() => toggleTaskStatus(task.id)}
-                    title="Nhấn để đổi trạng thái công việc"
+                    className="cursor-pointer group flex-1"
+                    onClick={() => handleOpenDetail(task)}
+                    title="Nhấn để xem chi tiết"
                   >
                     <p className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{task.name}</p>
-                    <p className={`text-xs mt-0.5 select-none ${task.statusColor}`}>{task.status}</p>
+                    <p className="text-[11px] font-medium text-slate-500 mt-0.5"><span className="material-symbols-outlined text-[12px] align-middle mr-1">precision_manufacturing</span>{task.equipmentName || task.equipmentId}</p>
                   </div>
                 </li>
               ))}
@@ -332,7 +348,7 @@ export default function TechnicalPage() {
                   <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bảo trì gần nhất</th>
                   <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lịch tiếp theo</th>
                   <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ưu tiên</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Đổi TT</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -380,13 +396,21 @@ export default function TechnicalPage() {
                       </select>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {!isReadOnly && (
+                      {!isReadOnly ? (
                         <button 
                           onClick={() => handleChangeEqStatus(eq.id)}
                           className="text-slate-400 hover:text-[#00236f] hover:bg-slate-100 p-2 rounded-full transition-all active:scale-90"
                           title="Đổi trạng thái bảo trì"
                         >
                           <span className="material-symbols-outlined text-xl">swap_horiz</span>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleOpenReport(eq.id)}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-full transition-all active:scale-90"
+                          title="Báo cáo thiết bị"
+                        >
+                          <span className="material-symbols-outlined text-xl">report</span>
                         </button>
                       )}
                     </td>
@@ -477,6 +501,187 @@ export default function TechnicalPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* POP-UP MODAL BÁO CÁO THIẾT BỊ */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => setShowReportModal(false)}
+          ></div>
+          
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
+              <h3 className="font-extrabold text-base text-[#00236f]">Báo cáo thiết bị</h3>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
+              >
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateReport} className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mã thiết bị</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={reportEqId}
+                  className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-600 cursor-not-allowed"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Vấn đề cần báo cáo</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ví dụ: Máy bơm kêu to, rỉ nước..."
+                  value={reportIssueName}
+                  onChange={(e) => setReportIssueName(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái thiết bị</label>
+                <select
+                  required
+                  value={reportStatus}
+                  onChange={(e) => setReportStatus(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
+                >
+                  <option value="Hoạt động">Hoạt động</option>
+                  <option value="Cần kiểm tra">Cần kiểm tra</option>
+                  <option value="Đang bảo trì">Đang bảo trì</option>
+                  <option value="Lỗi">Lỗi</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái xử lý</label>
+                <select
+                  required
+                  value={reportTaskStatus}
+                  onChange={(e) => setReportTaskStatus(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
+                >
+                  <option value="Cần kiểm tra">Cần kiểm tra</option>
+                  <option value="Đã hoàn thành">Đã hoàn thành</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung báo cáo</label>
+                <textarea
+                  required
+                  placeholder="Ví dụ: Cần tra thêm dầu mỡ, máy kêu to..."
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end items-center gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#00236f] hover:bg-[#00236f]/90 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">send</span>
+                  Gửi báo cáo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POP-UP MODAL CHI TIẾT BÁO CÁO */}
+      {showDetailModal && selectedTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => setShowDetailModal(false)}
+          ></div>
+          
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
+              <h3 className="font-extrabold text-base text-[#00236f]">Chi tiết báo cáo</h3>
+              <button
+                type="button"
+                onClick={() => setShowDetailModal(false)}
+                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
+              >
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Tên báo cáo</label>
+                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
+                  {selectedTask.name}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mã thiết bị</label>
+                  <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
+                    {selectedTask.equipmentId || 'Không xác định'}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái xử lý</label>
+                  {!isReadOnly ? (
+                    <select
+                      value={selectedTask.status}
+                      onChange={(e) => handleChangeTaskStatus(selectedTask.id, e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700 cursor-pointer"
+                    >
+                      <option value="Chưa làm">Chưa làm</option>
+                      <option value="Cần kiểm tra">Cần kiểm tra</option>
+                      <option value="Đang làm">Đang làm</option>
+                      <option value="Đã hoàn thành">Đã hoàn thành</option>
+                      <option value="Trễ hạn">Trễ hạn</option>
+                    </select>
+                  ) : (
+                    <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold flex items-center gap-2">
+                      <span className={selectedTask.statusColor || "text-slate-700"}>{selectedTask.status}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung chi tiết</label>
+                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 min-h-[6rem] whitespace-pre-wrap">
+                  {selectedTask.description || 'Không có mô tả'}
+                </div>
+              </div>
+
+              <div className="flex justify-end items-center gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
