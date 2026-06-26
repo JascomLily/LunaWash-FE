@@ -55,7 +55,7 @@ export default function ManagerStaff() {
 
     const fetchEmployees = async () => {
       try {
-        const res = await fetch(`http://192.168.1.219:5010/api/Users/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Users/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
         if (res.ok) {
           const data = await res.json();
           const mappedData = data.map(emp => ({
@@ -86,7 +86,7 @@ export default function ManagerStaff() {
       if (!user?.branchId) return;
       setIsAttendanceLoading(true);
       try {
-        const response = await fetch(`http://192.168.1.219:5010/api/StaffManagement/branch/${user.branchId}/attendance?date=${selectedDate}&shift=${selectedShiftFilter}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/attendance?date=${selectedDate}&shift=${selectedShiftFilter}`);
         if (response.ok) {
           const data = await response.json();
           const mapped = data.map(item => ({
@@ -132,7 +132,7 @@ export default function ManagerStaff() {
     const fetchTemplates = async () => {
       if (!user?.branchId) return;
       try {
-        const response = await fetch(`http://192.168.1.219:5010/api/StaffManagement/branch/${user.branchId}/templates`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/templates`);
         if (response.ok) {
           const data = await response.json();
           setScheduleTemplates(data.map(t => ({
@@ -174,7 +174,7 @@ export default function ManagerStaff() {
 
   const handleSaveTemplates = async () => {
     try {
-      const response = await fetch(`http://192.168.1.219:5010/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ templates: scheduleTemplates })
@@ -192,14 +192,14 @@ export default function ManagerStaff() {
 
   const fetchHistory = async () => {
     try {
-      const response = await fetch(`http://192.168.1.219:5010/api/StaffManagement/branch/${branchId}/history`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${branchId}/history`);
       if (response.ok) setHistoryLogs(await response.json());
     } catch (error) { toast.error("Lỗi khi tải lịch sử sửa đổi: " + error.message); }
   };
 
   const handleSaveAttendance = async () => {
     try {
-      const response = await fetch('http://192.168.1.219:5010/api/StaffManagement/attendance', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/StaffManagement/attendance', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -250,7 +250,7 @@ export default function Booking() {
         const parsed = JSON.parse(storedUser);
         if (parsed.token) {
           setIsLoadingVehicles(true);
-          fetch('http://192.168.1.219:5010/api/vehicles', {
+          fetch(import.meta.env.VITE_API_URL + '/api/vehicles', {
             headers: {
               'Authorization': `Bearer ${parsed.token}`
             }
@@ -285,7 +285,7 @@ export default function Booking() {
         const parsed = JSON.parse(storedUser);
         if (parsed.token) {
           setIsAddingCar(true);
-          fetch('http://192.168.1.219:5010/api/vehicles', {
+          fetch(import.meta.env.VITE_API_URL + '/api/vehicles', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -386,7 +386,7 @@ export default function Booking() {
         const slotNumber = selectedWashSlot.split('-')[1];
         if (!slotNumber) return;
         const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
-        const res = await fetch(`http://192.168.1.219:5010/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
         if (!res.ok) return;
         const data = await res.json();
         
@@ -715,7 +715,7 @@ export default function Booking() {
       const parsed = JSON.parse(storedUser);
 
       toast.loading('Đang xử lý đặt lịch...', { id: 'booking' });
-      const response = await fetch('http://192.168.1.219:5010/api/bookings', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

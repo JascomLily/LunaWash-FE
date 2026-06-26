@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
+import toast from 'react-hot-toast';
 
 /**
  * Trang Đăng ký tài khoản - LunaWash.
@@ -15,6 +17,18 @@ export default function Register() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // States for Profile Update Modal
+  const [showProfileUpdate, setShowProfileUpdate] = useState(false);
+  const [tempUser, setTempUser] = useState(null);
+  const [updateFullName, setUpdateFullName] = useState('');
+  const [updatePhone, setUpdatePhone] = useState('');
+  const [updateAddress, setUpdateAddress] = useState('');
+
+  // States for OTP Modal
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
 
   useEffect(() => {
     // Hiệu ứng tương tác nền
@@ -61,7 +75,7 @@ export default function Register() {
 
     try {
       // GỌI API XUỐNG BACKEND: Đẩy thông tin form đăng ký lên Server qua hàm fetch
-      const response = await fetch('http://192.168.1.219:5010/api/Auth/register', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -83,13 +97,152 @@ export default function Register() {
         throw new Error(errText);
       }
 
-      alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập để bắt đầu sử dụng.');
-      navigate('/login');
+      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.');
+      setOtpEmail(email);
+      setShowOtpModal(true);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || 'Không thể kết nối đến máy chủ Backend.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    // This is the JWT token provided by Google
+    const googleToken = credentialResponse.credential;
+    setLoading(true);
+
+    try {
+      // Gửi Token này xuống Backend để xác thực và lấy Token hệ thống
+      // Đăng nhập hay đăng ký bằng Google đều có thể dùng chung 1 API (vì BE sẽ tự tạo user nếu chưa có)
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/google-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: googleToken
+        })
+      });
+
+      if (!response.ok) {
+        let errText = 'Đăng nhập Google thất bại.';
+        try {
+          const errData = await response.json();
+          if (errData.message) errText = errData.message;
+        } catch (jsonErr) {}
+        throw new Error(errText);
+      }
+
+      const data = await response.json();
+      
+      let tier = 'Member';
+      if (data.role === 'Admin') tier = 'Admin';
+      else if (data.role === 'Staff') tier = 'Staff';
+      else if (data.role === 'BranchManager') tier = 'BranchManager';
+      else if (data.role === 'TechnicalStaff') tier = 'TechnicalStaff';
+      else if (data.role === 'Customer') tier = data.tier || 'Member';
+
+      const loggedInUser = {
+        fullName: data.fullName,
+        email: data.email,
+        tier: tier,
+        branchId: data.branchId || null,
+        branchName: data.branchName || null,
+        token: data.token,
+        points: data.currentPoints || 0,
+        avatarUrl: null
+      };
+
+      if (data.requiresProfileUpdate) {
+        setTempUser(loggedInUser);
+        setUpdateFullName(data.fullName);
+        setShowProfileUpdate(true);
+        toast('Vui lòng bổ sung SĐT và Địa chỉ để hoàn tất!', { icon: 'ℹ️' });
+      } else {
+        localStorage.setItem('user', JSON.stringify(loggedInUser));
+        toast.success(`Đăng nhập bằng Google thành công! Chào mừng ${loggedInUser.fullName}`);
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Lỗi kết nối Backend xử lý Google Login.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Có lỗi xảy ra khi bật cửa sổ Đăng nhập Google.');
+  };
+
+  const handleProfileUpdateSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tempUser.token}`
+        },
+        body: JSON.stringify({
+          fullName: updateFullName,
+          phone: updatePhone,
+          address: updateAddress
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Lỗi cập nhật hồ sơ');
+      }
+
+      // Cập nhật lại thông tin mới nhất vào user local
+      const finalUser = { ...tempUser, fullName: updateFullName };
+      localStorage.setItem('user', JSON.stringify(finalUser));
+      
+      toast.success(`Tuyệt vời! Chào mừng ${finalUser.fullName} đến với LunaWash!`);
+      window.location.href = '/';
+    } catch (error) {
+      console.error(error);
+      toast.error('Có lỗi khi lưu thông tin. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: otpEmail, otp: otpCode })
+      });
+      if (!response.ok) throw new Error('Mã OTP không hợp lệ hoặc đã hết hạn.');
+      toast.success('Xác thực email thành công! Bạn có thể đăng nhập ngay bây giờ.');
+      setShowOtpModal(false);
+      navigate('/login');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: otpEmail })
+      });
+      if (!response.ok) throw new Error('Không thể gửi lại OTP.');
+      toast.success('Đã gửi lại mã OTP. Vui lòng kiểm tra hộp thư đến hoặc mục thư rác.');
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -282,6 +435,24 @@ export default function Register() {
                 'Đăng ký ngay'
               )}
             </button>
+            
+            <div className="relative flex items-center justify-center mt-6 mb-4">
+              <span className="absolute inset-x-0 h-px bg-outline-variant/30"></span>
+              <span className="relative bg-white px-4 text-sm text-on-surface-variant font-medium">Hoặc</span>
+            </div>
+
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="outline"
+                size="large"
+                width="100%"
+                text="signup_with"
+              />
+            </div>
+
             <div className="text-center pt-4">
               <p className="font-body-md text-body-md text-on-surface-variant">
                 Bạn đã có tài khoản? 
@@ -291,6 +462,95 @@ export default function Register() {
           </form>
         </div>
       </div>
+
+      {/* Modal Cập nhật thông tin bắt buộc */}
+      {showProfileUpdate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-[500px] w-full shadow-2xl">
+            <h2 className="text-2xl font-bold text-primary mb-2">Hoàn tất đăng ký</h2>
+            <p className="text-on-surface-variant mb-6 text-sm">
+              Tài khoản Google của bạn không kèm số điện thoại. Vui lòng bổ sung để LunaWash có thể liên hệ và tích điểm cho bạn nhé!
+            </p>
+            <form onSubmit={handleProfileUpdateSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-on-surface-variant ml-1">Họ và Tên</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  value={updateFullName}
+                  onChange={e => setUpdateFullName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-on-surface-variant ml-1">Số điện thoại</label>
+                <input 
+                  type="tel" 
+                  className="w-full px-4 py-3 border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  value={updatePhone}
+                  onChange={e => setUpdatePhone(e.target.value)}
+                  placeholder="Ví dụ: 0901234567"
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-on-surface-variant ml-1">Địa chỉ</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  value={updateAddress}
+                  onChange={e => setUpdateAddress(e.target.value)}
+                  placeholder="Nhập địa chỉ của bạn"
+                  required
+                />
+              </div>
+              <button 
+                type="submit" 
+                className="w-full bg-primary text-white font-bold py-3 mt-4 rounded-xl hover:bg-primary-container transition-all"
+                disabled={loading}
+              >
+                {loading ? 'Đang lưu...' : 'Lưu và vào hệ thống'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nhập OTP */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-[400px] w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+              <span className="material-symbols-outlined text-3xl">mark_email_read</span>
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-2">Xác thực Email</h2>
+            <p className="text-on-surface-variant mb-6 text-sm">
+              Chúng tôi đã gửi một mã OTP gồm 6 chữ số đến email <strong>{otpEmail}</strong>. Vui lòng nhập mã để kích hoạt tài khoản.
+            </p>
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <input 
+                type="text" 
+                maxLength="6"
+                className="w-full text-center text-2xl tracking-[10px] font-bold px-4 py-3 border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="------"
+                required
+              />
+              <button 
+                type="submit" 
+                className="w-full bg-primary text-white font-bold py-3 mt-4 rounded-xl hover:bg-primary-container transition-all"
+                disabled={loading || otpCode.length < 6}
+              >
+                {loading ? 'Đang xác thực...' : 'Xác nhận OTP'}
+              </button>
+            </form>
+            <p className="mt-6 text-sm text-on-surface-variant">
+              Chưa nhận được mã? <button onClick={handleResendOtp} type="button" className="text-primary font-bold hover:underline">Gửi lại</button>
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

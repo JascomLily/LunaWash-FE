@@ -46,7 +46,7 @@ export default function BookingHistory() {
         comment: reviewComment
       };
 
-      const res = await fetch('http://192.168.1.219:5010/api/reviews', {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export default function BookingHistory() {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
-      const res = await fetch('http://192.168.1.219:5010/api/bookings/history', {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
         headers: { 'Authorization': `Bearer ${parsed.token}` }
       });
       if (res.ok) {
@@ -153,7 +153,7 @@ export default function BookingHistory() {
         if (!storedUser) return;
         const parsed = JSON.parse(storedUser);
         
-        const res = await fetch(`http://192.168.1.219:5010/api/bookings/${activeBooking.id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
@@ -182,7 +182,7 @@ export default function BookingHistory() {
         if (!storedUser) return;
         const parsed = JSON.parse(storedUser);
         
-        const res = await fetch(`http://192.168.1.219:5010/api/reviews/${bookingId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/${bookingId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
@@ -404,14 +404,14 @@ export default function BookingHistory() {
                         {item.rating ? (
                           <div className="flex items-center justify-center gap-1.5">
                             <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-bold text-xs flex items-center gap-1 shadow-sm">
-                              ⭐ {item.rating}.0
+                              ⭐ {Number(item.rating).toFixed(1)}
                             </span>
                             <button 
-                              onClick={() => handleDeleteReview(item.id)} 
-                              className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-full transition-colors" 
-                              title="Xóa đánh giá"
+                              onClick={() => navigate('/feedback', { state: { bookingId: item.id, booking: item, isEdit: true } })} 
+                              className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors" 
+                              title="Chỉnh sửa đánh giá"
                             >
-                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
                           </div>
                         ) : (

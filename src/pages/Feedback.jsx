@@ -10,6 +10,7 @@ export default function Feedback() {
   const location = useLocation();
   const booking = location.state?.booking;
   const bookingId = location.state?.bookingId;
+  const isEdit = location.state?.isEdit || false;
 
   // Trạng thái các mục đánh giá
   const [overallRating, setOverallRating] = useState(0);
@@ -18,14 +19,53 @@ export default function Feedback() {
   const [staffRating, setStaffRating] = useState(0);
 
   const [comment, setComment] = useState('');
-  const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Xử lý kéo thả và tải ảnh lên mô phỏng
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploadedFileName(file.name);
+  React.useEffect(() => {
+    if (isEdit && bookingId) {
+      const fetchReview = async () => {
+        try {
+          const res = await fetch(import.meta.env.VITE_API_URL + '/api/reviews/booking/' + bookingId, {
+            headers: {
+              'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setCleanlinessRating(data.cleanlinessRating || 0);
+            setSpeedRating(data.speedRating || 0);
+            setStaffRating(data.staffRating || 0);
+            setComment(data.comment || '');
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      };
+      fetchReview();
+    }
+  }, [isEdit, bookingId]);
+
+
+
+  const handleDelete = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('user'));
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/reviews/' + bookingId, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${parsed.token}`
+          }
+        });
+        if (res.ok) {
+          alert('Đã xóa đánh giá thành công.');
+          navigate('/history');
+        } else {
+          alert('Không thể xóa đánh giá, thử lại sau.');
+        }
+      } catch (err) {
+        alert('Lỗi kết nối đến máy chủ.');
+      }
     }
   };
 
@@ -35,8 +75,9 @@ export default function Feedback() {
       alert('Không tìm thấy thông tin chuyến xe hợp lệ để đánh giá!');
       return;
     }
-    if (overallRating === 0) {
-      alert('Vui lòng chọn mức độ trải nghiệm tổng thể của bạn!');
+    
+    if (cleanlinessRating === 0 || speedRating === 0 || staffRating === 0) {
+      alert('Vui lòng chọn mức độ hài lòng cho các tiêu chí chi tiết!');
       return;
     }
 
@@ -46,17 +87,25 @@ export default function Feedback() {
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
       
+      const calculatedOverall = parseFloat(((cleanlinessRating + speedRating + staffRating) / 3).toFixed(1));
+
       const payload = {
         bookingId: bookingId,
-        serviceRating: overallRating,
+        serviceRating: calculatedOverall,
         cleanlinessRating,
         speedRating,
         staffRating,
         comment: comment
       };
 
-      const res = await fetch('http://192.168.1.219:5010/api/reviews', {
-        method: 'POST',
+      const url = isEdit 
+        ? import.meta.env.VITE_API_URL + '/api/reviews/' + bookingId
+        : import.meta.env.VITE_API_URL + '/api/reviews';
+
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${parsed.token}`
@@ -68,7 +117,8 @@ export default function Feedback() {
         alert('Cảm ơn đóng góp của bạn! Đánh giá đã được gửi đi thành công.');
         navigate('/history');
       } else {
-        alert('Không thể gửi đánh giá, vui lòng thử lại sau.');
+        const errData = await res.json().catch(() => ({}));
+        alert('Không thể gửi đánh giá: ' + (errData.message || res.statusText || 'Lỗi không xác định'));
       }
     } catch(err) {
       alert('Lỗi kết nối đến máy chủ.');
@@ -139,13 +189,7 @@ export default function Feedback() {
             </div>
           )}
 
-          {/* BOX 1: TRẢI NGHIỆM TỔNG THỂ */}
-          <div className="bg-white border border-[#e2e8f0] rounded-3xl p-6 shadow-sm text-center space-y-4">
-            <h3 className="font-extrabold text-[#1e293b] text-sm tracking-wide uppercase">
-              Trải nghiệm tổng thể của bạn?
-            </h3>
-            <StarRating rating={overallRating} setRating={setOverallRating} size="text-3xl" />
-          </div>
+
 
           {/* BOX 2: CÁC TIÊU CHÍ CHI TIẾT */}
           <div className="bg-white border border-[#e2e8f0] rounded-3xl p-6 shadow-sm space-y-5">
@@ -193,46 +237,32 @@ export default function Feedback() {
             />
           </div>
 
-          {/* BOX 4: TẢI ẢNH XE LÊN */}
-          <div className="bg-white border border-[#e2e8f0] rounded-3xl p-6 shadow-sm space-y-3">
-            <h3 className="font-extrabold text-[#00236f] text-sm tracking-wide">
-              Tải lên hình ảnh xe của bạn (tùy chọn)
-            </h3>
-            <label className="border-2 border-dashed border-[#cbd5e1] hover:border-[#00236f]/60 bg-[#f8fafc] rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 gap-3 select-none">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <span className="material-symbols-outlined text-4xl text-[#00236f] font-light">cloud_upload</span>
-              {uploadedFileName ? (
-                <div>
-                  <p className="text-xs font-bold text-[#00236f]">{uploadedFileName}</p>
-                  <p className="text-[10px] text-emerald-600 mt-1">Đã chọn ảnh thành công</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-xs font-extrabold text-[#1e293b]">Nhấp hoặc kéo tệp vào đây để tải lên</p>
-                  <p className="text-[10px] text-outline mt-1">Hỗ trợ JPG, PNG (Tối đa 10MB)</p>
-                </div>
-              )}
-            </label>
-          </div>
 
-          {/* NÚT GỬI ĐÁNH GIÁ */}
-          <div className="flex justify-center pt-2">
+
+          {/* NÚT GỬI ĐÁNH GIÁ & NÚT XÓA */}
+          <div className="flex justify-center gap-4 pt-2">
+            {isEdit && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-8 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+              >
+                <span>Xóa đánh giá</span>
+                <span className="material-symbols-outlined text-base">delete</span>
+              </button>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-8 py-3.5 bg-[#00236f] hover:bg-[#00174b] text-white rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
-                <>Đang gửi đánh giá...</>
+                <>{isEdit ? 'Đang cập nhật...' : 'Đang gửi đánh giá...'}</>
               ) : (
                 <>
-                  <span>Gửi đánh giá</span>
-                  <span className="material-symbols-outlined text-base">send</span>
+                  <span>{isEdit ? 'Cập nhật' : 'Gửi đánh giá'}</span>
+                  <span className="material-symbols-outlined text-base">{isEdit ? 'update' : 'send'}</span>
                 </>
               )}
             </button>
