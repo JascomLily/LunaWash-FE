@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'http://localhost:5010/api/services';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/services`;
 
 const AVAILABLE_ICONS = [
   'water_drop', 'cool_to_dry', 'diamond', 'star', 
