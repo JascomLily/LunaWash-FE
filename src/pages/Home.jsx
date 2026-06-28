@@ -39,6 +39,31 @@ export default function Home() {
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  const [mainPackages, setMainPackages] = useState([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+
+  // Lấy danh sách các gói dịch vụ (MainPackage)
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch('http://localhost:5010/api/services');
+        if (res.ok) {
+          const data = await res.json();
+          // Lọc gói tự động (Package), đang kích hoạt, và chỉ lấy tối đa 3 gói đầu
+          const activeMain = data
+            .filter(s => s.serviceType === 'Package' && s.isActive)
+            .slice(0, 3);
+          setMainPackages(activeMain);
+        }
+      } catch (e) {
+        console.error("Lỗi khi tải gói dịch vụ:", e);
+      } finally {
+        setIsLoadingPackages(false);
+      }
+    };
+    fetchPackages();
+  }, []);
+
   const [banners, setBanners] = useState([
     { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
     { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
@@ -235,84 +260,71 @@ export default function Home() {
           {/* BA GÓI DỊCH VỤ */}
           <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-gutter">
             
-            {/* GÓI 1: Cơ bản */}
-            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  water_drop
-                </span>
+            {isLoadingPackages ? (
+              <div className="col-span-full text-center py-10 text-outline">
+                <span className="material-symbols-outlined animate-spin text-4xl mb-2">hourglass_empty</span>
+                <p>Đang tải danh sách dịch vụ...</p>
               </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Cơ bản</h3>
-                <span className="text-[10px] text-outline font-bold">~15 phút</span>
+            ) : mainPackages.length === 0 ? (
+              <div className="col-span-full text-center py-10 text-outline">
+                <span className="material-symbols-outlined text-4xl mb-2">info</span>
+                <p>Hiện chưa có gói dịch vụ nào.</p>
               </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Rửa bề mặt, rửa kính, sấy khô.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">150.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Cơ bản')}
-                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
+            ) : (
+              mainPackages.map((pkg, index) => {
+                // Xác định gói phổ biến (nếu admin set isPopular, hoặc fallback lấy gói thứ 2 nếu chỉ có 3 gói)
+                const isPopular = pkg.isPopular || (mainPackages.length >= 3 && index === 1);
+                
+                // Lấy giá tiền và thời gian (hiển thị giá min nếu có nhiều loại xe)
+                const price = pkg.prices && pkg.prices.length > 0 
+                  ? Math.min(...pkg.prices.map(p => p.price)) 
+                  : 0;
+                const duration = pkg.prices && pkg.prices.length > 0 
+                  ? pkg.prices[0].durationMinutes 
+                  : 0;
 
-            {/* GÓI 2: Nâng cao (Nổi bật nhất - PHỔ BIẾN) */}
-            <div className="relative bg-surface-container-lowest p-7 rounded-3xl border-2 border-[#00236f] shadow-lg hover:shadow-2xl transition-all group flex flex-col h-full overflow-hidden">
-              {/* Nhãn PHỔ BIẾN ở góc trên bên phải */}
-              <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
-                Phổ Biến
-              </div>
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  cool_to_dry
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Nâng cao</h3>
-                <span className="text-[10px] text-outline font-bold">~20 phút</span>
-              </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Tất cả gói Cơ bản và Rửa gầm xe.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">250.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Nâng cao')}
-                  className="w-full py-3 bg-[#00236f] hover:bg-primary-container text-white font-bold rounded-xl transition-all text-sm shadow-md hover:shadow-lg active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
-
-            {/* GÓI 3: Cao cấp */}
-            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  diamond
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Cao cấp</h3>
-                <span className="text-[10px] text-outline font-bold">~30 phút</span>
-              </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Dịch vụ cả 2 gói trên kèm đánh bóng.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">500.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Cao cấp')}
-                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
+                return (
+                  <div key={pkg.id} className={`relative bg-surface-container-lowest p-7 rounded-3xl transition-all group flex flex-col h-full overflow-hidden ${isPopular ? 'border-2 border-[#00236f] shadow-lg hover:shadow-2xl' : 'border border-outline-variant/60 hover:border-primary/45 hover:shadow-xl'}`}>
+                    {isPopular && (
+                      <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
+                        Phổ Biến
+                      </div>
+                    )}
+                    <div className="mb-5 text-primary">
+                      <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {pkg.iconName || 'water_drop'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline mb-2">
+                      <h3 className="font-bold text-lg text-on-surface">{pkg.serviceName}</h3>
+                      <span className="text-[10px] text-outline font-bold">~{duration} phút</span>
+                    </div>
+                    <div className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed flex flex-col gap-2">
+                      <p>{pkg.description}</p>
+                      {pkg.serviceFeatures && pkg.serviceFeatures.length > 0 && (
+                        <ul className="space-y-1.5 mt-2 border-t border-outline-variant/30 pt-3">
+                          {pkg.serviceFeatures.map((feat, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-xs text-on-surface-variant">
+                              <span className="material-symbols-outlined text-[14px] text-green-600 mt-0.5">check_circle</span>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-outline-variant/30">
+                      <p className="text-2xl font-black text-primary mb-5">{price.toLocaleString('vi-VN')}đ</p>
+                      <button 
+                        onClick={() => handleActionClick(pkg.serviceName)}
+                        className={`w-full py-3 font-bold rounded-xl transition-all text-sm shadow-sm active:scale-95 ${isPopular ? 'bg-[#00236f] hover:bg-primary-container text-white hover:shadow-lg' : 'border border-primary text-primary hover:bg-primary hover:text-white hover:shadow'}`}
+                      >
+                        Chọn ngay
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
 
           </div>
         </div>
