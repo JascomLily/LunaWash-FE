@@ -132,12 +132,39 @@ const INTERIOR_CLEAN_SPECS = {
 export default function Booking() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [promoCode, setPromoCode] = useState(location.state?.promoCode || '');
   const navState = location.state || {};
 
   // Cuộn lên đầu trang khi component được mount (đặc biệt khi chuyển từ trang chủ sang)
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  const [highlightPromo, setHighlightPromo] = useState(false);
+  const toastShownRef = React.useRef(false);
+
+  useEffect(() => {
+    if (location.state?.promoCode && !toastShownRef.current) {
+      toastShownRef.current = true;
+      toast.success(`Đã tự động áp dụng mã: ${location.state.promoCode}`, {
+        icon: '🎁',
+        duration: 4000,
+        style: {
+          borderRadius: '16px',
+          background: '#ffffff',
+          color: '#00236f',
+          fontWeight: '900',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          border: '2px solid #4cd7f6'
+        },
+      });
+      setHighlightPromo(true);
+      setTimeout(() => setHighlightPromo(false), 3000);
+      
+      // Clear the promoCode from history state so it doesn't trigger again on reload
+      navigate(location.pathname, { replace: true, state: { ...navState, promoCode: undefined } });
+    }
+  }, [location.state, location.pathname, navigate, navState]);
 
   // BƯỚC THIẾT LẬP STATE
   const [selectedBranch, setSelectedBranch] = useState(navState.branchId || '');
@@ -156,6 +183,31 @@ export default function Booking() {
   const interiorSpecs = INTERIOR_CLEAN_SPECS[selectedVehicleTypeId] || INTERIOR_CLEAN_SPECS['VT-OTO-4C'];
 
   const numSlots = includeInteriorClean ? interiorSpecs.slots : 1;
+
+  // Simulate Promo Code Verification
+  const [discountInfo, setDiscountInfo] = useState(null);
+  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
+
+  useEffect(() => {
+    if (!promoCode || promoCode.trim() === '') {
+      setDiscountInfo(null);
+      setIsVerifyingPromo(false);
+      return;
+    }
+
+    setIsVerifyingPromo(true);
+    setDiscountInfo(null);
+
+    const timer = setTimeout(() => {
+      setIsVerifyingPromo(false);
+      // Extract numbers from promo code for a fun prototype trick, default to 10 if none found
+      const match = promoCode.match(/\d+/);
+      const percent = match ? parseInt(match[0], 10) : 10;
+      setDiscountInfo(`Mã hợp lệ! Bạn được giảm ${percent}% cho dịch vụ này.`);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [promoCode]);
 
   // Lỗi khi chọn slot giờ không hợp lệ
   const [slotError, setSlotError] = useState(null);
@@ -1525,15 +1577,37 @@ export default function Booking() {
                 Xem thêm mã giảm giá
               </button>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 mb-1.5">
               <input 
                 type="text" 
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Nhập mã giảm giá..." 
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#4cd7f6]/50 transition-colors"
+                className={`flex-1 bg-white/5 border rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none transition-all uppercase ${
+                  highlightPromo 
+                    ? 'border-[#4cd7f6] ring-2 ring-[#4cd7f6]/50 shadow-[0_0_15px_rgba(76,215,246,0.3)] bg-[#4cd7f6]/10' 
+                    : discountInfo
+                      ? 'border-emerald-400 focus:border-emerald-400 bg-emerald-400/5'
+                      : 'border-white/10 focus:border-[#4cd7f6]/50'
+                }`}
               />
               <button className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
                 ÁP MÃ
               </button>
+            </div>
+            {/* Discount info text */}
+            <div className="h-4">
+              {isVerifyingPromo ? (
+                <span className="text-[10px] text-white/60 italic flex items-center gap-1 animate-pulse">
+                  <span className="material-symbols-outlined text-[12px]">sync</span>
+                  Đang kiểm tra mã...
+                </span>
+              ) : discountInfo ? (
+                <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fade-in-up">
+                  <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                  {discountInfo}
+                </span>
+              ) : null}
             </div>
           </div>
 
