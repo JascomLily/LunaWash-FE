@@ -26,7 +26,7 @@ export default function TechnicalPage() {
   const [selectedTask, setSelectedTask] = useState(null);
 
   const branchId = storedUser?.branchId || 'BR-HCM-01';
-  const baseUrl = `http://${window.location.hostname}:5010/api/equipments`;
+  const baseUrl = `${import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5010`}/api/equipments`;
 
   const fetchData = async () => {
     try {
