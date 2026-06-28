@@ -1,6 +1,6 @@
 import React from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -19,6 +19,16 @@ import ManagerStaff from './pages/ManagerStaff';
 import TechnicalPage from './pages/TechnicalPage';
 import ForgotPassword from './pages/ForgotPassword';
 import FloatingChatWidget from './components/FloatingChatWidget';
+import AdminMainLayout from './components/Admin/AdminMainLayout';
+import AdminSettingsLayout from './components/Admin/AdminSettingsLayout';
+import AdminServicePackages from './pages/Admin/AdminServicePackages';
+import AdminMembership from './pages/Admin/AdminMembership';
+import AdminPromotions from './pages/Admin/AdminPromotions';
+import AdminAds from './pages/Admin/AdminAds';
+import AdminEmployees from './pages/Admin/AdminEmployees';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminFeedback from './pages/Admin/AdminFeedback';
+import AdminTransactions from './pages/Admin/AdminTransactions';
 
 /**
  * Route guard để bảo vệ các tuyến đường Staff và Manager
@@ -51,6 +61,19 @@ function ProtectedRoute({ children, allowedRoles }) {
 
 import { Toaster } from 'react-hot-toast';
 
+function MainLayout() {
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-on-background">
+      <Navbar />
+      <div className="flex-grow">
+        <Outlet />
+      </div>
+      <Footer />
+      <FloatingChatWidget />
+    </div>
+  );
+}
+
 /**
  * App component chinh de thiet lap dinh tuyen (Routing) cac trang giao dien
  * va ap dung Navbar / Footer dong bo cho toan bo he thong.
@@ -62,13 +85,9 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <Router>
         <Toaster position="top-right" reverseOrder={false} />
-      <div className="flex flex-col min-h-screen bg-background text-on-background">
-        {/* Thanh dieu huong dinh kem */}
-        <Navbar />
-
-        {/* Khong gian noi dung dong */}
-        <div className="flex-grow">
-          <Routes>
+        <Routes>
+          {/* Main Website Routes */}
+          <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -106,15 +125,24 @@ function App() {
                 <TechnicalPage />
               </ProtectedRoute>
             } />
-          </Routes>
-        </div>
+          </Route>
 
-        {/* Chan trang dong bo */}
-        <Footer />
-        
-        {/* Global AI Chat Widget */}
-        <FloatingChatWidget />
-      </div>
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminMainLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="employees" element={<AdminEmployees />} />
+            <Route path="feedback" element={<AdminFeedback />} />
+            <Route path="settings" element={<AdminSettingsLayout />}>
+              <Route path="services" element={<AdminServicePackages />} />
+              <Route path="membership" element={<AdminMembership />} />
+              <Route path="promotions" element={<AdminPromotions />} />
+              <Route path="ads" element={<AdminAds />} />
+              <Route path="transactions" element={<AdminTransactions />} />
+              <Route index element={<Navigate to="services" replace />} />
+            </Route>
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+        </Routes>
       </Router>
     </GoogleOAuthProvider>
   );
