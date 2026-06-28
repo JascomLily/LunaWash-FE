@@ -46,7 +46,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const res = await fetch('http://localhost:5010/api/services');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/services`);
         if (res.ok) {
           const data = await res.json();
           // Lọc gói tự động (Package), đang kích hoạt, và chỉ lấy tối đa 3 gói đầu
