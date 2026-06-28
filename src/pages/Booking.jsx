@@ -804,8 +804,28 @@ export default function Booking() {
       toast.success('Đặt lịch thành công!', { id: 'booking' });
       
       if (selectedMethod === 'vnpay') {
-        // Redirect to mock VNPay payment with real booking ID and cost
-        navigate(`/payment?status=success&bookingId=${responseData.id}&amount=${totalCost}`);
+        try {
+          // Gọi API tạo URL thanh toán VNPAY từ Backend
+          const payRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/create-vnpay-url/${responseData.id}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${parsed.token}`
+            }
+          });
+          if (payRes.ok) {
+            const payData = await payRes.json();
+            if (payData.url) {
+              // Chuyển hướng sang cổng thanh toán VNPAY (Hiển thị QR & thẻ ngân hàng)
+              window.location.href = payData.url;
+              return;
+            }
+          }
+          throw new Error('Không thể tạo liên kết thanh toán VNPAY.');
+        } catch (payErr) {
+          console.error(payErr);
+          toast.error('Đặt lịch thành công nhưng không tạo được liên kết thanh toán. Vui lòng thanh toán tại quầy.', { id: 'booking' });
+          navigate('/history', { state: bookingState });
+        }
       } else {
         navigate('/history', { state: bookingState });
       }
