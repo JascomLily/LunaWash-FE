@@ -39,6 +39,12 @@ export default function Home() {
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  const [banners, setBanners] = useState([
+    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
+    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
+    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
+  ]);
+
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
@@ -66,6 +72,13 @@ export default function Home() {
       } catch (e) {
         console.error(e);
       }
+    }
+
+    const storedBanners = localStorage.getItem('ads_banners');
+    if (storedBanners) {
+      try {
+        setBanners(JSON.parse(storedBanners));
+      } catch (e) {}
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -176,27 +189,27 @@ export default function Home() {
           <div className="animate-marquee flex gap-6">
             {/* Set 1 */}
             <div className="flex gap-6">
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
+              {banners.map((b) => (
+                <div 
+                  key={b.id} 
+                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                >
+                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                </div>
+              ))}
             </div>
             {/* Set 2 (Duplicated for infinite scroll effect) */}
             <div className="flex gap-6">
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
+              {banners.map((b) => (
+                <div 
+                  key={`dup-${b.id}`} 
+                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                >
+                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                </div>
+              ))}
             </div>
           </div>
         </div>
