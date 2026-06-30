@@ -10,6 +10,8 @@ export default function Payment() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Xóa cờ đang chờ thanh toán nếu user vào trang kết quả này (dù thành công hay thất bại)
+    sessionStorage.removeItem('pendingVnpayBooking');
     // Kích hoạt animation sau khi mount
     setTimeout(() => setIsLoaded(true), 100);
   }, []);
