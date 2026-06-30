@@ -27,13 +27,11 @@ export default function Payment() {
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);
-          fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${currentBookingId}/status`, {
-            method: 'PUT',
+          fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${currentBookingId}`, {
+            method: 'DELETE',
             headers: {
-              'Content-Type': 'application/json',
               'Authorization': `Bearer ${parsed.token}`
-            },
-            body: JSON.stringify("Cancelled")
+            }
           }).catch(() => {});
         } catch (e) {}
       }
