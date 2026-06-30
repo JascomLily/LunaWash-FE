@@ -108,23 +108,66 @@ export default function Booking() {
   const [highlightPromo, setHighlightPromo] = useState(false);
   const toastShownRef = React.useRef(false);
 
+  // Promo Code Verification
+  const [discountInfo, setDiscountInfo] = useState(null);
+  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState(null);
+
+  const handleApplyPromo = async (codeToApply) => {
+    // If called from button onClick, codeToApply is an Event object
+    const code = (typeof codeToApply === 'string' ? codeToApply : promoCode)?.trim();
+    if (!code) {
+      setDiscountInfo(null);
+      setPromoError(null);
+      return;
+    }
+
+    setIsVerifyingPromo(true);
+    setDiscountInfo(null);
+    setPromoError(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const res = await fetch(`${baseUrl}/api/promotions/validate?code=${encodeURIComponent(code)}`);
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error(`Server returned non-JSON. Status: ${res.status}`);
+      }
+
+      if (data.success) {
+        setDiscountInfo(data.data);
+        toast.success(`Áp dụng mã ${data.data.name || code} thành công!`, {
+          icon: '🎁',
+          duration: 4000,
+          style: {
+            borderRadius: '16px',
+            background: '#ffffff',
+            color: '#00236f',
+            fontWeight: '900',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            border: '2px solid #4cd7f6'
+          },
+        });
+        setHighlightPromo(true);
+        setTimeout(() => setHighlightPromo(false), 3000);
+      } else {
+        setPromoError(data.message || 'Mã khuyến mãi không hợp lệ.');
+        toast.error(data.message || 'Mã khuyến mãi không hợp lệ.');
+      }
+    } catch (error) {
+      console.error('Lỗi khi check mã:', error);
+      setPromoError(`Lỗi kết nối: ${error.message}`);
+    } finally {
+      setIsVerifyingPromo(false);
+    }
+  };
+
   useEffect(() => {
     if (location.state?.promoCode && !toastShownRef.current) {
       toastShownRef.current = true;
-      toast.success(`Đã tự động áp dụng mã: ${location.state.promoCode}`, {
-        icon: '🎁',
-        duration: 4000,
-        style: {
-          borderRadius: '16px',
-          background: '#ffffff',
-          color: '#00236f',
-          fontWeight: '900',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-          border: '2px solid #4cd7f6'
-        },
-      });
-      setHighlightPromo(true);
-      setTimeout(() => setHighlightPromo(false), 3000);
+      handleApplyPromo(location.state.promoCode);
       
       // Clear the promoCode from history state so it doesn't trigger again on reload
       navigate(location.pathname, { replace: true, state: { ...navState, promoCode: undefined } });
@@ -193,30 +236,7 @@ export default function Booking() {
   const numSlots = totalDurationMinutes > 0 ? Math.ceil(totalDurationMinutes / 45) : 1;
   // -------------------------
 
-  // Simulate Promo Code Verification
-  const [discountInfo, setDiscountInfo] = useState(null);
-  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
 
-  useEffect(() => {
-    if (!promoCode || promoCode.trim() === '') {
-      setDiscountInfo(null);
-      setIsVerifyingPromo(false);
-      return;
-    }
-
-    setIsVerifyingPromo(true);
-    setDiscountInfo(null);
-
-    const timer = setTimeout(() => {
-      setIsVerifyingPromo(false);
-      // Extract numbers from promo code for a fun prototype trick, default to 10 if none found
-      const match = promoCode.match(/\d+/);
-      const percent = match ? parseInt(match[0], 10) : 10;
-      setDiscountInfo(`Mã hợp lệ! Bạn được giảm ${percent}% cho dịch vụ này.`);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [promoCode]);
 
   // Lỗi khi chọn slot giờ không hợp lệ
   const [slotError, setSlotError] = useState(null);
@@ -642,7 +662,9 @@ export default function Booking() {
   const activeAddOnList = addOnServices.filter(a => selectedAddOns.includes(a.id));
   const interiorCost = activeAddOnList.reduce((sum, a) => sum + (a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || a.prices?.[0]?.price || 0), 0);
   
-  const totalCost = baseCost + interiorCost;
+  const baseTotal = baseCost + interiorCost;
+  const actualDiscountPercent = discountInfo?.discountPercent || 0;
+  const totalCost = baseTotal - (baseTotal * actualDiscountPercent / 100);
 
   const activePackageDuration = activePackage?.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || activePackage?.prices?.[0]?.durationMinutes || 0;
   const interiorDuration = activeAddOnList.reduce((sum, a) => sum + (a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || a.prices?.[0]?.durationMinutes || 0), 0);
@@ -769,7 +791,8 @@ export default function Booking() {
       ScheduledStartTime: scheduledStartTime,
       Duration: totalDuration,
       Notes: notesStr,
-      ServicePriceIds: serviceIds
+      ServicePriceIds: serviceIds,
+      PromoCode: discountInfo ? promoCode : undefined
     };
 
     const bookingState = {
@@ -1640,7 +1663,9 @@ export default function Booking() {
                       : 'border-white/10 focus:border-[#4cd7f6]/50'
                 }`}
               />
-              <button className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
+              <button 
+                onClick={handleApplyPromo}
+                className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
                 ÁP MÃ
               </button>
             </div>
@@ -1654,7 +1679,12 @@ export default function Booking() {
               ) : discountInfo ? (
                 <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fade-in-up">
                   <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                  {discountInfo}
+                  Mã hợp lệ! Bạn được giảm {discountInfo.discountPercent}% cho dịch vụ này.
+                </span>
+              ) : promoError ? (
+                <span className="text-[10px] text-error font-bold flex items-center gap-1 animate-fade-in-up text-red-400">
+                  <span className="material-symbols-outlined text-[12px]">error</span>
+                  {promoError}
                 </span>
               ) : null}
             </div>
