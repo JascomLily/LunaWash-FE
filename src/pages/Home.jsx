@@ -240,6 +240,44 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SECTION VỀ CHÚNG TÔI */}
+      <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="about">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <span className="inline-block bg-sky-100 text-[#00236f] px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest select-none">
+              Về LunaWash
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#00236f] tracking-tight leading-tight">
+              Hệ thống chăm sóc xe thông minh hàng đầu
+            </h2>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              LunaWash ra đời với sứ mệnh mang đến trải nghiệm rửa xe và chăm sóc ô tô hoàn toàn mới. Ứng dụng công nghệ tự động hóa vào quy trình quản lý, chúng tôi giúp khách hàng tiết kiệm tối đa thời gian chờ đợi.
+            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Hệ thống đặt lịch tự động, không chờ đợi</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Sử dụng dung dịch chăm sóc xe cao cấp</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Đội ngũ kỹ thuật viên chuyên nghiệp, tận tâm</span>
+              </li>
+            </ul>
+          </div>
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[400px]">
+            <img 
+              src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?q=80&w=2070&auto=format&fit=crop" 
+              alt="LunaWash Facility" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* SECTION 2: CHỌN GÓI DỊCH VỤ PHÙ HỢP */}
       <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="packages">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-gutter items-center">
@@ -376,6 +414,50 @@ export default function Home() {
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* SECTION FAQ (HỎI ĐÁP) */}
+      <section className="py-16 bg-[#f8fafc] border-t border-outline-variant/20" id="faq">
+        <div className="max-w-3xl mx-auto px-margin-desktop">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-sky-100 text-[#00236f] px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest select-none mb-4">
+              Hỗ trợ
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#00236f] tracking-tight">Câu hỏi thường gặp</h2>
+          </div>
+          <div className="space-y-4">
+            {/* FAQ Item 1 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Tôi cần đặt lịch trước bao lâu?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                Để đảm bảo trải nghiệm tốt nhất và không phải chờ đợi, Quý khách nên đặt lịch trước ít nhất 30 phút. Tuy nhiên, hệ thống vẫn cho phép đặt lịch lấy ngay nếu trạm đang có chỗ trống.
+              </p>
+            </div>
+            {/* FAQ Item 2 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Hủy lịch có bị mất phí không?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                Việc hủy lịch là hoàn toàn miễn phí nếu Quý khách thao tác hủy trên hệ thống ít nhất 30 phút trước giờ hẹn.
+              </p>
+            </div>
+            {/* FAQ Item 3 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Hệ thống hỗ trợ những phương thức thanh toán nào?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                LunaWash hỗ trợ thanh toán linh hoạt bằng tiền mặt tại trạm, quẹt thẻ thẻ ngân hàng, hoặc thanh toán trực tuyến qua VNPAY / Momo.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
