@@ -27,12 +27,38 @@ export default function Payment() {
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);
-          fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${currentBookingId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${parsed.token}`
+          
+          const doCancel = async () => {
+            let idToDelete = currentBookingId;
+            
+            // Nếu mất localStorage và URL trả về BKG-XXX, ta fetch lịch sử để tìm đúng ID
+            if (!realBookingId || idToDelete.toString().startsWith('BKG')) {
+              try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/history`, {
+                  headers: { 'Authorization': `Bearer ${parsed.token}` }
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const pendingBooking = data.find(b => b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending'));
+                  if (pendingBooking) {
+                    idToDelete = pendingBooking.id;
+                  }
+                }
+              } catch (e) {}
             }
-          }).catch(() => {});
+            
+            // Xóa booking
+            if (idToDelete && idToDelete !== 'BK-123456' && !idToDelete.toString().startsWith('BKG')) {
+              fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${idToDelete}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${parsed.token}`
+                }
+              }).catch(() => {});
+            }
+          };
+          
+          doCancel();
         } catch (e) {}
       }
     }
