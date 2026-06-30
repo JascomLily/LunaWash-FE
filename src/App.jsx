@@ -12,6 +12,8 @@ import BookingHistory from './pages/BookingHistory';
 import Support from './pages/Support';
 import Payment from './pages/Payment';
 import Feedback from './pages/Feedback';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import StaffQueue from './pages/StaffQueue';
 import BranchHistory from './pages/BranchHistory';
 import BranchFeedback from './pages/BranchFeedback';
@@ -98,6 +100,8 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/feedback" element={<Feedback />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {/* Phân hệ Nhân viên & Quản lý */}
             <Route path="/staff/queue" element={

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 /**
  * Footer component dùng chung cho toàn bộ giao diện LunaWash.
@@ -36,19 +37,19 @@ export default function Footer() {
             </h4>
             <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#about">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/#about">
                   Về chúng tôi
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#packages">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/#packages">
                   Bảng giá
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#locations">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/#locations">
                   Chi nhánh
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -60,19 +61,19 @@ export default function Footer() {
             </h4>
             <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#support-center">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/support">
                   Trung tâm hỗ trợ
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#faq">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/#faq">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#contact">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/#contact">
                   Liên hệ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -84,14 +85,14 @@ export default function Footer() {
             </h4>
             <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#privacy">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/privacy">
                   Bảo mật
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="text-white/60 hover:text-white transition-colors" href="#terms">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/terms">
                   Điều khoản
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
