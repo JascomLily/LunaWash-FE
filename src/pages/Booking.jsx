@@ -732,10 +732,17 @@ export default function Booking() {
     if (!activeVeh) return;
 
     let serviceIds = [];
-    if (selectedPackage === 'PK-CB') serviceIds.push('PRC-4C-BSC');
-    else if (selectedPackage === 'PK-NC') serviceIds.push('PRC-4C-ADV');
-    else if (selectedPackage === 'PK-CC') serviceIds.push('PRC-4C-PRE');
-    activeAddOnList.forEach(a => serviceIds.push(a.id));
+    if (activePackage && activePackage.prices) {
+      const pInfo = activePackage.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || activePackage.prices[0];
+      if (pInfo) serviceIds.push(pInfo.id);
+    }
+    
+    activeAddOnList.forEach(a => {
+      if (a.prices) {
+        const pInfo = a.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || a.prices[0];
+        if (pInfo) serviceIds.push(pInfo.id);
+      }
+    });
 
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
     if (startIndex === -1) {
