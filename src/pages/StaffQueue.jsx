@@ -257,7 +257,7 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasInterior: (dto.services?.toLowerCase().includes('nội thất') || dto.packageName?.toLowerCase().includes('nội thất')),
+            hasInterior: (dto.services?.toLowerCase()?.includes('nội thất') || dto.packageName?.toLowerCase()?.includes('nội thất')),
             price: dto.totalPrice,
             customerName: 'Khách hàng',
             notes: dto.services || dto.extras,
@@ -325,9 +325,9 @@ export default function StaffQueue() {
 
   // Search & Filter
   const filteredBookings = branchBookings.filter(b => {
-    const matchesSearch = b.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          b.packageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          b.vehicleType.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (b.licensePlate || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (b.packageName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (b.vehicleType || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
