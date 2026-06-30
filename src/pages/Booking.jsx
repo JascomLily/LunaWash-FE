@@ -732,15 +732,17 @@ export default function Booking() {
     if (!activeVeh) return;
 
     let serviceIds = [];
-    if (activePackage && activePackage.prices) {
-      const pInfo = activePackage.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || activePackage.prices[0];
-      if (pInfo) serviceIds.push(pInfo.id);
+    if (activePackage) {
+      const pkgPriceInfo = activePackage.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId) || activePackage.prices?.[0];
+      if (pkgPriceInfo?.id) {
+        serviceIds.push(pkgPriceInfo.id);
+      }
     }
-    
+
     activeAddOnList.forEach(a => {
-      if (a.prices) {
-        const pInfo = a.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || a.prices[0];
-        if (pInfo) serviceIds.push(pInfo.id);
+      const addonPriceInfo = a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId) || a.prices?.[0];
+      if (addonPriceInfo?.id) {
+        serviceIds.push(addonPriceInfo.id);
       }
     });
 
