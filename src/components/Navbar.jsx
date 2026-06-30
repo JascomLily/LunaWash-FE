@@ -93,8 +93,8 @@ export default function Navbar() {
   };
 
   return (
-    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 h-20 shadow-sm border-b border-outline-variant/20">
-      <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
+    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 shadow-sm border-b border-outline-variant/20 flex flex-col">
+      <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20 shrink-0">
         {/* Logo */}
         {/* Logo */}
         <Link to={(!isCustomer && user) ? (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue") : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
@@ -232,7 +232,7 @@ export default function Navbar() {
               </button>
 
               {/* Nút Avatar bo góc sang trọng */}
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => navigate('/user')}
                   onMouseEnter={() => setDropdownOpen(true)}
@@ -357,9 +357,38 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* TẦNG 2 MOBILE: Thanh Profile */}
+      {user && (
+        <div className="md:hidden w-full bg-surface-container-lowest border-t border-outline-variant/20 px-4 py-2.5 flex items-center justify-between shadow-sm relative z-40 shrink-0">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/user')}>
+            <img src={user.avatarUrl || '/default-avatar.svg'} className="w-10 h-10 rounded-full object-cover border-2 border-outline-variant/40 shadow-sm" alt={user.fullName} />
+            <div className="flex flex-col text-left leading-tight gap-1">
+              <span className="font-bold text-sm text-on-surface-variant">{user.fullName}</span>
+              {isCustomer ? (
+                <span className={`relative inline-flex items-center gap-1 px-2 py-[2px] rounded text-white font-black text-[10px] uppercase tracking-widest shadow-sm bg-gradient-to-r ${tierInfo.bg}`} style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%)' }}>
+                  <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>{tierInfo.icon}</span>
+                  {tierInfo.label}
+                  <span className="text-white/80 px-1">|</span>
+                  <span className="text-amber-300 flex items-center gap-0.5">{user.points || 0} pt</span>
+                  <span className="w-2.5 inline-block" />
+                </span>
+              ) : (
+                <span className={`inline-flex items-center gap-1 px-2 py-[2px] rounded text-white font-black text-[10px] uppercase tracking-widest shadow-sm ${tierInfo.bg}`}>
+                  <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>{tierInfo.icon}</span>
+                  {tierInfo.label}
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={handleLogout} className="text-error p-2 hover:bg-error/10 rounded-full transition-colors flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">logout</span>
+          </button>
+        </div>
+      )}
+
       {/* MOBILE MENU OVERLAY */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-[80px] left-0 w-full h-[calc(100vh-80px)] bg-surface/95 backdrop-blur-xl border-t border-outline-variant/20 shadow-2xl flex flex-col z-[45] animate-fadeIn">
+        <div className="md:hidden absolute top-[80px] left-0 w-full h-[calc(100vh-80px)] bg-surface/95 backdrop-blur-xl border-t border-outline-variant/20 shadow-2xl flex flex-col z-[45] animate-fadeIn mt-[60px]">
           <div className="flex flex-col p-6 gap-4">
             {isCustomer ? (
               <>

@@ -959,15 +959,46 @@ export default function Booking() {
       </div>
 
       {/* CỘT GIỮA (MAIN CONTENT) */}
-      <div className="flex-1 w-full min-w-0 flex flex-col relative">
-        {/* MOBILE PROGRESS BAR (NẾU CẦN) */}
-        <div className="lg:hidden text-center py-6 px-margin-mobile">
-          <h1 className="text-2xl md:text-3xl font-black text-[#00236f] uppercase tracking-tight">
+      <div className="flex-1 w-full min-w-0 flex flex-col relative pb-32 lg:pb-0">
+        {/* MOBILE PROGRESS BAR (HORIZONTAL) */}
+        <div className="lg:hidden w-full px-6 pt-8 pb-2">
+          <h1 className="text-xl md:text-3xl font-black text-[#00236f] uppercase tracking-tight text-center mb-6">
             LunaWash - Đặt Lịch
           </h1>
+          <div className="flex justify-between items-center relative max-w-[400px] mx-auto">
+            <div className="absolute left-4 right-4 top-4 h-[2px] bg-outline-variant/30 z-0"></div>
+            {['1', '2', '3', '4', '5'].map((num) => {
+              const stepId = `step-${num}`;
+              const isActive = activeStep === stepId;
+              const isCompleted = (() => {
+                if (num === '1') return !!selectedBranch;
+                if (num === '2') return !!selectedWashSlot;
+                if (num === '3') return !!selectedPackage;
+                if (num === '4') return !!selectedVehicleId;
+                if (num === '5') return !!selectedTimeSlotId;
+                return false;
+              })();
+              return (
+                <div 
+                  key={`mobile-${stepId}`}
+                  onClick={() => document.getElementById(stepId)?.scrollIntoView({behavior: 'smooth', block: 'start'})}
+                  className="flex flex-col items-center gap-1 relative z-10 cursor-pointer"
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                    isCompleted 
+                      ? 'bg-emerald-500 text-white shadow-md'
+                      : isActive 
+                        ? 'bg-[#00236f] text-white scale-110 shadow-lg ring-2 ring-[#00236f]/30' 
+                        : 'bg-surface-container text-outline ring-1 ring-outline-variant/50'
+                  }`}>
+                    {isCompleted ? <span className="material-symbols-outlined text-sm font-bold block">check</span> : num}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-
-        <div className="pt-4 lg:pt-8 pb-16 px-margin-mobile md:px-12 relative z-10 w-full max-w-[1000px] mx-auto">
+        <div className="pt-2 lg:pt-8 pb-16 px-margin-mobile md:px-12 relative z-10 w-full max-w-[1000px] mx-auto">
           <div className="space-y-8 pb-32">
 
         {/* 1. CHỌN CHI NHÁNH */}
@@ -1585,7 +1616,26 @@ export default function Booking() {
 
         </div>
       </div>
+      
+      {/* MOBILE STICKY BOTTOM BAR */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#00236f] text-white px-5 py-4 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.25)] z-50 flex items-center justify-between border-t border-white/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+         <div className="flex flex-col">
+            <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider mb-0.5">Tổng thanh toán</span>
+            <span className="text-[#4cd7f6] text-xl font-black leading-none">{selectedPackage ? formatCurrency(totalCost) : '0đ'}</span>
+         </div>
+         <button 
+            onClick={handleOpenPaymentModal}
+            className={`px-6 py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 ${
+              allStepsCompleted 
+                ? 'shimmer-bounce-btn text-[#001f26]' 
+                : 'bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] shadow-lg shadow-cyan-400/20'
+            }`}
+          >
+            ĐẶT LỊCH NGAY
+          </button>
       </div>
+
+    </div>
       </div> {/* End Center Content Wrapper */}
 
       {/* RIGHT SIDEBAR (ORDER SUMMARY) */}
