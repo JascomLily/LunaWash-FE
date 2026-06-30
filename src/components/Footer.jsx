@@ -71,7 +71,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link className="text-white/60 hover:text-white transition-colors" to="/#contact">
+                <Link className="text-white/60 hover:text-white transition-colors" to="/support">
                   Liên hệ
                 </Link>
               </li>
