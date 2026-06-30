@@ -414,7 +414,7 @@ export default function Register() {
                 disabled={loading}
               />
               <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="terms">
-                Tôi đồng ý với <a className="text-primary font-bold hover:underline" href="#">Điều khoản</a> và <a className="text-primary font-bold hover:underline" href="#">Chính sách bảo mật</a>.
+                Tôi đồng ý với <Link className="text-primary font-bold hover:underline" to="/terms">Điều khoản</Link> và <Link className="text-primary font-bold hover:underline" to="/privacy">Chính sách bảo mật</Link>.
               </label>
             </div>
 
