@@ -1245,7 +1245,7 @@ export default function Booking() {
               <span className="material-symbols-outlined text-base">add_box</span>
               DỊCH VỤ KÈM THEO
             </h2>
-            <p className="text-xs text-on-surface-variant mt-1">Chọn thêm các dịch vụ vệ sinh và chăm sóc chuyên sâu.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Chọn thêm các dịch vụ vệ sinh và chăm sóc chuyên sâu. <span className="italic text-primary/80 font-medium">(giá tiền có thể thay đổi theo loại xe)</span></p>
           </div>
 
           {serviceFetchError ? (
