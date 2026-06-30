@@ -115,13 +115,11 @@ export default function Booking() {
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
-            await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${pendingId}/status`, {
-              method: 'PUT',
+            await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${pendingId}`, {
+              method: 'DELETE',
               headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${parsed.token}`
-              },
-              body: JSON.stringify("Cancelled")
+              }
             });
             setTimeout(() => {
               toast.error('Bạn đã hủy thanh toán. Lịch đặt chưa được ghi nhận!', { id: 'vnpay-abort', duration: 5000 });
