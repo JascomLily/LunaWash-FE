@@ -906,7 +906,7 @@ export default function Booking() {
           animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
-      <div className="flex w-full min-h-[calc(100vh-80px)] justify-between">
+      <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-80px)] lg:justify-between relative">
       
       {/* NARROW LEFT SIDEBAR (PROGRESS) */}
       <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[120px] shrink-0 bg-background z-[40] flex-col items-center py-8 border-r border-outline-variant/30">
@@ -1589,8 +1589,8 @@ export default function Booking() {
       </div> {/* End Center Content Wrapper */}
 
       {/* RIGHT SIDEBAR (ORDER SUMMARY) */}
-      <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[350px] shrink-0 bg-[#00236f] z-[40] flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.1)] text-white overflow-hidden">
-        <div className="p-6 flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col w-full lg:w-[350px] shrink-0 bg-[#00236f] z-[40] lg:shadow-[-10px_0_30px_rgba(0,0,0,0.1)] text-white overflow-visible lg:overflow-hidden relative lg:sticky lg:top-[80px] lg:h-[calc(100vh-80px)] mt-8 lg:mt-0">
+        <div className="p-6 flex-1 flex flex-col overflow-visible lg:overflow-hidden">
           
           <h2 className="font-black text-2xl tracking-tight mb-4">Tóm tắt dịch vụ</h2>
           

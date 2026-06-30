@@ -11,6 +11,7 @@ export default function Navbar() {
   
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(user.tier);
@@ -208,9 +209,19 @@ export default function Navbar() {
         </nav>
 
         {/* Action Button or User Profile */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Nút Hamburger cho Mobile */}
+          <button 
+            className="md:hidden p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {mobileMenuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
+
           {user ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Nút Chuông Thông Báo */}
               <button 
                 onClick={() => alert("Bạn không có thông báo mới nào.")}
@@ -345,6 +356,39 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* MOBILE MENU OVERLAY */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-[80px] left-0 w-full h-[calc(100vh-80px)] bg-surface/95 backdrop-blur-xl border-t border-outline-variant/20 shadow-2xl flex flex-col z-[45] animate-fadeIn">
+          <div className="flex flex-col p-6 gap-4">
+            {isCustomer ? (
+              <>
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/') ? 'text-primary' : 'text-on-surface'}`}>Trang Chủ</Link>
+                <Link to="/booking" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/booking') ? 'text-primary' : 'text-on-surface'}`}>Đặt Lịch</Link>
+                <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử</Link>
+                <Link to="/support" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/support') ? 'text-primary' : 'text-on-surface'}`}>Hỗ Trợ</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                <Link to="/staff/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử Trạm</Link>
+                <Link to="/staff/feedback" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/feedback') ? 'text-primary' : 'text-on-surface'}`}>Phản Hồi</Link>
+                <Link to="/staff/technical" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/technical') ? 'text-primary' : 'text-on-surface'}`}>Trang Kỹ Thuật</Link>
+                {user?.tier === 'BranchManager' && (
+                  <Link to="/staff/employees" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/employees') ? 'text-primary' : 'text-on-surface'}`}>Nhân Sự & Ca Trực</Link>
+                )}
+              </>
+            )}
+            
+            {!user && (
+              <div className="flex flex-col gap-3 mt-4">
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/login'); }} className="py-3 bg-primary text-on-primary rounded-xl font-bold w-full shadow-md">Đăng Nhập</button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/register'); }} className="py-3 bg-secondary text-on-secondary rounded-xl font-bold w-full shadow-md">Đăng Ký</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
