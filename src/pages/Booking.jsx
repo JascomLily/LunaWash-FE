@@ -105,6 +105,34 @@ export default function Booking() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // Dọn dẹp booking rác nếu user bấm nút BACK từ trang thanh toán VNPay
+  useEffect(() => {
+    const checkAbortedPayment = async () => {
+      const pendingId = sessionStorage.getItem('pendingVnpayBooking');
+      if (pendingId) {
+        sessionStorage.removeItem('pendingVnpayBooking');
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${pendingId}/status`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${parsed.token}`
+              },
+              body: JSON.stringify("Cancelled")
+            });
+            setTimeout(() => {
+              toast.error('Bạn đã hủy thanh toán. Lịch đặt chưa được ghi nhận!', { id: 'vnpay-abort', duration: 5000 });
+            }, 500);
+          } catch(e) {}
+        }
+      }
+    };
+    checkAbortedPayment();
+  }, []);
+
   const [highlightPromo, setHighlightPromo] = useState(false);
   const toastShownRef = React.useRef(false);
 
@@ -837,9 +865,9 @@ export default function Booking() {
       }
 
       const responseData = await response.json();
-      toast.success('Đặt lịch thành công!', { id: 'booking' });
       
       if (selectedMethod === 'vnpay') {
+        toast.loading('Đang khởi tạo thanh toán VNPAY...', { id: 'booking' });
         try {
           // Gọi API tạo URL thanh toán VNPAY từ Backend
           const payRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/create-vnpay-url/${responseData.id}`, {
@@ -851,6 +879,8 @@ export default function Booking() {
           if (payRes.ok) {
             const payData = await payRes.json();
             if (payData.url) {
+              // Lưu tạm ID để xử lý nếu user bấm nút Back ở trình duyệt (hủy ngang)
+              sessionStorage.setItem('pendingVnpayBooking', responseData.id);
               // Chuyển hướng sang cổng thanh toán VNPAY (Hiển thị QR & thẻ ngân hàng)
               window.location.href = payData.url;
               return;
@@ -863,6 +893,7 @@ export default function Booking() {
           navigate('/history', { state: bookingState });
         }
       } else {
+        toast.success('Đặt lịch thành công!', { id: 'booking' });
         navigate('/history', { state: bookingState });
       }
     } catch (err) {
