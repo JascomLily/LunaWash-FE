@@ -14,7 +14,27 @@ export default function Payment() {
     sessionStorage.removeItem('pendingVnpayBooking');
     // Kích hoạt animation sau khi mount
     setTimeout(() => setIsLoaded(true), 100);
-  }, []);
+
+    // Nếu thanh toán thất bại, tự động hủy lịch đặt trên hệ thống
+    const currentStatus = searchParams.get('status') || 'success';
+    const currentBookingId = searchParams.get('bookingId');
+    if (currentStatus !== 'success' && currentBookingId && currentBookingId !== 'BK-123456') {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${currentBookingId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${parsed.token}`
+            },
+            body: JSON.stringify("Cancelled")
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+  }, [searchParams]);
 
   const status = searchParams.get('status') || 'success'; 
   const bookingId = searchParams.get('bookingId') || 'BK-123456';
