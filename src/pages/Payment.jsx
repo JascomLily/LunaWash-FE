@@ -10,14 +10,18 @@ export default function Payment() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Xóa cờ đang chờ thanh toán nếu user vào trang kết quả này (dù thành công hay thất bại)
+    // Lấy ID thật sự của booking từ session trước khi xóa
+    const realBookingId = sessionStorage.getItem('pendingVnpayBooking');
     sessionStorage.removeItem('pendingVnpayBooking');
+    
     // Kích hoạt animation sau khi mount
     setTimeout(() => setIsLoaded(true), 100);
 
     // Nếu thanh toán thất bại, tự động hủy lịch đặt trên hệ thống
     const currentStatus = searchParams.get('status') || 'success';
-    const currentBookingId = searchParams.get('bookingId');
+    // Ưu tiên dùng realBookingId, nếu không có mới dùng bookingId từ URL (thường là mã BKG-...)
+    const currentBookingId = realBookingId || searchParams.get('bookingId');
+    
     if (currentStatus !== 'success' && currentBookingId && currentBookingId !== 'BK-123456') {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
