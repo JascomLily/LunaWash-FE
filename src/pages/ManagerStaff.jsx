@@ -965,7 +965,7 @@ const handleAddEmployee = async (e) => {
                       )}
                       <p className="text-xs text-slate-500 font-bold mb-1">{new Date(log.createdAt).toLocaleString('vi-VN')}</p>
                       <p className="text-sm text-slate-800">
-                        <span className="font-bold text-primary">{log.modifiedByFullName}</span> đã <span className="font-bold">{log.action.toLowerCase()}</span> của <span className="font-bold">{log.employeeFullName}</span>
+                        <span className="font-bold text-primary">{log.modifiedByFullName}</span> đã <span className="font-bold">{(log.action || '').toLowerCase()}</span> của <span className="font-bold">{log.employeeFullName}</span>
                         {log.oldValue && log.newValue ? (
                           <> từ <span className="text-rose-600 line-through">{log.oldValue}</span> thành <span className="text-emerald-600 font-bold">{log.newValue}</span>.</>
                         ) : (
