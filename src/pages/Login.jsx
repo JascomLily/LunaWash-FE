@@ -298,8 +298,8 @@ export default function Login() {
               <input 
                 className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
                 id="email" 
-                placeholder="customer1@gmail.com hoặc gõ 'khachhang'" 
-                type="text"
+                placeholder="email@example.com" 
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
