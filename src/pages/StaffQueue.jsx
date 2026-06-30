@@ -122,6 +122,8 @@ export default function StaffQueue() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Pending');
   const [addingInteriorBooking, setAddingInteriorBooking] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const dropdownRef = useRef(null);
 
   // Date picker states
   const today = new Date();
