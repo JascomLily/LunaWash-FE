@@ -49,12 +49,24 @@ export default function Payment() {
             
             // Xóa booking
             if (idToDelete && idToDelete !== 'BK-123456' && !idToDelete.toString().startsWith('BKG')) {
-              fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${idToDelete}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${parsed.token}`
+              try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${idToDelete}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${parsed.token}`
+                  }
+                });
+                if (res.ok) {
+                  // toast.success(`Đã tự động hủy booking rác ID: ${idToDelete}`);
+                } else {
+                  const errText = await res.text();
+                  toast.error(`Backend từ chối hủy: ${res.status} - ${errText}`);
                 }
-              }).catch(() => {});
+              } catch (e) {
+                toast.error(`Lỗi gọi API hủy: ${e.message}`);
+              }
+            } else {
+              toast.error(`Không tìm thấy ID hợp lệ để hủy: ${idToDelete}`);
             }
           };
           
