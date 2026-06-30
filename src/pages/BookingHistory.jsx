@@ -418,7 +418,7 @@ export default function BookingHistory() {
                               <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
                           </div>
-                        ) : (
+                        ) : item.status === 'Hoàn thành' ? (
                           <button 
                             onClick={() => navigate('/feedback', { state: { bookingId: item.id, booking: item } })}
                             className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 mx-auto transition-colors shadow-sm"
@@ -426,6 +426,8 @@ export default function BookingHistory() {
                             <span className="material-symbols-outlined text-sm">star</span>
                             Đánh giá
                           </button>
+                        ) : (
+                          <span className="text-outline/50 text-xs font-semibold">-</span>
                         )}
                       </td>
                       {/* Chi tiết */}
