@@ -108,9 +108,9 @@ export default function Booking() {
   // Dọn dẹp booking rác nếu user bấm nút BACK từ trang thanh toán VNPay
   useEffect(() => {
     const checkAbortedPayment = async () => {
-      const pendingId = sessionStorage.getItem('pendingVnpayBooking');
+      const pendingId = localStorage.getItem('pendingVnpayBooking');
       if (pendingId) {
-        sessionStorage.removeItem('pendingVnpayBooking');
+        localStorage.removeItem('pendingVnpayBooking');
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           try {
@@ -880,7 +880,7 @@ export default function Booking() {
             const payData = await payRes.json();
             if (payData.url) {
               // Lưu tạm ID để xử lý nếu user bấm nút Back ở trình duyệt (hủy ngang)
-              sessionStorage.setItem('pendingVnpayBooking', responseData.id);
+              localStorage.setItem('pendingVnpayBooking', responseData.id);
               // Chuyển hướng sang cổng thanh toán VNPAY (Hiển thị QR & thẻ ngân hàng)
               window.location.href = payData.url;
               return;

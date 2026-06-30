@@ -11,8 +11,8 @@ export default function Payment() {
 
   useEffect(() => {
     // Lấy ID thật sự của booking từ session trước khi xóa
-    const realBookingId = sessionStorage.getItem('pendingVnpayBooking');
-    sessionStorage.removeItem('pendingVnpayBooking');
+    const realBookingId = localStorage.getItem('pendingVnpayBooking');
+    localStorage.removeItem('pendingVnpayBooking');
     
     // Kích hoạt animation sau khi mount
     setTimeout(() => setIsLoaded(true), 100);
