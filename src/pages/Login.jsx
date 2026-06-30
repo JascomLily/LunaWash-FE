@@ -59,22 +59,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // --- DUMMY LOGIN CHO BẢN PROTOTYPE ---
-      if (email === 'khachhang' || email === 'admin' || email === 'nhanvien') {
-         let tier = 'Member';
-         let fullName = 'Khách Hàng VIP';
-         let redirectUrl = '/';
-         
-         if (email === 'admin') { tier = 'Admin'; fullName = 'Chủ Tiệm'; redirectUrl = '/admin'; }
-         if (email === 'nhanvien') { tier = 'Staff'; fullName = 'Nhân Viên Kỹ Thuật'; redirectUrl = '/staff/queue'; }
-         
-         const dummyUser = { fullName, email: `${email}@gmail.com`, tier, token: "dummy-token", points: 150 };
-         localStorage.setItem('user', JSON.stringify(dummyUser));
-         toast.success(`Đăng nhập (Giả lập) thành công! Chào mừng ${fullName}`);
-         window.location.href = redirectUrl;
-         return;
-      }
-      // ------------------------------------
+      // --- Đã xóa Dummy Login. Giờ sẽ gọi thẳng API xuống Backend ---
 
       // GỌI API XUỐNG BACKEND: Gửi yêu cầu đăng nhập (POST) đến Endpoint /api/Auth/login
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/login', {
