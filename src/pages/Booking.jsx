@@ -408,13 +408,18 @@ export default function Booking() {
     }
   };
 
-  // Khởi tạo ngày hôm nay dạng YYYY-MM-DD
-  const getTodayStr = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  // Lấy thời gian hiện tại chuẩn GMT+7 (Giờ Việt Nam)
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    return new Date(vnTimeStr);
+  };
+
+  // Khởi tạo ngày hôm nay dạng YYYY-MM-DD theo giờ VN
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   };
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
@@ -438,9 +443,9 @@ export default function Booking() {
   };
 
   const { days: maxBookingDays, tier: currentTier } = getUserMaxBookingDays();
-  const todayStart = new Date();
+  const todayStart = getVietnamTime();
   todayStart.setHours(0, 0, 0, 0);
-  const maxAllowedDate = new Date();
+  const maxAllowedDate = getVietnamTime();
   maxAllowedDate.setDate(maxAllowedDate.getDate() + maxBookingDays);
   maxAllowedDate.setHours(23, 59, 59, 999);
 
@@ -448,11 +453,11 @@ export default function Booking() {
   // Lấy năm và tháng từ selectedDate để hiển thị lịch ban đầu
   const [calendarYear, setCalendarYear] = useState(() => {
     const parts = selectedDate.split('-');
-    return parts[0] ? parseInt(parts[0], 10) : new Date().getFullYear();
+    return parts[0] ? parseInt(parts[0], 10) : getVietnamTime().getFullYear();
   });
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const parts = selectedDate.split('-');
-    return parts[1] ? parseInt(parts[1], 10) - 1 : new Date().getMonth();
+    return parts[1] ? parseInt(parts[1], 10) - 1 : getVietnamTime().getMonth();
   });
 
   const [occupiedSlotsSet, setOccupiedSlotsSet] = useState(new Map());
@@ -474,9 +479,8 @@ export default function Booking() {
         const blocked = new Map();
         
         // 1. Chặn các slot giờ đã qua trong ngày hôm nay
-        const now = new Date();
-        const tzOffset = now.getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(now - tzOffset)).toISOString().split('T')[0];
+        const now = getVietnamTime();
+        const localISOTime = getTodayStr(now);
         const isToday = selectedDate === localISOTime;
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
@@ -615,7 +619,7 @@ export default function Booking() {
   };
 
   const handleSelectToday = () => {
-    const today = new Date();
+    const today = getVietnamTime();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
     const d = String(today.getDate()).padStart(2, '0');

@@ -15,7 +15,18 @@ export default function ManagerStaff() {
   const [selectedShift, setSelectedShift] = useState('Ca sáng');
   const [employees, setEmployees] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    return new Date(vnTimeStr);
+  };
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayStr());
   const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [scheduleTemplates, setScheduleTemplates] = useState([]);
