@@ -97,7 +97,7 @@ export default function Navbar() {
       <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20 shrink-0">
         {/* Logo */}
         {/* Logo */}
-        <Link to={(!isCustomer && user) ? (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue") : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
+        <Link to={(!isCustomer && user) ? (user.tier === 'Admin' ? "/admin" : (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue")) : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
             alt="LunaWash Logo"
@@ -148,6 +148,19 @@ export default function Navbar() {
                 }`}
               >
                 Hỗ Trợ
+              </Link>
+            </>
+          ) : user.tier === 'Admin' ? (
+            <>
+              <Link
+                to="/admin"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/admin') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Vào Trang Quản Trị
               </Link>
             </>
           ) : (
@@ -396,6 +409,10 @@ export default function Navbar() {
                 <Link to="/booking" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/booking') ? 'text-primary' : 'text-on-surface'}`}>Đặt Lịch</Link>
                 <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử</Link>
                 <Link to="/support" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/support') ? 'text-primary' : 'text-on-surface'}`}>Hỗ Trợ</Link>
+              </>
+            ) : user?.tier === 'Admin' ? (
+              <>
+                <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/admin') ? 'text-primary' : 'text-on-surface'}`}>Vào Trang Quản Trị</Link>
               </>
             ) : (
               <>
