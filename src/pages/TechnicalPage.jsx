@@ -9,13 +9,12 @@ const mockStations = [
 ];
 
 const mockTasks = [
-  { id: 'TASK-101', name: 'Trạm 2 kêu to, tụt áp', stationId: 'Trạm 2', machineName: 'Hệ thống rửa gầm', status: 'Chưa làm', description: 'Nhân viên báo máy nén khí kêu to thất thường, áp lực yếu không đủ bọt tuyết.', type: 'incident', requestedBy: 'Staff', createdAt: '01/07/2026 08:30' },
+  { id: 'TASK-101', name: 'Trạm 2 kêu to, tụt áp', stationId: 'Trạm 2', machineName: 'Hệ thống rửa gầm', status: 'Chờ nghiệm thu', description: 'Nhân viên báo máy nén khí kêu to thất thường, áp lực yếu không đủ bọt tuyết.', type: 'incident', requestedBy: 'Manager', createdAt: '01/07/2026 08:30' },
   { id: 'TASK-102', name: 'Bảo dưỡng định kỳ tháng 7', stationId: 'Trạm 1', machineName: 'Máy rửa xe tự động Karcher', status: 'Đang làm', description: 'Tra dầu mỡ ray trượt, vệ sinh béc phun.', type: 'maintenance', requestedBy: 'Manager', createdAt: '01/07/2026 07:00' }
 ];
 
 const mockReports = [
-  { id: 'REP-089', issueName: 'Bơm nước yếu quá', stationId: 'Trạm 3', machineName: 'Hệ thống xịt bọt tuyết', reportedBy: 'Nhân viên CSX 1', role: 'Staff', desc: 'Sáng nay em bật máy thấy nước ra yếu xìu, không trôi được xà phòng sếp ơi.', time: '01/07/2026 10:00', status: 'Chờ xử lý', brokenPartSuggest: 'Bơm áp lực' },
-  { id: 'REP-090', issueName: 'Dây curoa bị mòn', stationId: 'Trạm 1', machineName: 'Máy rửa xe tự động Karcher', reportedBy: 'Kỹ thuật A', role: 'TechnicalStaff', desc: 'Đi kiểm tra định kỳ phát hiện dây curoa số 2 bị mòn nặng, đề xuất thay sớm kẻo đứt.', time: '01/07/2026 09:30', status: 'Chờ xử lý', brokenPartSuggest: 'Dây curoa số 2' }
+  { id: 'REP-089', issueName: 'Bơm nước yếu quá', stationId: 'Trạm 3', machineName: 'Hệ thống xịt bọt tuyết', reportedBy: 'Nhân viên CSX 1', role: 'Staff', desc: 'Sáng nay em bật máy thấy nước ra yếu xìu, không trôi được xà phòng sếp ơi.', time: '01/07/2026 10:00', status: 'Chờ xử lý', brokenPartSuggest: 'Bơm áp lực' }
 ];
 
 export default function TechnicalPage() {
@@ -32,26 +31,21 @@ export default function TechnicalPage() {
   // Default Tabs
   const getInitialTab = () => {
     if(isManager) return 'overview';
-    if(isTechnical) return 'maintenance';
+    if(isTechnical) return 'incidents';
     return 'overview';
   }
   const [activeTab, setActiveTab] = useState(getInitialTab()); 
 
   // Modals
-  const [showReportModal, setShowReportModal] = useState(false); // Nhân viên / Kỹ thuật báo lỗi
+  const [showReportModal, setShowReportModal] = useState(false);
   const [reportData, setReportData] = useState({ stationId: '', issueName: '', desc: '', brokenPartSuggest: '' });
 
-  const [showSupportModal, setShowSupportModal] = useState(false); // Kỹ thuật xin hỗ trợ
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportData, setSupportData] = useState({ taskId: '', requestType: 'Linh kiện', note: '' });
 
-  const [showReviewModal, setShowReviewModal] = useState(false); // Quản lý duyệt báo cáo thành Task
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewData, setReviewData] = useState({ priority: 'Trung bình', note: '', updateStationTable: true });
-
-  // Update Status Modal (Manager) & Update Broken Part Modal (Tech)
-  const [showEditStationModal, setShowEditStationModal] = useState(false);
-  const [selectedStation, setSelectedStation] = useState(null);
-  const [editStationData, setEditStationData] = useState({ status: 'Tốt', brokenPart: '' });
 
   // 1. Gửi Báo cáo (Staff / Tech -> Manager)
   const handleSubmitReport = (e) => {
@@ -84,7 +78,7 @@ export default function TechnicalPage() {
     // Đổi trạng thái Report
     setReports(reports.map(r => r.id === selectedReport.id ? { ...r, status: 'Đã giao Task' } : r));
     
-    // Update trực tiếp vào bảng Trạm nếu Quản lý tick chọn
+    // Auto Update Bảng Trạm
     if (reviewData.updateStationTable) {
       setStations(stations.map(st => {
         if (st.id === selectedReport.stationId) {
@@ -101,7 +95,7 @@ export default function TechnicalPage() {
       }));
     }
     
-    // Tạo Task mới cho Kỹ thuật
+    // Tạo Task
     const newTask = {
       id: `TASK-${Math.floor(Math.random() * 1000)}`,
       name: selectedReport.issueName,
@@ -115,27 +109,43 @@ export default function TechnicalPage() {
     };
     
     setTasks([newTask, ...tasks]);
-    toast.success("Đã giao Task và cập nhật tình trạng Trạm!");
+    toast.success("Đã giao Task và cập nhật tình trạng Trạm thành Hỏng/Trục trặc!");
     setShowReviewModal(false);
   };
 
-  // 3. Kỹ thuật cập nhật trạng thái Task
-  const handleUpdateTaskStatus = (taskId, newStatus) => {
+  // 3. Kỹ thuật cập nhật Task
+  const handleTechUpdateTask = (taskId, newStatus) => {
     setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-    toast.success(`Đã cập nhật trạng thái: ${newStatus}`);
     
     if(newStatus === 'Cần hỗ trợ') {
+      toast.success(`Đã cập nhật trạng thái: ${newStatus}`);
       setSupportData({ taskId: taskId, requestType: 'Linh kiện', note: '' });
       setShowSupportModal(true);
+    } else if (newStatus === 'Chờ nghiệm thu') {
+      toast.success("Đã báo cáo sửa xong! Chờ Quản lý nghiệm thu.");
+    } else {
+      toast.success(`Đã cập nhật trạng thái: ${newStatus}`);
     }
+  };
+
+  // 4. Quản lý Nghiệm thu Task -> Auto Update Bảng Trạm về "Tốt"
+  const handleManagerCompleteTask = (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if(!task) return;
+
+    // Đổi Task thành Hoàn thành
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'Hoàn thành' } : t));
     
-    if(newStatus === 'Hoàn thành') {
-      // Tự động set trạng thái Trạm về "Tốt" nếu task xong
-      const task = tasks.find(t => t.id === taskId);
-      if(task) {
-        setStations(stations.map(st => st.id === task.stationId ? { ...st, status: 'Tốt', brokenPart: '', statusColor: 'border-emerald-200 text-emerald-700 bg-emerald-50', lastFixed: new Date().toLocaleDateString('vi-VN') } : st));
-      }
-    }
+    // Set Trạm về Tốt
+    setStations(stations.map(st => st.id === task.stationId ? { 
+      ...st, 
+      status: 'Tốt', 
+      brokenPart: '', 
+      statusColor: 'border-emerald-200 text-emerald-700 bg-emerald-50', 
+      lastFixed: new Date().toLocaleDateString('vi-VN') 
+    } : st));
+
+    toast.success("Nghiệm thu thành công! Trạm đã được cập nhật thành 'Tốt'.");
   };
 
   const handleSubmitSupport = (e) => {
@@ -143,32 +153,10 @@ export default function TechnicalPage() {
     toast.success(`Đã gửi yêu cầu cấp ${supportData.requestType} lên Quản lý!`);
     setShowSupportModal(false);
   };
-  
-  // 4. Update Station Directly (Manager updates status, Tech updates broken part)
-  const handleEditStationSubmit = (e) => {
-    e.preventDefault();
-    setStations(stations.map(st => {
-      if (st.id === selectedStation.id) {
-        let newColor = st.statusColor;
-        if(editStationData.status === 'Tốt') newColor = 'border-emerald-200 text-emerald-700 bg-emerald-50';
-        if(editStationData.status === 'Trục trặc') newColor = 'border-amber-200 text-amber-700 bg-amber-50';
-        if(editStationData.status === 'Hỏng') newColor = 'border-rose-200 text-rose-700 bg-rose-50';
-        
-        return {
-          ...st,
-          status: editStationData.status,
-          brokenPart: editStationData.status === 'Tốt' ? '' : editStationData.brokenPart,
-          statusColor: newColor
-        };
-      }
-      return st;
-    }));
-    toast.success("Đã cập nhật thông tin Trạm!");
-    setShowEditStationModal(false);
-  };
 
   const incidentTasks = tasks.filter(t => t.type === 'incident');
   const pendingReportsCount = reports.filter(r => r.status === 'Chờ xử lý').length;
+  const pendingReviewTasksCount = tasks.filter(t => t.status === 'Chờ nghiệm thu').length;
 
   return (
     <main className="min-h-screen bg-[#f8fafc] pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
@@ -195,51 +183,25 @@ export default function TechnicalPage() {
               setReportData({ stationId: '', issueName: '', desc: '', brokenPartSuggest: '' });
               setShowReportModal(true);
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all active:scale-95 shadow-md ${
-              isManager ? 'bg-[#001f3f] text-white hover:bg-slate-800 hidden' : 'bg-rose-600 text-white hover:bg-rose-700'
-            }`}
+            className="flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all active:scale-95 shadow-md bg-rose-600 text-white hover:bg-rose-700"
           >
-            {!isManager && (
-              <>
-                <span className="material-symbols-outlined text-xl">warning</span>
-                Báo cáo sự cố khẩn
-              </>
-            )}
+            <span className="material-symbols-outlined text-xl">warning</span>
+            {isTechnical ? 'Báo cáo sự cố thiết bị' : 'Báo cáo sự cố khẩn'}
           </button>
         </div>
 
-        {/* TABS CHO KỸ THUẬT VIÊN */}
-        {isTechnical && (
-          <div className="flex gap-4 border-b border-slate-200">
-            <button 
-              className={`pb-3 px-4 font-bold text-sm transition-colors ${activeTab === 'maintenance' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setActiveTab('maintenance')}
-            >
-              Bảo trì hằng ngày
-            </button>
-            <button 
-              className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'incidents' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setActiveTab('incidents')}
-            >
-              Xử lý sự cố
-              {incidentTasks.filter(t => t.status !== 'Hoàn thành').length > 0 && (
-                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
-                  {incidentTasks.filter(t => t.status !== 'Hoàn thành').length}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* TABS CHO QUẢN LÝ */}
-        {isManager && (
-          <div className="flex gap-4 border-b border-slate-200">
+        {/* TABS MENU */}
+        <div className="flex gap-4 border-b border-slate-200">
+          {(isManager || isStaff) && (
             <button 
               className={`pb-3 px-4 font-bold text-sm transition-colors ${activeTab === 'overview' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
               onClick={() => setActiveTab('overview')}
             >
               Tổng quan Thiết bị
             </button>
+          )}
+
+          {isManager && (
             <button 
               className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'reports' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
               onClick={() => setActiveTab('reports')}
@@ -251,8 +213,31 @@ export default function TechnicalPage() {
                 </span>
               )}
             </button>
-          </div>
-        )}
+          )}
+
+          {(isTechnical || isManager) && (
+            <button 
+              className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'incidents' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('incidents')}
+            >
+              {isManager ? 'Theo dõi Task' : 'Xử lý sự cố'}
+              {(isManager ? pendingReviewTasksCount : incidentTasks.filter(t => t.status !== 'Hoàn thành').length) > 0 && (
+                <span className={`${isManager ? 'bg-emerald-500' : 'bg-rose-500'} text-white text-[10px] px-2 py-0.5 rounded-full font-black`}>
+                  {isManager ? pendingReviewTasksCount : incidentTasks.filter(t => t.status !== 'Hoàn thành').length}
+                </span>
+              )}
+            </button>
+          )}
+
+          {isTechnical && (
+            <button 
+              className={`pb-3 px-4 font-bold text-sm transition-colors ${activeTab === 'maintenance' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('maintenance')}
+            >
+              Bảo trì định kỳ
+            </button>
+          )}
+        </div>
 
         {/* NỘI DUNG THEO TABS VÀ ROLE */}
         
@@ -293,10 +278,14 @@ export default function TechnicalPage() {
               </div>
             )}
 
-            {/* DANH SÁCH THIẾT BỊ (TRẠM) */}
+            {/* DANH SÁCH THIẾT BỊ (TRẠM) - READ ONLY */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="font-bold text-slate-700">Danh sách Trạm / Máy rửa</h3>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">lock</span>
+                  Chế độ Xem (Tự động cập nhật qua Báo cáo)
+                </span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[800px]">
@@ -307,7 +296,6 @@ export default function TechnicalPage() {
                       <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tình trạng</th>
                       <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bộ phận hỏng</th>
                       <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ngày sửa gần nhất</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -329,32 +317,6 @@ export default function TechnicalPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-xs font-semibold text-slate-600">{st.lastFixed}</td>
-                        <td className="px-6 py-4 text-center">
-                          {isStaff ? (
-                            <button 
-                              onClick={() => {
-                                setReportData({ stationId: st.id, issueName: '', desc: '', brokenPartSuggest: '' });
-                                setShowReportModal(true);
-                              }}
-                              className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all font-bold text-xs flex items-center justify-center gap-1 mx-auto"
-                            >
-                              <span className="material-symbols-outlined text-lg">report</span>
-                              Báo lỗi
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                setSelectedStation(st);
-                                setEditStationData({ status: st.status, brokenPart: st.brokenPart });
-                                setShowEditStationModal(true);
-                              }}
-                              className="text-blue-500 hover:text-white hover:bg-blue-600 px-3 py-1.5 rounded-lg transition-all font-bold text-xs flex items-center justify-center gap-1 mx-auto border border-blue-200 hover:border-blue-600"
-                            >
-                              <span className="material-symbols-outlined text-sm">edit</span>
-                              {isManager ? 'Sửa Tình Trạng' : 'Báo Hỏng Bộ Phận'}
-                            </button>
-                          )}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -439,8 +401,8 @@ export default function TechnicalPage() {
           </div>
         )}
 
-        {/* VIEW 3: XỬ LÝ SỰ CỐ (Chỉ Technical) */}
-        {activeTab === 'incidents' && isTechnical && (
+        {/* VIEW 3: XỬ LÝ SỰ CỐ / THEO DÕI TASK (Tech / Manager) */}
+        {activeTab === 'incidents' && (
           <div className="space-y-4">
             {incidentTasks.length === 0 ? (
               <div className="bg-white rounded-2xl p-8 text-center border border-slate-100">
@@ -449,7 +411,7 @@ export default function TechnicalPage() {
               </div>
             ) : (
               incidentTasks.map(task => (
-                <div key={task.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:border-blue-300 transition-colors">
+                <div key={task.id} className={`bg-white rounded-2xl shadow-sm border p-5 transition-colors ${task.status === 'Chờ nghiệm thu' ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 hover:border-blue-300'}`}>
                   <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
@@ -457,6 +419,7 @@ export default function TechnicalPage() {
                           task.status === 'Chưa làm' ? 'bg-slate-100 text-slate-600' :
                           task.status === 'Đang làm' ? 'bg-blue-100 text-blue-700' :
                           task.status === 'Cần hỗ trợ' ? 'bg-amber-100 text-amber-700' :
+                          task.status === 'Chờ nghiệm thu' ? 'bg-emerald-500 text-white animate-pulse' :
                           'bg-emerald-100 text-emerald-700'
                         }`}>
                           {task.status}
@@ -473,29 +436,54 @@ export default function TechnicalPage() {
                       </p>
                     </div>
                     
-                    {/* Hành động cập nhật */}
+                    {/* Hành động cập nhật dựa theo Role */}
                     {task.status !== 'Hoàn thành' && (
                       <div className="flex flex-wrap items-center gap-2">
-                        {task.status === 'Chưa làm' && (
-                          <button onClick={() => handleUpdateTaskStatus(task.id, 'Đang làm')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
-                            Bắt đầu sửa
-                          </button>
-                        )}
-                        {(task.status === 'Đang làm' || task.status === 'Cần hỗ trợ') && (
+                        
+                        {/* Hành động cho KỸ THUẬT */}
+                        {isTechnical && (
                           <>
-                            <button onClick={() => handleUpdateTaskStatus(task.id, 'Cần hỗ trợ')} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
-                              Yêu cầu hỗ trợ (Linh kiện/Kinh phí)
-                            </button>
-                            <button onClick={() => handleUpdateTaskStatus(task.id, 'Hoàn thành')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
-                              Xác nhận Hoàn thành
-                            </button>
+                            {task.status === 'Chưa làm' && (
+                              <button onClick={() => handleTechUpdateTask(task.id, 'Đang làm')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">play_arrow</span> Bắt đầu sửa
+                              </button>
+                            )}
+                            {(task.status === 'Đang làm' || task.status === 'Cần hỗ trợ') && (
+                              <>
+                                <button onClick={() => handleTechUpdateTask(task.id, 'Cần hỗ trợ')} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
+                                  Yêu cầu hỗ trợ (Linh kiện)
+                                </button>
+                                <button onClick={() => handleTechUpdateTask(task.id, 'Chờ nghiệm thu')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-sm">done_all</span> Sửa xong, Yêu cầu Quản lý xem
+                                </button>
+                              </>
+                            )}
+                            {task.status === 'Chờ nghiệm thu' && (
+                              <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                                <span className="material-symbols-outlined">hourglass_top</span> Đang đợi Quản lý duyệt...
+                              </span>
+                            )}
+                          </>
+                        )}
+
+                        {/* Hành động cho QUẢN LÝ */}
+                        {isManager && (
+                          <>
+                            {task.status === 'Chờ nghiệm thu' ? (
+                              <button onClick={() => handleManagerCompleteTask(task.id)} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-lg">verified</span>
+                                Nghiệm thu Hoàn tất (Đã sửa xong)
+                              </button>
+                            ) : (
+                              <span className="text-sm font-medium text-slate-400 italic">Kỹ thuật đang xử lý...</span>
+                            )}
                           </>
                         )}
                       </div>
                     )}
                   </div>
                   
-                  <div className="bg-slate-50 p-4 rounded-xl text-sm font-medium text-slate-600 whitespace-pre-line">
+                  <div className="bg-white/50 p-4 rounded-xl text-sm font-medium text-slate-600 whitespace-pre-line border border-slate-100">
                     <p className="font-bold text-slate-700 mb-1">Nội dung từ Quản lý:</p>
                     {task.description}
                   </div>
@@ -505,65 +493,6 @@ export default function TechnicalPage() {
           </div>
         )}
       </div>
-
-      {/* MODAL EDIT STATION (MANAGER / TECH) */}
-      {showEditStationModal && selectedStation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEditStationModal(false)}></div>
-          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in z-50 flex flex-col">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-blue-50">
-              <h3 className="font-extrabold text-base text-blue-700 flex items-center gap-2">
-                <span className="material-symbols-outlined">edit</span>
-                {isManager ? 'Cập nhật tình trạng Trạm' : 'Chẩn đoán hư hỏng bộ phận'}
-              </h3>
-              <button type="button" onClick={() => setShowEditStationModal(false)} className="p-1 hover:bg-blue-100 rounded-lg text-blue-700 transition-all">
-                <span className="material-symbols-outlined text-xl font-bold">close</span>
-              </button>
-            </div>
-
-            <form id="editStationForm" onSubmit={handleEditStationSubmit} className="p-6 space-y-5">
-              <p className="font-bold text-slate-800 border-b border-slate-100 pb-2">{selectedStation.id} - {selectedStation.machine}</p>
-              
-              {isManager && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Đánh giá Tình Trạng</label>
-                  <select
-                    value={editStationData.status}
-                    onChange={(e) => setEditStationData({...editStationData, status: e.target.value})}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-slate-700"
-                  >
-                    <option value="Tốt">🟢 Tốt (Hoạt động bình thường)</option>
-                    <option value="Trục trặc">🟡 Trục trặc (Cần kiểm tra nhưng vẫn chạy)</option>
-                    <option value="Hỏng">🔴 Hỏng (Ngừng hoạt động)</option>
-                  </select>
-                </div>
-              )}
-
-              {isTechnical && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Bộ phận bị hỏng (Nhập chi tiết)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="VD: Bơm áp lực, Motor quay, Dây curoa..."
-                    value={editStationData.brokenPart}
-                    onChange={(e) => setEditStationData({...editStationData, brokenPart: e.target.value, status: 'Hỏng'})}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-slate-700"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1 italic">Nhập bộ phận hỏng sẽ tự động chuyển trạng thái máy thành Hỏng.</p>
-                </div>
-              )}
-            </form>
-
-            <div className="flex justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50">
-              <button type="button" onClick={() => setShowEditStationModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
-              <button type="submit" form="editStationForm" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
-                Cập nhật
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL BÁO LỖI (Dành cho Staff/Tech) */}
       {showReportModal && (
@@ -618,6 +547,7 @@ export default function TechnicalPage() {
                   <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider ml-1">Dự đoán bộ phận hỏng (Dành cho Kỹ thuật)</label>
                   <input
                     type="text"
+                    required
                     placeholder="VD: Mòn dây curoa, Cháy motor..."
                     value={reportData.brokenPartSuggest}
                     onChange={(e) => setReportData({...reportData, brokenPartSuggest: e.target.value})}
@@ -664,7 +594,6 @@ export default function TechnicalPage() {
             </div>
 
             <div className="p-6 overflow-y-auto">
-              {/* Nội dung báo cáo cũ */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Báo cáo từ {selectedReport.reportedBy}</p>
                 <h4 className="font-bold text-slate-800 mb-1">{selectedReport.issueName}</h4>
@@ -676,7 +605,6 @@ export default function TechnicalPage() {
 
               <form id="reviewForm" onSubmit={handleReviewReport} className="space-y-5">
                 
-                {/* Auto Update Option */}
                 <label className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer">
                   <input 
                     type="checkbox" 
@@ -686,7 +614,7 @@ export default function TechnicalPage() {
                   />
                   <div>
                     <p className="text-sm font-bold text-blue-800">Tự động cập nhật vào Bảng Trạm</p>
-                    <p className="text-[10px] text-blue-600">Sẽ set trạng thái Trạm thành Hỏng/Trục trặc và ghi nhận bộ phận bị hư theo báo cáo này.</p>
+                    <p className="text-[10px] text-blue-600">Sẽ tự động khóa Trạm và ghi nhận bộ phận bị hư theo báo cáo.</p>
                   </div>
                 </label>
 
@@ -735,6 +663,57 @@ export default function TechnicalPage() {
                 Xác nhận Giao Task
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL YÊU CẦU HỖ TRỢ (Cho Tech) */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSupportModal(false)}></div>
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-amber-50">
+              <h3 className="font-extrabold text-base text-amber-700 flex items-center gap-2">
+                <span className="material-symbols-outlined">help_center</span>
+                Yêu cầu hỗ trợ từ Quản lý
+              </h3>
+              <button type="button" onClick={() => setShowSupportModal(false)} className="p-1 hover:bg-amber-100 rounded-lg text-amber-700 transition-all">
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitSupport} className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loại hỗ trợ</label>
+                <select
+                  value={supportData.requestType}
+                  onChange={(e) => setSupportData({...supportData, requestType: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 text-sm font-bold text-slate-700"
+                >
+                  <option value="Linh kiện">Cần cấp vật tư / Linh kiện thay thế</option>
+                  <option value="Kinh phí">Cần duyệt kinh phí mua ngoài</option>
+                  <option value="Thợ ngoài">Cần gọi thợ chuyên nghiệp bên ngoài</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung / Số tiền đề xuất</label>
+                <textarea
+                  required
+                  placeholder="VD: Đề xuất thay nguyên cụm motor giá 2tr, hoặc xin xuất kho 1 bơm áp lực..."
+                  value={supportData.note}
+                  onChange={(e) => setSupportData({...supportData, note: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 text-sm font-medium h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
+                <button type="submit" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
+                  Gửi yêu cầu
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
