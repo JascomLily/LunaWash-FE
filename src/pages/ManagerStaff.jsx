@@ -7,16 +7,6 @@ const BRANCH_NAMES = {
   'BRN-Q1-01': 'LunaWash Quận 1 - Chi nhánh Trung Tâm'
 };
 
-// DEMO: Dữ liệu nhân viên mẫu để test UI. Sau này sẽ gọi API lấy từ DB.
-const DEFAULT_EMPLOYEES = [
-  { id: 'EMP-001', fullName: 'Nguyễn Văn Nhân Viên', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 1, status: 'Active', checkIn: '07:55 AM', note: 'Đúng giờ' },
-  { id: 'EMP-002', fullName: 'Phạm Hoàng Nam', role: 'Kỹ thuật', wages: '7.800.000đ', leaveDays: 0, status: 'Active', checkIn: '07:58 AM', note: 'Đúng giờ' },
-  { id: 'EMP-003', fullName: 'Nguyễn Thị Thu', role: 'Chăm sóc xe', wages: '8.000.000đ', leaveDays: 2, status: 'Active', checkIn: '08:12 AM', note: 'Hỏng xe giữa đường' },
-  { id: 'EMP-004', fullName: 'Lê Văn Tài', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 0, status: 'Active', checkIn: '08:00 AM', note: 'Đúng giờ' },
-  { id: 'EMP-005', fullName: 'Hoàng Quốc Việt', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 1, status: 'Active', checkIn: '08:02 AM', note: 'Đúng giờ' },
-  { id: 'EMP-006', fullName: 'Đặng Minh Châu', role: 'Chăm sóc xe', wages: '8.200.000đ', leaveDays: 3, status: 'Active', checkIn: null, note: 'Có phép (Khám bệnh)' },
-  { id: 'EMP-007', fullName: 'Vũ Quốc Bảo', role: 'Kỹ thuật', wages: '7.500.000đ', leaveDays: 0, status: 'Inactive', checkIn: null, note: 'Nghỉ không phép' }
-];
 
 export default function ManagerStaff() {
   const navigate = useNavigate();
@@ -41,7 +31,7 @@ export default function ManagerStaff() {
   const [historyLogs, setHistoryLogs] = useState([]);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02' });
+  const [newEmployee, setNewEmployee] = useState({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02', salary: '', leaveDays: '' });
 
 
   useEffect(() => {
@@ -253,17 +243,17 @@ export default function ManagerStaff() {
 const handleAddEmployee = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/Employees`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newEmployee, branchId: user.branchId || 'BRN-LD-01' })
+        body: JSON.stringify({ ...newEmployee, salary: Number(newEmployee.salary), leaveDays: Number(newEmployee.leaveDays), branchId: user.branchId || 'BRN-LD-01' })
       });
       if (response.ok) {
         toast.success("Thêm nhân viên thành công!");
         setShowAddModal(false);
-        setNewEmployee({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02' });
+        setNewEmployee({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02', salary: '', leaveDays: '' });
         
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/Employees/branch/${user.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId || 'BRN-LD-01'}`);
         if (res.ok) {
             const data = await res.json();
             setEmployees(data.map(emp => ({
@@ -288,7 +278,7 @@ const handleAddEmployee = async (e) => {
   const handleDeleteEmployee = async (id) => {
     if(!confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/Employees/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -304,7 +294,7 @@ const handleAddEmployee = async (e) => {
 
   const handleRealtimeCheckIn = async (empId) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/Employees/checkin`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ employeeId: empId, branchId: user.branchId || 'BRN-LD-01' })
@@ -884,6 +874,67 @@ const handleAddEmployee = async (e) => {
 
       </div>
       {/* Assign Shift Modal Removed */}
+
+      {/* Add Employee Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden flex flex-col shadow-xl">
+            <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
+              <h2 className="text-lg font-bold text-[#00236f] flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">person_add</span>
+                Thêm nhân viên mới
+              </h2>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              <form onSubmit={handleAddEmployee} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-on-surface-variant mb-1">Họ và tên</label>
+                  <input type="text" required value={newEmployee.fullName} onChange={e => setNewEmployee({...newEmployee, fullName: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest" placeholder="Nhập họ và tên..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-on-surface-variant mb-1">Email</label>
+                  <input type="email" required value={newEmployee.email} onChange={e => setNewEmployee({...newEmployee, email: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest" placeholder="Nhập email liên hệ..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-on-surface-variant mb-1">Số điện thoại</label>
+                  <input type="tel" required value={newEmployee.phoneNumber} onChange={e => setNewEmployee({...newEmployee, phoneNumber: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest" placeholder="Nhập số điện thoại..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-on-surface-variant mb-1">Vai trò</label>
+                  <select value={newEmployee.roleId} onChange={e => setNewEmployee({...newEmployee, roleId: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest appearance-none">
+                    <option value="ROL-02">Chăm sóc xe</option>
+                    <option value="ROL-05">Kỹ thuật viên</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-on-surface-variant mb-1">Chi nhánh</label>
+                  <input type="text" disabled value={user.branchId || 'BRN-LD-01'} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 bg-slate-100 text-slate-500 cursor-not-allowed" />
+                  <p className="text-xs text-slate-400 mt-1">Chi nhánh mặc định theo tài khoản Quản lý</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-on-surface-variant mb-1">Mức lương (VNĐ)</label>
+                    <input type="number" required min="0" step="100000" value={newEmployee.salary || ''} onChange={e => setNewEmployee({...newEmployee, salary: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest" placeholder="VD: 7000000" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-on-surface-variant mb-1">Số ngày phép</label>
+                    <input type="number" required min="0" value={newEmployee.leaveDays || ''} onChange={e => setNewEmployee({...newEmployee, leaveDays: e.target.value})} className="w-full px-4 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-surface-container-lowest" placeholder="VD: 12" />
+                  </div>
+                </div>
+                <button type="submit" className="w-full mt-2 py-3 bg-primary hover:bg-primary-container text-white font-bold rounded-xl transition-all shadow-md active:scale-[0.98]">
+                  Xác nhận thêm
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* History Modal */}
       {showHistoryModal && (

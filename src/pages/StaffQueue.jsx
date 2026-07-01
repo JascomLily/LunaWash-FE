@@ -117,6 +117,7 @@ const BRANCH_DETAILS = {
 
 export default function StaffQueue() {
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
