@@ -125,7 +125,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/staff/technical" element={
-              <ProtectedRoute allowedRoles={['TechnicalStaff', 'BranchManager']}>
+              <ProtectedRoute allowedRoles={['Staff', 'TechnicalStaff', 'BranchManager']}>
                 <TechnicalPage />
               </ProtectedRoute>
             } />
