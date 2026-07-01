@@ -84,7 +84,7 @@ export default function TechnicalPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-slate-800">Kỹ thuật thiết bị</h1>
               <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full">
-                Chi nhánh Bình Thạnh
+                Chi nhánh Quận 1
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1 font-medium">
