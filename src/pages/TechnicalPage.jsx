@@ -581,6 +581,13 @@ export default function TechnicalPage() {
             </div>
 
             <form onSubmit={handleSubmitReport} className="p-6 space-y-5">
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl flex items-start gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-lg">info</span>
+                <p className="text-xs font-medium text-blue-800">
+                  Lưu ý: Báo cáo này sẽ được gửi trực tiếp lên Hộp thư của <strong className="font-bold">Quản lý chi nhánh</strong> để phân công xử lý.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Chọn Trạm hỏng</label>
                 <select
