@@ -56,10 +56,10 @@ export default function BranchHistory() {
   // Search filter
   const filteredHistory = completedBookings.filter(b => {
     const term = searchTerm.toLowerCase();
-    return b.licensePlate.toLowerCase().includes(term) ||
-           b.packageName.toLowerCase().includes(term) ||
-           b.customerName.toLowerCase().includes(term) ||
-           b.vehicleType.toLowerCase().includes(term);
+    return (b.licensePlate || '').toLowerCase().includes(term) ||
+           (b.packageName || '').toLowerCase().includes(term) ||
+           (b.customerName || '').toLowerCase().includes(term) ||
+           (b.vehicleType || '').toLowerCase().includes(term);
   });
 
   // Calculations for Manager

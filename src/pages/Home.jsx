@@ -39,6 +39,37 @@ export default function Home() {
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  const [mainPackages, setMainPackages] = useState([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+
+  // Lấy danh sách các gói dịch vụ (MainPackage)
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/services`);
+        if (res.ok) {
+          const data = await res.json();
+          // Lọc gói tự động (Package), đang kích hoạt, và chỉ lấy tối đa 3 gói đầu
+          const activeMain = data
+            .filter(s => s.serviceType === 'Package' && s.isActive)
+            .slice(0, 3);
+          setMainPackages(activeMain);
+        }
+      } catch (e) {
+        console.error("Lỗi khi tải gói dịch vụ:", e);
+      } finally {
+        setIsLoadingPackages(false);
+      }
+    };
+    fetchPackages();
+  }, []);
+
+  const [banners, setBanners] = useState([
+    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
+    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
+    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
+  ]);
+
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
@@ -66,6 +97,13 @@ export default function Home() {
       } catch (e) {
         console.error(e);
       }
+    }
+
+    const storedBanners = localStorage.getItem('ads_banners');
+    if (storedBanners) {
+      try {
+        setBanners(JSON.parse(storedBanners));
+      } catch (e) {}
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -176,28 +214,66 @@ export default function Home() {
           <div className="animate-marquee flex gap-6">
             {/* Set 1 */}
             <div className="flex gap-6">
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
+              {banners.map((b) => (
+                <div 
+                  key={b.id} 
+                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                >
+                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                </div>
+              ))}
             </div>
             {/* Set 2 (Duplicated for infinite scroll effect) */}
             <div className="flex gap-6">
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_1.png" alt="Promo 1" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_2.png" alt="Promo 2" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
-              <div className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group">
-                <img src="/promo_3.png" alt="Promo 3" className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
-              </div>
+              {banners.map((b) => (
+                <div 
+                  key={`dup-${b.id}`} 
+                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                >
+                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION VỀ CHÚNG TÔI */}
+      <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="about">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <span className="inline-block bg-sky-100 text-[#00236f] px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest select-none">
+              Về LunaWash
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#00236f] tracking-tight leading-tight">
+              Hệ thống chăm sóc xe thông minh hàng đầu
+            </h2>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              LunaWash ra đời với sứ mệnh mang đến trải nghiệm rửa xe và chăm sóc ô tô hoàn toàn mới. Ứng dụng công nghệ tự động hóa vào quy trình quản lý, chúng tôi giúp khách hàng tiết kiệm tối đa thời gian chờ đợi.
+            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Hệ thống đặt lịch tự động, không chờ đợi</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Sử dụng dung dịch chăm sóc xe cao cấp</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                <span className="text-sm text-on-surface-variant">Đội ngũ kỹ thuật viên chuyên nghiệp, tận tâm</span>
+              </li>
+            </ul>
+          </div>
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[400px]">
+            <img 
+              src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?q=80&w=2070&auto=format&fit=crop" 
+              alt="LunaWash Facility" 
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </section>
@@ -222,84 +298,71 @@ export default function Home() {
           {/* BA GÓI DỊCH VỤ */}
           <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-gutter">
             
-            {/* GÓI 1: Cơ bản */}
-            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  water_drop
-                </span>
+            {isLoadingPackages ? (
+              <div className="col-span-full text-center py-10 text-outline">
+                <span className="material-symbols-outlined animate-spin text-4xl mb-2">hourglass_empty</span>
+                <p>Đang tải danh sách dịch vụ...</p>
               </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Cơ bản</h3>
-                <span className="text-[10px] text-outline font-bold">~15 phút</span>
+            ) : mainPackages.length === 0 ? (
+              <div className="col-span-full text-center py-10 text-outline">
+                <span className="material-symbols-outlined text-4xl mb-2">info</span>
+                <p>Hiện chưa có gói dịch vụ nào.</p>
               </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Rửa bề mặt, rửa kính, sấy khô.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">150.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Cơ bản')}
-                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
+            ) : (
+              mainPackages.map((pkg, index) => {
+                // Xác định gói phổ biến (nếu admin set isPopular, hoặc fallback lấy gói thứ 2 nếu chỉ có 3 gói)
+                const isPopular = pkg.isPopular || (mainPackages.length >= 3 && index === 1);
+                
+                // Lấy giá tiền và thời gian (hiển thị giá min nếu có nhiều loại xe)
+                const price = pkg.prices && pkg.prices.length > 0 
+                  ? Math.min(...pkg.prices.map(p => p.price)) 
+                  : 0;
+                const duration = pkg.prices && pkg.prices.length > 0 
+                  ? pkg.prices[0].durationMinutes 
+                  : 0;
 
-            {/* GÓI 2: Nâng cao (Nổi bật nhất - PHỔ BIẾN) */}
-            <div className="relative bg-surface-container-lowest p-7 rounded-3xl border-2 border-[#00236f] shadow-lg hover:shadow-2xl transition-all group flex flex-col h-full overflow-hidden">
-              {/* Nhãn PHỔ BIẾN ở góc trên bên phải */}
-              <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
-                Phổ Biến
-              </div>
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  cool_to_dry
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Nâng cao</h3>
-                <span className="text-[10px] text-outline font-bold">~20 phút</span>
-              </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Tất cả gói Cơ bản và Rửa gầm xe.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">250.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Nâng cao')}
-                  className="w-full py-3 bg-[#00236f] hover:bg-primary-container text-white font-bold rounded-xl transition-all text-sm shadow-md hover:shadow-lg active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
-
-            {/* GÓI 3: Cao cấp */}
-            <div className="bg-surface-container-lowest p-7 rounded-3xl border border-outline-variant/60 hover:border-primary/45 transition-all hover:shadow-xl group flex flex-col h-full">
-              <div className="mb-5 text-primary">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  diamond
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline mb-2">
-                <h3 className="font-bold text-lg text-on-surface">Cao cấp</h3>
-                <span className="text-[10px] text-outline font-bold">~30 phút</span>
-              </div>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">
-                Dịch vụ cả 2 gói trên kèm đánh bóng.
-              </p>
-              <div className="mt-auto">
-                <p className="text-2xl font-black text-primary mb-5">500.000đ</p>
-                <button 
-                  onClick={() => handleActionClick('Cao cấp')}
-                  className="w-full py-3 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white font-bold transition-all text-sm shadow-sm hover:shadow active:scale-95"
-                >
-                  Chọn ngay
-                </button>
-              </div>
-            </div>
+                return (
+                  <div key={pkg.id} className={`relative bg-surface-container-lowest p-7 rounded-3xl transition-all group flex flex-col h-full overflow-hidden ${isPopular ? 'border-2 border-[#00236f] shadow-lg hover:shadow-2xl' : 'border border-outline-variant/60 hover:border-primary/45 hover:shadow-xl'}`}>
+                    {isPopular && (
+                      <div className="absolute top-0 right-0 bg-[#00236f] text-white px-4 py-1 text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
+                        Phổ Biến
+                      </div>
+                    )}
+                    <div className="mb-5 text-primary">
+                      <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {pkg.iconName || 'water_drop'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline mb-2">
+                      <h3 className="font-bold text-lg text-on-surface">{pkg.serviceName}</h3>
+                      <span className="text-[10px] text-outline font-bold">~{duration} phút</span>
+                    </div>
+                    <div className="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed flex flex-col gap-2">
+                      <p>{pkg.description}</p>
+                      {pkg.serviceFeatures && pkg.serviceFeatures.length > 0 && (
+                        <ul className="space-y-1.5 mt-2 border-t border-outline-variant/30 pt-3">
+                          {pkg.serviceFeatures.map((feat, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-xs text-on-surface-variant">
+                              <span className="material-symbols-outlined text-[14px] text-green-600 mt-0.5">check_circle</span>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-outline-variant/30">
+                      <p className="text-2xl font-black text-primary mb-5">{price.toLocaleString('vi-VN')}đ</p>
+                      <button 
+                        onClick={() => handleActionClick(pkg.serviceName)}
+                        className={`w-full py-3 font-bold rounded-xl transition-all text-sm shadow-sm active:scale-95 ${isPopular ? 'bg-[#00236f] hover:bg-primary-container text-white hover:shadow-lg' : 'border border-primary text-primary hover:bg-primary hover:text-white hover:shadow'}`}
+                      >
+                        Chọn ngay
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
 
           </div>
         </div>
@@ -351,6 +414,50 @@ export default function Home() {
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* SECTION FAQ (HỎI ĐÁP) */}
+      <section className="py-16 bg-[#f8fafc] border-t border-outline-variant/20" id="faq">
+        <div className="max-w-3xl mx-auto px-margin-desktop">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-sky-100 text-[#00236f] px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest select-none mb-4">
+              Hỗ trợ
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#00236f] tracking-tight">Câu hỏi thường gặp</h2>
+          </div>
+          <div className="space-y-4">
+            {/* FAQ Item 1 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Tôi cần đặt lịch trước bao lâu?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                Để đảm bảo trải nghiệm tốt nhất và không phải chờ đợi, Quý khách nên đặt lịch trước ít nhất 30 phút. Tuy nhiên, hệ thống vẫn cho phép đặt lịch lấy ngay nếu trạm đang có chỗ trống.
+              </p>
+            </div>
+            {/* FAQ Item 2 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Hủy lịch có bị mất phí không?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                Việc hủy lịch là hoàn toàn miễn phí nếu Quý khách thao tác hủy trên hệ thống ít nhất 30 phút trước giờ hẹn.
+              </p>
+            </div>
+            {/* FAQ Item 3 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+              <h3 className="font-bold text-on-surface flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Hệ thống hỗ trợ những phương thức thanh toán nào?
+              </h3>
+              <p className="text-on-surface-variant text-sm pl-7 leading-relaxed">
+                LunaWash hỗ trợ thanh toán linh hoạt bằng tiền mặt tại trạm, quẹt thẻ thẻ ngân hàng, hoặc thanh toán trực tuyến qua VNPAY / Momo.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

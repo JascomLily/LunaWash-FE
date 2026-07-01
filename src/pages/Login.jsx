@@ -59,6 +59,8 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // --- Đã xóa Dummy Login. Giờ sẽ gọi thẳng API xuống Backend ---
+
       // GỌI API XUỐNG BACKEND: Gửi yêu cầu đăng nhập (POST) đến Endpoint /api/Auth/login
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/login', {
         method: 'POST',
@@ -116,7 +118,9 @@ export default function Login() {
       toast.success(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName}`);
       
       // Chuyển hướng trực tiếp dựa trên vai trò để tránh hiện trang chủ
-      if (loggedInUser.tier === 'Staff' || loggedInUser.tier === 'BranchManager') {
+      if (loggedInUser.tier === 'Admin') {
+        window.location.href = '/admin';
+      } else if (loggedInUser.tier === 'Staff' || loggedInUser.tier === 'BranchManager') {
         window.location.href = '/staff/queue';
       } else if (loggedInUser.tier === 'TechnicalStaff') {
         window.location.href = '/staff/technical';
@@ -294,7 +298,7 @@ export default function Login() {
               <input 
                 className="w-full pl-12 pr-4 py-4 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface disabled:opacity-50" 
                 id="email" 
-                placeholder="customer1@gmail.com" 
+                placeholder="email@example.com" 
                 type="email"
                 required
                 value={email}

@@ -123,10 +123,22 @@ export default function StaffQueue() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Pending');
   const [addingInteriorBooking, setAddingInteriorBooking] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const dropdownRef = useRef(null);
 
   // Date picker states
-  const today = new Date();
-  const [selectedDate, setSelectedDate] = useState(today.toISOString().split('T')[0]);
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    return new Date(vnTimeStr);
+  };
+  const today = getVietnamTime();
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const [selectedDate, setSelectedDate] = useState(getTodayStr(today));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
@@ -181,7 +193,7 @@ export default function StaffQueue() {
   };
 
   const handleSelectToday = () => {
-    const t = new Date();
+    const t = getVietnamTime();
     setCalendarMonth(t.getMonth());
     setCalendarYear(t.getFullYear());
     const y = t.getFullYear();
@@ -239,7 +251,7 @@ export default function StaffQueue() {
                   const [hours, mins] = endTimeStr.split(':');
                   const endTime = new Date(year, month - 1, day, hours, mins);
                   
-                  if (new Date() > endTime) {
+                  if (getVietnamTime() > endTime) {
                      status = 'Cancelled';
                   }
                 }
@@ -258,7 +270,7 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasInterior: (dto.services?.toLowerCase().includes('nội thất') || dto.packageName?.toLowerCase().includes('nội thất')),
+            hasInterior: (dto.services?.toLowerCase()?.includes('nội thất') || dto.packageName?.toLowerCase()?.includes('nội thất')),
             price: dto.totalPrice,
             customerName: 'Khách hàng',
             notes: dto.services || dto.extras,
@@ -326,9 +338,9 @@ export default function StaffQueue() {
 
   // Search & Filter
   const filteredBookings = branchBookings.filter(b => {
-    const matchesSearch = b.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          b.packageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          b.vehicleType.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (b.licensePlate || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (b.packageName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (b.vehicleType || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -473,7 +485,7 @@ export default function StaffQueue() {
               >
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                  {selectedDate === today.toISOString().split('T')[0] ? 'Hôm nay' : selectedDate}
+                  {selectedDate === getTodayStr(today) ? 'Hôm nay' : selectedDate}
                 </div>
                 <span className="material-symbols-outlined text-[18px] ml-2">expand_more</span>
               </button>

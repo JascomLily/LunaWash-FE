@@ -11,6 +11,7 @@ export default function Navbar() {
   
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(user.tier);
@@ -92,11 +93,11 @@ export default function Navbar() {
   };
 
   return (
-    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 h-20 shadow-sm border-b border-outline-variant/20">
-      <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
+    <header className="bg-surface/80 backdrop-blur-md text-primary font-title-md text-title-md fixed w-full top-0 left-0 right-0 z-50 shadow-sm border-b border-outline-variant/20 flex flex-col">
+      <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20 shrink-0">
         {/* Logo */}
         {/* Logo */}
-        <Link to={(!isCustomer && user) ? (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue") : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
+        <Link to={(!isCustomer && user) ? (user.tier === 'Admin' ? "/admin" : (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue")) : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
             alt="LunaWash Logo"
@@ -147,6 +148,19 @@ export default function Navbar() {
                 }`}
               >
                 Hỗ Trợ
+              </Link>
+            </>
+          ) : user.tier === 'Admin' ? (
+            <>
+              <Link
+                to="/admin"
+                className={`transition-colors py-2 border-b-2 ${
+                  isActive('/admin') 
+                    ? 'text-primary font-bold border-primary' 
+                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                }`}
+              >
+                Vào Trang Quản Trị
               </Link>
             </>
           ) : (
@@ -208,9 +222,19 @@ export default function Navbar() {
         </nav>
 
         {/* Action Button or User Profile */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Nút Hamburger cho Mobile */}
+          <button 
+            className="md:hidden p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {mobileMenuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
+
           {user ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Nút Chuông Thông Báo */}
               <button 
                 onClick={() => alert("Bạn không có thông báo mới nào.")}
@@ -221,7 +245,7 @@ export default function Navbar() {
               </button>
 
               {/* Nút Avatar bo góc sang trọng */}
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => navigate('/user')}
                   onMouseEnter={() => setDropdownOpen(true)}
@@ -345,6 +369,72 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* TẦNG 2 MOBILE: Thanh Profile */}
+      {user && (
+        <div className="md:hidden w-full bg-surface-container-lowest border-t border-outline-variant/20 px-4 py-2.5 flex items-center justify-between shadow-sm relative z-40 shrink-0">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/user')}>
+            <img src={user.avatarUrl || '/default-avatar.svg'} className="w-10 h-10 rounded-full object-cover border-2 border-outline-variant/40 shadow-sm" alt={user.fullName} />
+            <div className="flex flex-col text-left leading-tight gap-1">
+              <span className="font-bold text-sm text-on-surface-variant">{user.fullName}</span>
+              {isCustomer ? (
+                <span className={`relative inline-flex items-center gap-1 px-2 py-[2px] rounded text-white font-black text-[10px] uppercase tracking-widest shadow-sm bg-gradient-to-r ${tierInfo.bg}`} style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%)' }}>
+                  <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>{tierInfo.icon}</span>
+                  {tierInfo.label}
+                  <span className="text-white/80 px-1">|</span>
+                  <span className="text-amber-300 flex items-center gap-0.5">{user.points || 0} pt</span>
+                  <span className="w-2.5 inline-block" />
+                </span>
+              ) : (
+                <span className={`inline-flex items-center gap-1 px-2 py-[2px] rounded text-white font-black text-[10px] uppercase tracking-widest shadow-sm ${tierInfo.bg}`}>
+                  <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>{tierInfo.icon}</span>
+                  {tierInfo.label}
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={handleLogout} className="text-error p-2 hover:bg-error/10 rounded-full transition-colors flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">logout</span>
+          </button>
+        </div>
+      )}
+
+      {/* MOBILE MENU OVERLAY */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-[80px] left-0 w-full h-[calc(100vh-80px)] bg-surface/95 backdrop-blur-xl border-t border-outline-variant/20 shadow-2xl flex flex-col z-[45] animate-fadeIn mt-[60px]">
+          <div className="flex flex-col p-6 gap-4">
+            {isCustomer ? (
+              <>
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/') ? 'text-primary' : 'text-on-surface'}`}>Trang Chủ</Link>
+                <Link to="/booking" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/booking') ? 'text-primary' : 'text-on-surface'}`}>Đặt Lịch</Link>
+                <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử</Link>
+                <Link to="/support" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/support') ? 'text-primary' : 'text-on-surface'}`}>Hỗ Trợ</Link>
+              </>
+            ) : user?.tier === 'Admin' ? (
+              <>
+                <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/admin') ? 'text-primary' : 'text-on-surface'}`}>Vào Trang Quản Trị</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                <Link to="/staff/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử Trạm</Link>
+                <Link to="/staff/feedback" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/feedback') ? 'text-primary' : 'text-on-surface'}`}>Phản Hồi</Link>
+                <Link to="/staff/technical" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/technical') ? 'text-primary' : 'text-on-surface'}`}>Trang Kỹ Thuật</Link>
+                {user?.tier === 'BranchManager' && (
+                  <Link to="/staff/employees" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/employees') ? 'text-primary' : 'text-on-surface'}`}>Nhân Sự & Ca Trực</Link>
+                )}
+              </>
+            )}
+            
+            {!user && (
+              <div className="flex flex-col gap-3 mt-4">
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/login'); }} className="py-3 bg-primary text-on-primary rounded-xl font-bold w-full shadow-md">Đăng Nhập</button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/register'); }} className="py-3 bg-secondary text-on-secondary rounded-xl font-bold w-full shadow-md">Đăng Ký</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

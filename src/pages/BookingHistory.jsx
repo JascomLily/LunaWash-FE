@@ -83,9 +83,11 @@ export default function BookingHistory() {
       });
       if (res.ok) {
         const data = await res.json();
+        // Lọc bỏ những booking rác của VNPAY (chưa thanh toán xong mà đã thoát)
+        const validData = data.filter(b => !(b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending')));
         
         // Find the first "Sắp đến" or "Đang rửa" booking
-        const active = data.find(b => b.status === 'Sắp đến' || b.status === 'Đang rửa');
+        const active = validData.find(b => b.status === 'Sắp đến' || b.status === 'Đang rửa');
         if (active) {
           let timeVal = '';
           let dateVal = '';
@@ -120,7 +122,7 @@ export default function BookingHistory() {
         }
 
         // Map the rest to historyList
-        const history = data.filter(b => !active || b.id !== active.id).map(b => ({
+        const history = validData.filter(b => !active || b.id !== active.id).map(b => ({
           id: b.id,
           packageName: b.packageName,
           vehicle: b.vehicleInfo,
@@ -418,7 +420,7 @@ export default function BookingHistory() {
                               <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
                           </div>
-                        ) : (
+                        ) : item.status === 'Hoàn thành' ? (
                           <button 
                             onClick={() => navigate('/feedback', { state: { bookingId: item.id, booking: item } })}
                             className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 mx-auto transition-colors shadow-sm"
@@ -426,6 +428,8 @@ export default function BookingHistory() {
                             <span className="material-symbols-outlined text-sm">star</span>
                             Đánh giá
                           </button>
+                        ) : (
+                          <span className="text-outline/50 text-xs font-semibold">-</span>
                         )}
                       </td>
                       {/* Chi tiết */}

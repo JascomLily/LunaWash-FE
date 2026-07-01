@@ -62,36 +62,7 @@ const WASH_SLOTS = [
   { id: 'SL-03', name: 'Trạm 3', status: 'Sẵn sàng', color: 'text-emerald-600 bg-emerald-50' }
 ];
 
-const SERVICE_PACKAGES = [
-  {
-    id: 'PK-CB',
-    name: 'Cơ bản',
-    desc: 'Rửa sạch ngoại thất, làm khô tự động và xịt bóng lốp.',
-    price: 150000,
-    priceStr: '150.000đ',
-    time: 15,
-    features: ['Rửa vòi áp lực cao', 'Sấy khô nhiệt', 'Làm bóng lốp']
-  },
-  {
-    id: 'PK-NC',
-    name: 'Nâng cao',
-    desc: 'Dịch vụ cơ bản kết hợp vệ sinh gầm và tẩy ố lazang.',
-    price: 250000,
-    priceStr: '250.000đ',
-    time: 20,
-    features: ['Tất cả gói Cơ bản', 'Vệ sinh gầm xe', 'Tẩy ố lazang chuyên sâu'],
-    isPopular: true
-  },
-  {
-    id: 'PK-CC',
-    name: 'Cao cấp',
-    desc: 'Chăm sóc toàn diện với phủ Nano Ceramic bảo vệ sơn xe.',
-    price: 500000,
-    priceStr: '500.000đ',
-    time: 30,
-    features: ['Tất cả gói Nâng cao', 'Phủ Nano bảo vệ sơn', 'Đánh bóng']
-  }
-];
+// Removed static SERVICE_PACKAGES
 
 const MOCK_SAVED_VEHICLES = [
   { id: 'V-01', license: 'Toyota Vios - 51H-123.45', type: 'xe-o-to', brand: 'Toyota', model: 'Vios 1.5G' },
@@ -117,13 +88,7 @@ const generateTimeSlots = () => {
 const TIME_SLOTS = generateTimeSlots();
 
 // Cấu hình dịch vụ vệ sinh nội thất cho từng loại xe
-const INTERIOR_CLEAN_SPECS = {
-  'VT-OTO-2C': { typeName: 'Ô tô 2 chỗ', price: 500000, priceStr: '500.000đ', duration: 120, slots: 3, blockedTime: 135 },
-  'VT-OTO-4C': { typeName: 'Ô tô 4 chỗ', price: 700000, priceStr: '700.000đ', duration: 150, slots: 4, blockedTime: 180 },
-  'VT-OTO-7C': { typeName: 'Ô tô 7 chỗ', price: 1000000, priceStr: '1.000.000đ', duration: 210, slots: 5, blockedTime: 225 },
-  'VT-OTO-BT': { typeName: 'Xe bán tải', price: 1100000, priceStr: '1.100.000đ', duration: 240, slots: 6, blockedTime: 270 },
-  'VT-OTO-SUV': { typeName: 'SUV', price: 1100000, priceStr: '1.100.000đ', duration: 240, slots: 6, blockedTime: 270 }
-};
+// Removed static INTERIOR_CLEAN_SPECS
 
 /**
  * Trang Đặt Lịch Rửa Xe Thông Minh (Booking) - LunaWash.
@@ -132,6 +97,7 @@ const INTERIOR_CLEAN_SPECS = {
 export default function Booking() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [promoCode, setPromoCode] = useState(location.state?.promoCode || '');
   const navState = location.state || {};
 
   // Cuộn lên đầu trang khi component được mount (đặc biệt khi chuyển từ trang chủ sang)
@@ -139,11 +105,131 @@ export default function Booking() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // Dọn dẹp booking rác nếu user bấm nút BACK từ trang thanh toán VNPay
+  useEffect(() => {
+    const checkAbortedPayment = async () => {
+      const pendingId = localStorage.getItem('pendingVnpayBooking');
+      if (pendingId) {
+        localStorage.removeItem('pendingVnpayBooking');
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${pendingId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${parsed.token}`
+              }
+            });
+            setTimeout(() => {
+              toast.error('Bạn đã hủy thanh toán. Lịch đặt chưa được ghi nhận!', { id: 'vnpay-abort', duration: 5000 });
+            }, 500);
+          } catch(e) {}
+        }
+      }
+    };
+    checkAbortedPayment();
+  }, []);
+
+  const [highlightPromo, setHighlightPromo] = useState(false);
+  const toastShownRef = React.useRef(false);
+
+  // Promo Code Verification
+  const [discountInfo, setDiscountInfo] = useState(null);
+  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState(null);
+
+  const handleApplyPromo = async (codeToApply) => {
+    // If called from button onClick, codeToApply is an Event object
+    const code = (typeof codeToApply === 'string' ? codeToApply : promoCode)?.trim();
+    if (!code) {
+      setDiscountInfo(null);
+      setPromoError(null);
+      return;
+    }
+
+    setIsVerifyingPromo(true);
+    setDiscountInfo(null);
+    setPromoError(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const res = await fetch(`${baseUrl}/api/promotions/validate?code=${encodeURIComponent(code)}`);
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error(`Server returned non-JSON. Status: ${res.status}`);
+      }
+
+      if (data.success) {
+        setDiscountInfo(data.data);
+        toast.success(`Áp dụng mã ${data.data.name || code} thành công!`, {
+          icon: '🎁',
+          duration: 4000,
+          style: {
+            borderRadius: '16px',
+            background: '#ffffff',
+            color: '#00236f',
+            fontWeight: '900',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            border: '2px solid #4cd7f6'
+          },
+        });
+        setHighlightPromo(true);
+        setTimeout(() => setHighlightPromo(false), 3000);
+      } else {
+        setPromoError(data.message || 'Mã khuyến mãi không hợp lệ.');
+        toast.error(data.message || 'Mã khuyến mãi không hợp lệ.');
+      }
+    } catch (error) {
+      console.error('Lỗi khi check mã:', error);
+      setPromoError(`Lỗi kết nối: ${error.message}`);
+    } finally {
+      setIsVerifyingPromo(false);
+    }
+  };
+
+  useEffect(() => {
+    if (location.state?.promoCode && !toastShownRef.current) {
+      toastShownRef.current = true;
+      handleApplyPromo(location.state.promoCode);
+      
+      // Clear the promoCode from history state so it doesn't trigger again on reload
+      navigate(location.pathname, { replace: true, state: { ...navState, promoCode: undefined } });
+    }
+  }, [location.state, location.pathname, navigate, navState]);
+
   // BƯỚC THIẾT LẬP STATE
   const [selectedBranch, setSelectedBranch] = useState(navState.branchId || '');
   const [selectedWashSlot, setSelectedWashSlot] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(navState.packageId || '');
-  const [includeInteriorClean, setIncludeInteriorClean] = useState(false);
+  
+  const [mainPackages, setMainPackages] = useState([]);
+  const [addOnServices, setAddOnServices] = useState([]);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [serviceFetchError, setServiceFetchError] = useState(false);
+
+  useEffect(() => {
+    // Gọi API lấy danh sách dịch vụ động (nếu backend đang chạy)
+    const fetchServices = async () => {
+      try {
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/services');
+        if (res.ok) {
+          const data = await res.json();
+          setMainPackages(data.filter(s => s.serviceType === 'Package' && s.isActive));
+          setAddOnServices(data.filter(s => s.serviceType === 'AddOn' && s.isActive));
+          setServiceFetchError(false);
+        } else {
+          setServiceFetchError(true);
+        }
+      } catch (err) {
+        setServiceFetchError(true);
+      }
+    };
+    fetchServices();
+  }, []);
+
 
   // Xe và Thông tin xe (lấy từ Backend)
   const [userVehicles, setUserVehicles] = useState([]);
@@ -153,9 +239,30 @@ export default function Booking() {
   // Lấy cấu hình dịch vụ vệ sinh nội thất cho loại xe đang chọn
   const activeVehicle = userVehicles.find(v => v.id === selectedVehicleId);
   const selectedVehicleTypeId = activeVehicle?.vehicleTypeId || 'VT-OTO-4C';
-  const interiorSpecs = INTERIOR_CLEAN_SPECS[selectedVehicleTypeId] || INTERIOR_CLEAN_SPECS['VT-OTO-4C'];
+    // --- Tính toán số slot ---
+  const activeMainPackage = mainPackages.find(p => p.id === selectedPackage);
+  let mainDuration = 0;
+  if (activeMainPackage && activeMainPackage.prices) {
+    const pInfo = activeMainPackage.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || activeMainPackage.prices[0];
+    mainDuration = pInfo?.durationMinutes || 0;
+  }
 
-  const numSlots = includeInteriorClean ? interiorSpecs.slots : 1;
+  let addOnsDuration = 0;
+  selectedAddOns.forEach(id => {
+    const addon = addOnServices.find(a => a.id === id);
+    if (addon && addon.prices) {
+      const pInfo = addon.prices.find(p => p.vehicleTypeId === selectedVehicleTypeId) || addon.prices[0];
+      addOnsDuration += (pInfo?.durationMinutes || 0);
+    }
+  });
+
+  const totalDurationMinutes = mainDuration + addOnsDuration;
+  
+  // Tính số lượng slot cần thiết (mỗi slot kéo dài tương đương 45 phút thực tế cho booking)
+  const numSlots = totalDurationMinutes > 0 ? Math.ceil(totalDurationMinutes / 45) : 1;
+  // -------------------------
+
+
 
   // Lỗi khi chọn slot giờ không hợp lệ
   const [slotError, setSlotError] = useState(null);
@@ -163,11 +270,11 @@ export default function Booking() {
   const getSlotSelectionError = (idx) => {
     if (idx + numSlots > TIME_SLOTS.length) {
       const slotsRemaining = TIME_SLOTS.length - idx;
-      return `Loại xe của bạn (${interiorSpecs.typeName}) khi vệ sinh nội thất cần đăng ký ${numSlots} slot liên tiếp (tổng cộng ${numSlots * 45} phút). Tuy nhiên, nếu bắt đầu từ Lượt ${idx + 1} (${TIME_SLOTS[idx].time}), từ đây đến cuối ngày chỉ còn lại ${slotsRemaining} slot, không đủ để hoàn thành dịch vụ. Vui lòng chọn khung giờ bắt đầu sớm hơn.`;
+      return `Các dịch vụ bạn chọn cần đăng ký ${numSlots} slot liên tiếp (tổng cộng ${totalDurationMinutes} phút). Tuy nhiên, nếu bắt đầu từ Lượt ${idx + 1} (${TIME_SLOTS[idx].time}), từ đây đến cuối ngày chỉ còn lại ${slotsRemaining} slot, không đủ để hoàn thành dịch vụ. Vui lòng chọn khung giờ bắt đầu sớm hơn.`;
     }
     for (let i = 0; i < numSlots; i++) {
       if (occupiedSlots.has(idx + i)) {
-        return `Không thể đặt lịch bắt đầu từ Lượt ${idx + 1} (${TIME_SLOTS[idx].time}) vì trong chuỗi ${numSlots} slot liên tiếp cần thiết, Lượt ${idx + i + 1} (${TIME_SLOTS[idx + i].time}) đã bị khách hàng khác đặt trước. Quy định vệ sinh nội thất yêu cầu các slot phải liên tục và không bị gián đoạn. Vui lòng chọn khung giờ trống liền mạch khác.`;
+        return `Không thể đặt lịch bắt đầu từ Lượt ${idx + 1} (${TIME_SLOTS[idx].time}) vì trong chuỗi ${numSlots} slot liên tiếp cần thiết, Lượt ${idx + i + 1} (${TIME_SLOTS[idx + i].time}) đã bị khách hàng khác đặt trước. Quy định yêu cầu các slot phải liên tục và không bị gián đoạn. Vui lòng chọn khung giờ trống liền mạch khác.`;
       }
     }
     return null;
@@ -327,13 +434,18 @@ export default function Booking() {
     }
   };
 
-  // Khởi tạo ngày hôm nay dạng YYYY-MM-DD
-  const getTodayStr = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  // Lấy thời gian hiện tại chuẩn GMT+7 (Giờ Việt Nam)
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    return new Date(vnTimeStr);
+  };
+
+  // Khởi tạo ngày hôm nay dạng YYYY-MM-DD theo giờ VN
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   };
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
@@ -357,9 +469,9 @@ export default function Booking() {
   };
 
   const { days: maxBookingDays, tier: currentTier } = getUserMaxBookingDays();
-  const todayStart = new Date();
+  const todayStart = getVietnamTime();
   todayStart.setHours(0, 0, 0, 0);
-  const maxAllowedDate = new Date();
+  const maxAllowedDate = getVietnamTime();
   maxAllowedDate.setDate(maxAllowedDate.getDate() + maxBookingDays);
   maxAllowedDate.setHours(23, 59, 59, 999);
 
@@ -367,11 +479,11 @@ export default function Booking() {
   // Lấy năm và tháng từ selectedDate để hiển thị lịch ban đầu
   const [calendarYear, setCalendarYear] = useState(() => {
     const parts = selectedDate.split('-');
-    return parts[0] ? parseInt(parts[0], 10) : new Date().getFullYear();
+    return parts[0] ? parseInt(parts[0], 10) : getVietnamTime().getFullYear();
   });
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const parts = selectedDate.split('-');
-    return parts[1] ? parseInt(parts[1], 10) - 1 : new Date().getMonth();
+    return parts[1] ? parseInt(parts[1], 10) - 1 : getVietnamTime().getMonth();
   });
 
   const [occupiedSlotsSet, setOccupiedSlotsSet] = useState(new Map());
@@ -393,9 +505,8 @@ export default function Booking() {
         const blocked = new Map();
         
         // 1. Chặn các slot giờ đã qua trong ngày hôm nay
-        const now = new Date();
-        const tzOffset = now.getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(now - tzOffset)).toISOString().split('T')[0];
+        const now = getVietnamTime();
+        const localISOTime = getTodayStr(now);
         const isToday = selectedDate === localISOTime;
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
@@ -534,7 +645,7 @@ export default function Booking() {
   };
 
   const handleSelectToday = () => {
-    const today = new Date();
+    const today = getVietnamTime();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
     const d = String(today.getDate()).padStart(2, '0');
@@ -574,12 +685,20 @@ export default function Booking() {
 
 
   // TÍNH TOÁN DỮ LIỆU TÓM TẮT DỊCH VỤ ĐỘNG
-  const activePackage = SERVICE_PACKAGES.find(p => p.id === selectedPackage) || null;
-  const baseCost = activePackage ? activePackage.price : 0;
-  const interiorCost = includeInteriorClean ? interiorSpecs.price : 0;
-  const totalCost = baseCost + interiorCost;
+  const activePackage = mainPackages.find(p => p.id === selectedPackage) || null;
+  const activePackagePrice = activePackage?.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || activePackage?.prices?.[0]?.price || 0;
+  const baseCost = activePackage ? activePackagePrice : 0;
   
-  const totalDuration = (activePackage ? activePackage.time : 0) + (includeInteriorClean ? interiorSpecs.duration : 0);
+  const activeAddOnList = addOnServices.filter(a => selectedAddOns.includes(a.id));
+  const interiorCost = activeAddOnList.reduce((sum, a) => sum + (a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || a.prices?.[0]?.price || 0), 0);
+  
+  const baseTotal = baseCost + interiorCost;
+  const actualDiscountPercent = discountInfo?.discountPercent || 0;
+  const totalCost = baseTotal - (baseTotal * actualDiscountPercent / 100);
+
+  const activePackageDuration = activePackage?.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || activePackage?.prices?.[0]?.durationMinutes || 0;
+  const interiorDuration = activeAddOnList.reduce((sum, a) => sum + (a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || a.prices?.[0]?.durationMinutes || 0), 0);
+  const totalDuration = activePackageDuration + interiorDuration;
   const displayDuration = selectedPackage ? (numSlots * 45 - 5) : 0;
   const activeBranchName = BRANCHES.find(b => b.id === selectedBranch)?.name || 'Chưa chọn';
   const activeSlotName = selectedWashSlot ? (WASH_SLOTS.find(s => s.id === selectedWashSlot)?.name || 'Chưa chọn') : 'Chưa chọn';
@@ -665,10 +784,19 @@ export default function Booking() {
     if (!activeVeh) return;
 
     let serviceIds = [];
-    if (selectedPackage === 'PK-CB') serviceIds.push('PRC-4C-BSC');
-    else if (selectedPackage === 'PK-NC') serviceIds.push('PRC-4C-ADV');
-    else if (selectedPackage === 'PK-CC') serviceIds.push('PRC-4C-PRE');
-    if (includeInteriorClean) serviceIds.push('PRC-INT-01');
+    if (activePackage) {
+      const pkgPriceInfo = activePackage.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId) || activePackage.prices?.[0];
+      if (pkgPriceInfo?.id) {
+        serviceIds.push(pkgPriceInfo.id);
+      }
+    }
+
+    activeAddOnList.forEach(a => {
+      const addonPriceInfo = a.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId) || a.prices?.[0];
+      if (addonPriceInfo?.id) {
+        serviceIds.push(addonPriceInfo.id);
+      }
+    });
 
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
     if (startIndex === -1) {
@@ -693,13 +821,14 @@ export default function Booking() {
       ScheduledStartTime: scheduledStartTime,
       Duration: totalDuration,
       Notes: notesStr,
-      ServicePriceIds: serviceIds
+      ServicePriceIds: serviceIds,
+      PromoCode: discountInfo ? promoCode : undefined
     };
 
     const bookingState = {
       paymentMethod: selectedMethod,
-      packageName: `GÓI ${activePackage.name.toUpperCase()}${includeInteriorClean === true ? ' + VỆ SINH NỘI THẤT' : ''}`,
-      services: `${activePackage.name}${includeInteriorClean === true ? ' + Vệ sinh nội thất' : ''}`,
+      packageName: `GÓI ${activePackage.serviceName.toUpperCase()}${activeAddOnList.length > 0 ? ' + DỊCH VỤ KÈM' : ''}`,
+      services: `${activePackage.serviceName}${activeAddOnList.length > 0 ? ' + Dịch vụ kèm' : ''}`, 
       formattedPrice: formatCurrency(totalCost),
       activeBranchName,
       address: BRANCHES.find(b => b.id === selectedBranch)?.address || 'Thủ Đức, HCM',
@@ -734,9 +863,9 @@ export default function Booking() {
       }
 
       const responseData = await response.json();
-      toast.success('Đặt lịch thành công!', { id: 'booking' });
       
       if (selectedMethod === 'vnpay') {
+        toast.loading('Đang khởi tạo thanh toán VNPAY...', { id: 'booking' });
         try {
           // Gọi API tạo URL thanh toán VNPAY từ Backend
           const payRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/create-vnpay-url/${responseData.id}`, {
@@ -748,6 +877,8 @@ export default function Booking() {
           if (payRes.ok) {
             const payData = await payRes.json();
             if (payData.url) {
+              // Lưu tạm ID để xử lý nếu user bấm nút Back ở trình duyệt (hủy ngang)
+              localStorage.setItem('pendingVnpayBooking', responseData.id);
               // Chuyển hướng sang cổng thanh toán VNPAY (Hiển thị QR & thẻ ngân hàng)
               window.location.href = payData.url;
               return;
@@ -760,6 +891,7 @@ export default function Booking() {
           navigate('/history', { state: bookingState });
         }
       } else {
+        toast.success('Đặt lịch thành công!', { id: 'booking' });
         navigate('/history', { state: bookingState });
       }
     } catch (err) {
@@ -807,7 +939,7 @@ export default function Booking() {
           animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
-      <div className="flex w-full min-h-[calc(100vh-80px)] justify-between">
+      <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-80px)] lg:justify-between relative">
       
       {/* NARROW LEFT SIDEBAR (PROGRESS) */}
       <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[120px] shrink-0 bg-background z-[40] flex-col items-center py-8 border-r border-outline-variant/30">
@@ -860,15 +992,46 @@ export default function Booking() {
       </div>
 
       {/* CỘT GIỮA (MAIN CONTENT) */}
-      <div className="flex-1 w-full min-w-0 flex flex-col relative">
-        {/* MOBILE PROGRESS BAR (NẾU CẦN) */}
-        <div className="lg:hidden text-center py-6 px-margin-mobile">
-          <h1 className="text-2xl md:text-3xl font-black text-[#00236f] uppercase tracking-tight">
+      <div className="flex-1 w-full min-w-0 flex flex-col relative pb-32 lg:pb-0">
+        {/* MOBILE PROGRESS BAR (HORIZONTAL) */}
+        <div className="lg:hidden w-full px-6 pt-8 pb-2">
+          <h1 className="text-xl md:text-3xl font-black text-[#00236f] uppercase tracking-tight text-center mb-6">
             LunaWash - Đặt Lịch
           </h1>
+          <div className="flex justify-between items-center relative max-w-[400px] mx-auto">
+            <div className="absolute left-4 right-4 top-4 h-[2px] bg-outline-variant/30 z-0"></div>
+            {['1', '2', '3', '4', '5'].map((num) => {
+              const stepId = `step-${num}`;
+              const isActive = activeStep === stepId;
+              const isCompleted = (() => {
+                if (num === '1') return !!selectedBranch;
+                if (num === '2') return !!selectedWashSlot;
+                if (num === '3') return !!selectedPackage;
+                if (num === '4') return !!selectedVehicleId;
+                if (num === '5') return !!selectedTimeSlotId;
+                return false;
+              })();
+              return (
+                <div 
+                  key={`mobile-${stepId}`}
+                  onClick={() => document.getElementById(stepId)?.scrollIntoView({behavior: 'smooth', block: 'start'})}
+                  className="flex flex-col items-center gap-1 relative z-10 cursor-pointer"
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                    isCompleted 
+                      ? 'bg-emerald-500 text-white shadow-md'
+                      : isActive 
+                        ? 'bg-[#00236f] text-white scale-110 shadow-lg ring-2 ring-[#00236f]/30' 
+                        : 'bg-surface-container text-outline ring-1 ring-outline-variant/50'
+                  }`}>
+                    {isCompleted ? <span className="material-symbols-outlined text-sm font-bold block">check</span> : num}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-
-        <div className="pt-4 lg:pt-8 pb-16 px-margin-mobile md:px-12 relative z-10 w-full max-w-[1000px] mx-auto">
+        <div className="pt-2 lg:pt-8 pb-16 px-margin-mobile md:px-12 relative z-10 w-full max-w-[1000px] mx-auto">
           <div className="space-y-8 pb-32">
 
         {/* 1. CHỌN CHI NHÁNH */}
@@ -1008,66 +1171,94 @@ export default function Booking() {
             <span className="material-symbols-outlined text-base">cleaning_services</span>
             Chọn gói dịch vụ
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SERVICE_PACKAGES.map((pkg) => (
-              <div 
-                key={pkg.id}
-                onClick={() => { setSelectedPackage(pkg.id); }}
-                className={`relative p-6 rounded-3xl border cursor-pointer transition-all flex flex-col justify-between h-full ${
-                  pkg.id === 'PK-CC' ? 'overflow-hidden group' : ''
-                } ${
-                  selectedPackage === pkg.id 
-                    ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/20 shadow-lg' 
-                    : 'border-outline-variant hover:border-primary/50 hover:shadow-md'
-                }`}
-              >
-                {pkg.id === 'PK-CC' && (
-                  <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[#00236f]/10 to-transparent skew-x-[-20deg] animate-shimmer pointer-events-none z-10" />
-                )}
-                {pkg.isPopular && (
-                  <span className="absolute top-0 right-0 bg-[#00236f] text-white text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl select-none">
-                    Phổ biến
-                  </span>
-                )}
-
-                <div className="space-y-4">
-                  <span className="material-symbols-outlined text-3xl font-light text-primary">
-                    {pkg.id === 'PK-CB' ? 'water_drop' : (pkg.id === 'PK-NC' ? 'cool_to_dry' : 'diamond')}
-                  </span>
-                  <div>
-                    <h3 className="font-extrabold text-lg">{pkg.name}</h3>
-                    <p className="text-xs text-on-surface-variant font-medium mt-1 leading-relaxed">{pkg.desc}</p>
-                  </div>
-                  <ul className="space-y-2 border-t border-outline-variant/20 pt-4 text-xs font-semibold text-on-surface-variant">
-                    {pkg.features.map((f, fIdx) => (
-                      <li key={fIdx} className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-emerald-600 text-sm font-bold">check</span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="flex justify-between items-baseline">
-                    <p className="text-2xl font-black">{pkg.priceStr}</p>
-                    <p className="text-[10px] text-outline font-bold">~{pkg.time} phút</p>
-                  </div>
-
-
-                  <button 
-                    className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all uppercase tracking-wider ${
+          {serviceFetchError ? (
+            <div className="p-8 text-center text-error border border-error/20 rounded-2xl bg-error/5">
+              <span className="material-symbols-outlined text-3xl mb-2">cloud_off</span>
+              <p className="text-sm font-bold">Lỗi kết nối Cơ sở dữ liệu!</p>
+              <p className="text-xs mt-1">Vui lòng kiểm tra lại kết nối Backend hoặc Database.</p>
+            </div>
+          ) : mainPackages.length === 0 ? (
+            <div className="p-8 text-center text-outline-variant border border-dashed border-outline-variant/30 rounded-2xl bg-surface-container-lowest">
+              <p className="text-sm italic font-medium">Hiện chưa có gói dịch vụ nào được thiết lập.</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 pt-2" style={{ scrollbarWidth: 'thin' }}>
+                {mainPackages.map((pkg) => (
+                  <div 
+                    key={pkg.id}
+                    id={`pkg-card-${pkg.id}`}
+                    onClick={() => { setSelectedPackage(pkg.id); }}
+                    className={`relative p-6 min-w-[280px] md:min-w-[320px] snap-center shrink-0 rounded-3xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      pkg.id === 'PK-CC' ? 'overflow-hidden group' : ''
+                    } ${
                       selectedPackage === pkg.id 
-                        ? 'bg-primary text-white hover:bg-primary-container shadow-md' 
-                        : 'border border-primary text-primary hover:bg-primary hover:text-white'
+                        ? 'border-primary bg-primary/5 text-primary ring-2 ring-primary/20 shadow-lg' 
+                        : 'border-outline-variant hover:border-primary/50 hover:shadow-md'
                     }`}
                   >
-                    {selectedPackage === pkg.id ? 'Đã chọn' : 'Chọn gói này'}
-                  </button>
+                  {pkg.id === 'PK-CC' && (
+                    <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[#00236f]/10 to-transparent skew-x-[-20deg] animate-shimmer pointer-events-none z-10" />
+                  )}
+                  {pkg.isPopular && (
+                    <span className="absolute top-0 right-0 bg-[#00236f] text-white text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl select-none">
+                      Phổ biến
+                    </span>
+                  )}
+
+                  <div className="space-y-4">
+                    <span className="material-symbols-outlined text-3xl font-light text-primary">
+                      {pkg.iconName || 'water_drop'}
+                    </span>
+                    <div>
+                      <h3 className="font-extrabold text-lg">{pkg.serviceName}</h3>
+                      <p className="text-xs text-on-surface-variant font-medium mt-1 leading-relaxed">{pkg.description}</p>
+                    </div>
+                    <ul className="space-y-2 border-t border-outline-variant/20 pt-4 text-xs font-semibold text-on-surface-variant">
+                      {pkg.serviceFeatures.map((f, fIdx) => (
+                        <li key={fIdx} className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-emerald-600 text-sm font-bold">check</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    <div className="flex justify-between items-baseline">
+                      <p className="text-2xl font-black">{(pkg.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || pkg.prices?.[0]?.price || 0).toLocaleString('vi-VN') + 'đ'}</p>
+                      <p className="text-[10px] text-outline font-bold">~{(pkg.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || pkg.prices?.[0]?.durationMinutes || 0)} phút</p>
+                    </div>
+
+
+                    <button 
+                      className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all uppercase tracking-wider ${
+                        selectedPackage === pkg.id 
+                          ? 'bg-primary text-white hover:bg-primary-container shadow-md' 
+                          : 'border border-primary text-primary hover:bg-primary hover:text-white'
+                      }`}
+                    >
+                      {selectedPackage === pkg.id ? 'Đã chọn' : 'Chọn gói này'}
+                    </button>
+                  </div>
                 </div>
+              ))}
               </div>
-            ))}
-          </div>
+              <div className="flex justify-center gap-2 mt-2 border-t border-outline-variant/10 pt-4">
+                {mainPackages.map((pkg) => (
+                  <button 
+                    key={`dot-${pkg.id}`}
+                    onClick={(e) => {
+                       e.stopPropagation();
+                       document.getElementById(`pkg-card-${pkg.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${selectedPackage === pkg.id ? 'bg-primary scale-125' : 'bg-outline-variant/30 hover:bg-outline-variant/60'}`}
+                    title={pkg.serviceName}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
         </section>
 
@@ -1133,108 +1324,85 @@ export default function Booking() {
           </div>
         </section>
 
-        {/* DỊCH VỤ VỆ SINH NỘI THẤT KÈM THEO (KHÔNG PHẢI LÀ TIẾN TRÌNH CỐ ĐỊNH) */}
+        {/* DỊCH VỤ KÈM THEO */}
         <section 
           id="interior-section"
           className="border border-outline-variant/40 shadow-sm rounded-3xl p-6 space-y-6 bg-surface-container-lowest"
         >
           <div className="mb-6 border-b border-outline-variant/20 pb-4">
             <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-base">cleaning_services</span>
-              Dịch vụ vệ sinh nội thất kèm theo
+              <span className="material-symbols-outlined text-base">add_box</span>
+              DỊCH VỤ KÈM THEO
             </h2>
-            <p className="text-xs text-on-surface-variant mt-1">Dịch vụ bổ sung vệ sinh nội thất chuyên sâu tùy chọn.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Chọn thêm các dịch vụ vệ sinh và chăm sóc chuyên sâu. <span className="italic text-primary/80 font-medium">(giá tiền có thể thay đổi theo loại xe)</span></p>
           </div>
 
-          <div className="space-y-4">
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              Dưới đây là bảng thông số dịch vụ vệ sinh nội thất chi tiết cho từng loại xe. Hệ thống tự động nhận diện loại xe hiện tại của bạn để áp dụng mức giá và số slot phù hợp.
-            </p>
-
-            {/* Bảng so sánh giá và thời gian */}
-            <div className="overflow-x-auto border border-outline-variant/30 rounded-2xl">
-              <table className="w-full text-left border-collapse text-xs font-semibold min-w-[600px]">
-                <thead>
-                  <tr className="bg-surface-container-low/50 border-b border-outline-variant/30 text-outline text-[10px] uppercase tracking-wider font-extrabold">
-                    <th className="p-4">Loại xe</th>
-                    <th className="p-4 text-right">Giá đề xuất</th>
-                    <th className="p-4 text-center">Thời gian ước tính</th>
-                    <th className="p-4 text-center">Số slot (45 phút / slot)</th>
-                    <th className="p-4 text-right">Thời gian bị giữ trên lịch</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  {Object.entries(INTERIOR_CLEAN_SPECS).map(([typeId, spec]) => {
-                    const isCurrentType = selectedVehicleId !== '' && selectedVehicleTypeId === typeId;
-                    return (
-                      <tr 
-                        key={typeId}
-                        className={`transition-colors ${
-                          isCurrentType 
-                            ? 'bg-primary/5 text-primary font-bold border-l-4 border-l-primary' 
-                            : 'text-on-surface hover:bg-surface-container-low/20'
-                        }`}
-                      >
-                        <td className="p-4 flex items-center gap-2">
-                          {isCurrentType && (
-                            <span className="bg-primary text-white text-[8px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded shadow-sm">
-                              Xe đang chọn
-                            </span>
-                          )}
-                          <span>{spec.typeName}</span>
-                        </td>
-                        <td className="p-4 text-right font-bold">{spec.priceStr}</td>
-                        <td className="p-4 text-center">{spec.duration} phút</td>
-                        <td className="p-4 text-center">{spec.slots} slot</td>
-                        <td className="p-4 text-right text-outline">{spec.blockedTime} phút</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {serviceFetchError ? (
+            <div className="p-6 text-center text-error border border-error/20 rounded-2xl bg-error/5">
+              <span className="material-symbols-outlined text-3xl mb-2">cloud_off</span>
+              <p className="text-sm font-bold">Lỗi kết nối Cơ sở dữ liệu!</p>
             </div>
-
-            {/* Hộp lưu ý quan trọng */}
-            <div className="flex gap-3 bg-amber-50 border border-amber-200/60 rounded-2xl p-4 text-amber-900 text-xs">
-              <span className="material-symbols-outlined text-amber-600 text-lg select-none font-bold">warning</span>
-              <div className="space-y-1">
-                <p className="font-extrabold text-amber-800 text-sm">Lưu ý quan trọng khi chọn dịch vụ</p>
-                <p className="text-xs leading-relaxed text-amber-900/80 font-medium">
-                  Khi chọn thêm dịch vụ vệ sinh nội thất, các slot đặt lịch bắt buộc phải chọn <strong>liên tiếp và liền kề nhau</strong>. Nếu trong hàng định chọn trước đó đã có 1 slot người khác đặt trước chen ngang rồi thì hệ thống sẽ tự động vô hiệu hóa và bạn không thể lựa chọn khoảng giờ đó.
-                </p>
-              </div>
+          ) : addOnServices.length === 0 ? (
+            <div className="p-6 text-center text-outline-variant border border-dashed border-outline-variant/30 rounded-2xl bg-surface-container-lowest">
+              <p className="text-sm italic font-medium">Hiện chưa có dịch vụ kèm theo nào.</p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {addOnServices.map((addon) => {
+                const isSelected = selectedAddOns.includes(addon.id);
+                const price = addon.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || addon.prices?.[0]?.price || 0;
+                const duration = addon.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || addon.prices?.[0]?.durationMinutes || 0;
+                return (
+                  <div 
+                    key={addon.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedAddOns(selectedAddOns.filter(id => id !== addon.id));
+                      } else {
+                        setSelectedAddOns([...selectedAddOns, addon.id]);
+                      }
+                    }}
+                    className={`cursor-pointer transition-all duration-300 rounded-2xl p-5 border-2 flex items-start gap-4 ${isSelected ? 'bg-primary/5 border-primary shadow-lg shadow-primary/10 scale-[1.02]' : 'bg-surface border-outline/30 hover:border-primary/50 hover:bg-surface-container-low'}`}
+                  >
+                    <div className={`mt-1 flex items-center justify-center transition-colors ${isSelected ? 'text-primary' : 'text-outline/50'}`}>
+                      <span className="material-symbols-outlined text-2xl">
+                        {isSelected ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`material-symbols-outlined text-xl ${isSelected ? 'text-primary' : 'text-outline/70'}`}>
+                          {addon.iconName || 'build'}
+                        </span>
+                        <h4 className={`font-bold text-lg ${isSelected ? 'text-primary' : 'text-on-surface'}`}>{addon.serviceName}</h4>
+                      </div>
+                      <p className="text-sm text-on-surface-variant mb-3">{addon.description}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-auto">
+                        <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold text-sm">
+                          +{price.toLocaleString('vi-VN')}đ
+                        </div>
+                        <div className="bg-surface-variant text-on-surface-variant px-3 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm">schedule</span>
+                          +{duration}p
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-            {/* Nút chọn đồng ý vệ sinh nội thất (chuyển xuống dưới cùng, căn trái) */}
-            <div className="flex justify-start pt-2">
-              <div 
-                onClick={() => {
-                  if (!selectedVehicleId) {
-                    setShowNoVehicleAlert(true);
-                    return;
-                  }
-                  setIncludeInteriorClean(!includeInteriorClean);
-                }}
-                className={`px-8 py-3.5 rounded-xl border cursor-pointer transition-all flex items-center gap-3 select-none ${
-                  includeInteriorClean 
-                    ? 'bg-[#00236f] text-white border-[#00236f] shadow-lg ring-4 ring-[#00236f]/20 font-bold scale-[1.02]' 
-                    : 'bg-white border-outline-variant hover:border-[#00236f]/50 text-on-surface font-semibold hover:bg-surface-container-lowest shadow-sm'
-                }`}
-              >
-                <span className={`material-symbols-outlined text-xl ${includeInteriorClean ? 'text-white' : 'text-outline'}`}>
-                  {includeInteriorClean ? 'check_box' : 'check_box_outline_blank'}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-extrabold uppercase tracking-wider">
-                    Thêm gói vệ sinh nội thất
-                  </span>
-                  {includeInteriorClean && (
-                    <span className="text-sm font-black text-[#4cd7f6] uppercase tracking-wider bg-white/10 px-2.5 py-1 rounded select-none">
-                      Đang chọn
-                    </span>
-                  )}
-                </div>
-              </div>
+          {/* LƯU Ý TỔNG THỜI GIAN VÀ SLOT */}
+          <div className="mt-6 bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <span className="material-symbols-outlined text-amber-600 mt-0.5">info</span>
+            <div>
+              <h4 className="font-bold text-amber-900 text-sm mb-1">
+                Tổng thời gian phục vụ dự kiến: <span className="text-amber-700 font-black">{totalDurationMinutes} phút</span> ({numSlots} slot)
+              </h4>
+              <p className="text-xs text-amber-800 leading-relaxed">
+                Mỗi lượt (slot) đặt lịch tương đương 45 phút. Khi bạn đặt nhiều loại hình dịch vụ hoặc các gói cao cấp, hệ thống sẽ tự động tính toán và yêu cầu <strong className="text-amber-900">chọn {numSlots} slot liền kề nhau</strong> để đảm bảo nhân viên có đủ thời gian chăm sóc tốt nhất cho xe của bạn.
+              </p>
             </div>
           </div>
         </section>
@@ -1481,12 +1649,31 @@ export default function Booking() {
 
         </div>
       </div>
+      
+      {/* MOBILE STICKY BOTTOM BAR */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#00236f] text-white px-5 py-4 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.25)] z-50 flex items-center justify-between border-t border-white/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+         <div className="flex flex-col">
+            <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider mb-0.5">Tổng thanh toán</span>
+            <span className="text-[#4cd7f6] text-xl font-black leading-none">{selectedPackage ? formatCurrency(totalCost) : '0đ'}</span>
+         </div>
+         <button 
+            onClick={handleOpenPaymentModal}
+            className={`px-6 py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 ${
+              allStepsCompleted 
+                ? 'shimmer-bounce-btn text-[#001f26]' 
+                : 'bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] shadow-lg shadow-cyan-400/20'
+            }`}
+          >
+            ĐẶT LỊCH NGAY
+          </button>
       </div>
+
+    </div>
       </div> {/* End Center Content Wrapper */}
 
       {/* RIGHT SIDEBAR (ORDER SUMMARY) */}
-      <div className="hidden lg:flex sticky top-[80px] h-[calc(100vh-80px)] w-[350px] shrink-0 bg-[#00236f] z-[40] flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.1)] text-white overflow-hidden">
-        <div className="p-6 flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col w-full lg:w-[350px] shrink-0 bg-[#00236f] z-[40] lg:shadow-[-10px_0_30px_rgba(0,0,0,0.1)] text-white overflow-visible lg:overflow-hidden relative lg:sticky lg:top-[80px] lg:h-[calc(100vh-80px)] mt-8 lg:mt-0">
+        <div className="p-6 flex-1 flex flex-col overflow-visible lg:overflow-hidden">
           
           <h2 className="font-black text-2xl tracking-tight mb-4">Tóm tắt dịch vụ</h2>
           
@@ -1545,15 +1732,44 @@ export default function Booking() {
                 Xem thêm mã giảm giá
               </button>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 mb-1.5">
               <input 
                 type="text" 
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Nhập mã giảm giá..." 
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#4cd7f6]/50 transition-colors"
+                className={`flex-1 bg-white/5 border rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none transition-all uppercase ${
+                  highlightPromo 
+                    ? 'border-[#4cd7f6] ring-2 ring-[#4cd7f6]/50 shadow-[0_0_15px_rgba(76,215,246,0.3)] bg-[#4cd7f6]/10' 
+                    : discountInfo
+                      ? 'border-emerald-400 focus:border-emerald-400 bg-emerald-400/5'
+                      : 'border-white/10 focus:border-[#4cd7f6]/50'
+                }`}
               />
-              <button className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
+              <button 
+                onClick={handleApplyPromo}
+                className="bg-[#4cd7f6] hover:bg-[#57dffe] text-[#001f26] font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors active:scale-95">
                 ÁP MÃ
               </button>
+            </div>
+            {/* Discount info text */}
+            <div className="h-4">
+              {isVerifyingPromo ? (
+                <span className="text-[10px] text-white/60 italic flex items-center gap-1 animate-pulse">
+                  <span className="material-symbols-outlined text-[12px]">sync</span>
+                  Đang kiểm tra mã...
+                </span>
+              ) : discountInfo ? (
+                <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fade-in-up">
+                  <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                  Mã hợp lệ! Bạn được giảm {discountInfo.discountPercent}% cho dịch vụ này.
+                </span>
+              ) : promoError ? (
+                <span className="text-[10px] text-error font-bold flex items-center gap-1 animate-fade-in-up text-red-400">
+                  <span className="material-symbols-outlined text-[12px]">error</span>
+                  {promoError}
+                </span>
+              ) : null}
             </div>
           </div>
 

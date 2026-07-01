@@ -10,9 +10,71 @@ export default function Payment() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Lấy ID thật sự của booking từ session trước khi xóa
+    const realBookingId = localStorage.getItem('pendingVnpayBooking');
+    localStorage.removeItem('pendingVnpayBooking');
+    
     // Kích hoạt animation sau khi mount
     setTimeout(() => setIsLoaded(true), 100);
-  }, []);
+
+    // Nếu thanh toán thất bại, tự động hủy lịch đặt trên hệ thống
+    const currentStatus = searchParams.get('status') || 'success';
+    // Ưu tiên dùng realBookingId, nếu không có mới dùng bookingId từ URL (thường là mã BKG-...)
+    const currentBookingId = realBookingId || searchParams.get('bookingId');
+    
+    if (currentStatus !== 'success' && currentBookingId && currentBookingId !== 'BK-123456') {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          
+          const doCancel = async () => {
+            let idToDelete = currentBookingId;
+            
+            // Nếu mất localStorage và URL trả về BKG-XXX, ta fetch lịch sử để tìm đúng ID
+            if (!realBookingId || idToDelete.toString().startsWith('BKG')) {
+              try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/history`, {
+                  headers: { 'Authorization': `Bearer ${parsed.token}` }
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const pendingBooking = data.find(b => b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending'));
+                  if (pendingBooking) {
+                    idToDelete = pendingBooking.id;
+                  }
+                }
+              } catch (e) {}
+            }
+            
+            // Xóa booking
+            if (idToDelete && idToDelete !== 'BK-123456' && !idToDelete.toString().startsWith('BKG')) {
+              try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${idToDelete}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${parsed.token}`
+                  }
+                });
+                if (res.ok) {
+                  // toast.success(`Đã tự động hủy booking rác ID: ${idToDelete}`);
+                } else {
+                  const errText = await res.text();
+                  toast.error(`Backend từ chối hủy: ${res.status} - ${errText}`);
+                }
+              } catch (e) {
+                toast.error(`Lỗi gọi API hủy: ${e.message}`);
+              }
+            } else {
+              toast.error(`Không tìm thấy ID hợp lệ để hủy: ${idToDelete}`);
+            }
+          };
+          
+          doCancel();
+        } catch (e) {}
+      }
+    }
+  }, [searchParams]);
 
   const status = searchParams.get('status') || 'success'; 
   const bookingId = searchParams.get('bookingId') || 'BK-123456';

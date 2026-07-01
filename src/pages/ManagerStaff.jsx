@@ -15,7 +15,18 @@ export default function ManagerStaff() {
   const [selectedShift, setSelectedShift] = useState('Ca sáng');
   const [employees, setEmployees] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    return new Date(vnTimeStr);
+  };
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayStr());
   const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [scheduleTemplates, setScheduleTemplates] = useState([]);
@@ -965,7 +976,7 @@ const handleAddEmployee = async (e) => {
                       )}
                       <p className="text-xs text-slate-500 font-bold mb-1">{new Date(log.createdAt).toLocaleString('vi-VN')}</p>
                       <p className="text-sm text-slate-800">
-                        <span className="font-bold text-primary">{log.modifiedByFullName}</span> đã <span className="font-bold">{log.action.toLowerCase()}</span> của <span className="font-bold">{log.employeeFullName}</span>
+                        <span className="font-bold text-primary">{log.modifiedByFullName}</span> đã <span className="font-bold">{(log.action || '').toLowerCase()}</span> của <span className="font-bold">{log.employeeFullName}</span>
                         {log.oldValue && log.newValue ? (
                           <> từ <span className="text-rose-600 line-through">{log.oldValue}</span> thành <span className="text-emerald-600 font-bold">{log.newValue}</span>.</>
                         ) : (
