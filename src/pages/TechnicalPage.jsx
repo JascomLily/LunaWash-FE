@@ -13,6 +13,11 @@ const mockTasks = [
   { id: 'TASK-102', name: 'Bảo dưỡng định kỳ tháng 7', equipmentId: 'EQ-001', equipmentName: 'Máy rửa xe tự động Karcher', status: 'Đang làm', description: 'Tra dầu mỡ ray trượt, vệ sinh béc phun.', type: 'maintenance', requestedBy: 'Manager', createdAt: '01/07/2026 07:00' }
 ];
 
+const mockReports = [
+  { id: 'REP-089', issueName: 'Bơm nước yếu quá', eqId: 'EQ-003', eqName: 'Hệ thống bơm áp lực', reportedBy: 'Nhân viên CSX 1', role: 'Staff', desc: 'Sáng nay em bật máy thấy nước ra yếu xìu, không trôi được xà phòng sếp ơi.', time: '01/07/2026 10:00', status: 'Chờ xử lý' },
+  { id: 'REP-090', issueName: 'Dây curoa bị mòn', eqId: 'EQ-001', eqName: 'Máy rửa xe tự động Karcher', reportedBy: 'Kỹ thuật A', role: 'TechnicalStaff', desc: 'Đi kiểm tra định kỳ phát hiện dây curoa số 2 bị mòn nặng, đề xuất thay sớm kẻo đứt.', time: '01/07/2026 09:30', status: 'Chờ xử lý' }
+];
+
 export default function TechnicalPage() {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isManager = storedUser?.tier === 'BranchManager' || storedUser?.tier === 'Admin';
@@ -22,7 +27,15 @@ export default function TechnicalPage() {
   // State for Demo
   const [equipments, setEquipments] = useState(mockEquipments);
   const [tasks, setTasks] = useState(mockTasks);
-  const [activeTab, setActiveTab] = useState(isTechnical ? 'maintenance' : 'overview'); 
+  const [reports, setReports] = useState(mockReports);
+  
+  // Default Tabs
+  const getInitialTab = () => {
+    if(isManager) return 'overview';
+    if(isTechnical) return 'maintenance';
+    return 'overview';
+  }
+  const [activeTab, setActiveTab] = useState(getInitialTab()); 
 
   // Modals
   const [showReportModal, setShowReportModal] = useState(false); // Cho Nhân viên / Kỹ thuật báo lỗi
@@ -31,30 +44,59 @@ export default function TechnicalPage() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportData, setSupportData] = useState({ taskId: '', requestType: 'Linh kiện', note: '' });
 
-  // Handle Report Submit
+  const [showReviewModal, setShowReviewModal] = useState(false); // Cho Quản lý duyệt báo cáo thành Task
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [reviewData, setReviewData] = useState({ priority: 'Trung bình', note: '' });
+
+  // 1. Gửi Báo cáo (Staff / Tech -> Manager)
   const handleSubmitReport = (e) => {
     e.preventDefault();
     if(!reportData.eqId || !reportData.issueName) return;
     
-    const newTask = {
-      id: `TASK-${Math.floor(Math.random() * 1000)}`,
-      name: reportData.issueName,
-      equipmentId: reportData.eqId,
-      equipmentName: equipments.find(eq => eq.id === reportData.eqId)?.name || '',
-      status: 'Chưa làm',
-      description: reportData.desc,
-      type: 'incident',
-      requestedBy: storedUser?.tier || 'Staff',
-      createdAt: new Date().toLocaleString('vi-VN')
+    const newReport = {
+      id: `REP-${Math.floor(Math.random() * 1000)}`,
+      issueName: reportData.issueName,
+      eqId: reportData.eqId,
+      eqName: equipments.find(eq => eq.id === reportData.eqId)?.name || '',
+      reportedBy: storedUser?.name || 'Nhân viên',
+      role: storedUser?.tier || 'Staff',
+      desc: reportData.desc,
+      time: new Date().toLocaleString('vi-VN'),
+      status: 'Chờ xử lý'
     };
 
-    setTasks([newTask, ...tasks]);
-    toast.success("Đã gửi báo cáo cho Quản lý!");
+    setReports([newReport, ...reports]);
+    toast.success("Đã gửi báo cáo lên Hộp thư của Quản lý!");
     setShowReportModal(false);
     setReportData({ eqId: '', issueName: '', desc: '' });
   };
 
-  // Change Task Status (For Tech)
+  // 2. Quản lý duyệt Báo cáo & Tạo Task
+  const handleReviewReport = (e) => {
+    e.preventDefault();
+    
+    // Đổi trạng thái Report
+    setReports(reports.map(r => r.id === selectedReport.id ? { ...r, status: 'Đã giao Task' } : r));
+    
+    // Tạo Task mới cho Kỹ thuật
+    const newTask = {
+      id: `TASK-${Math.floor(Math.random() * 1000)}`,
+      name: selectedReport.issueName,
+      equipmentId: selectedReport.eqId,
+      equipmentName: selectedReport.eqName,
+      status: 'Chưa làm',
+      description: `[Từ báo cáo của ${selectedReport.reportedBy} - Mức độ: ${reviewData.priority}] - ${selectedReport.desc} \n\nGhi chú của Quản lý: ${reviewData.note}`,
+      type: 'incident',
+      requestedBy: 'Manager',
+      createdAt: new Date().toLocaleString('vi-VN')
+    };
+    
+    setTasks([newTask, ...tasks]);
+    toast.success("Đã duyệt báo cáo và giao Task cho Kỹ thuật!");
+    setShowReviewModal(false);
+  };
+
+  // 3. Kỹ thuật cập nhật trạng thái Task
   const handleUpdateTaskStatus = (taskId, newStatus) => {
     setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
     toast.success(`Đã cập nhật trạng thái: ${newStatus}`);
@@ -65,7 +107,6 @@ export default function TechnicalPage() {
     }
   };
 
-  // Submit Support Request (Kỹ thuật xin linh kiện/kinh phí)
   const handleSubmitSupport = (e) => {
     e.preventDefault();
     toast.success(`Đã gửi yêu cầu cấp ${supportData.requestType} lên Quản lý!`);
@@ -73,6 +114,7 @@ export default function TechnicalPage() {
   };
 
   const incidentTasks = tasks.filter(t => t.type === 'incident');
+  const pendingReportsCount = reports.filter(r => r.status === 'Chờ xử lý').length;
 
   return (
     <main className="min-h-screen bg-[#f8fafc] pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
@@ -100,13 +142,15 @@ export default function TechnicalPage() {
               setShowReportModal(true);
             }}
             className={`flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all active:scale-95 shadow-md ${
-              isManager ? 'bg-[#001f3f] text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-700'
+              isManager ? 'bg-[#001f3f] text-white hover:bg-slate-800 hidden' : 'bg-rose-600 text-white hover:bg-rose-700'
             }`}
           >
-            <span className="material-symbols-outlined text-xl">
-              {isManager ? 'add_task' : 'warning'}
-            </span>
-            {isManager ? 'Giao Task Kỹ thuật' : 'Báo cáo sự cố khẩn'}
+            {!isManager && (
+              <>
+                <span className="material-symbols-outlined text-xl">warning</span>
+                Báo cáo sự cố khẩn
+              </>
+            )}
           </button>
         </div>
 
@@ -133,9 +177,32 @@ export default function TechnicalPage() {
           </div>
         )}
 
+        {/* TABS CHO QUẢN LÝ */}
+        {isManager && (
+          <div className="flex gap-4 border-b border-slate-200">
+            <button 
+              className={`pb-3 px-4 font-bold text-sm transition-colors ${activeTab === 'overview' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('overview')}
+            >
+              Tổng quan Thiết bị
+            </button>
+            <button 
+              className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'reports' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              Hộp thư Báo cáo
+              {pendingReportsCount > 0 && (
+                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                  {pendingReportsCount}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* NỘI DUNG THEO TABS VÀ ROLE */}
         
-        {/* VIEW 1: BẢO TRÍ HẰNG NGÀY HOẶC OVERVIEW (Cho Manager/Staff) */}
+        {/* VIEW 1: BẢO TRÍ HẰNG NGÀY HOẶC OVERVIEW (Cho Manager/Staff/Tech) */}
         {(activeTab === 'maintenance' || activeTab === 'overview') && (
           <>
             {/* THỐNG KÊ (Chỉ Manager hoặc Tech xem) */}
@@ -165,7 +232,7 @@ export default function TechnicalPage() {
                 <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32 shadow-sm">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-blue-600 bg-blue-50 rounded-full p-1 text-sm">assignment</span>
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Task Sự Cố</span>
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Task Đang xử lý</span>
                   </div>
                   <p className="text-[2.5rem] font-black text-blue-600 leading-none">{incidentTasks.length}</p>
                 </div>
@@ -240,7 +307,76 @@ export default function TechnicalPage() {
           </>
         )}
 
-        {/* VIEW 2: XỬ LÝ SỰ CỐ (Chỉ Technical) */}
+        {/* VIEW 2: HỘP THƯ BÁO CÁO (Chỉ Manager) */}
+        {activeTab === 'reports' && isManager && (
+          <div className="space-y-4">
+            {reports.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-slate-100">
+                <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">mark_email_read</span>
+                <p className="text-slate-500 font-medium">Hộp thư báo cáo đang trống!</p>
+              </div>
+            ) : (
+              reports.map(rep => (
+                <div key={rep.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:border-blue-300 transition-colors">
+                  <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-md uppercase tracking-wider ${
+                          rep.status === 'Chờ xử lý' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {rep.status}
+                        </span>
+                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">schedule</span> {rep.time}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-extrabold text-slate-800 mt-2">{rep.issueName}</h3>
+                      <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px] text-blue-500">precision_manufacturing</span>
+                        Thiết bị: <strong className="text-slate-700">{rep.eqName}</strong>
+                      </p>
+                      
+                      <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-sm text-slate-500">person</span>
+                          </div>
+                          <span className="text-sm font-bold text-slate-700">{rep.reportedBy}</span>
+                          <span className="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">{rep.role}</span>
+                        </div>
+                        <p className="text-sm text-slate-600 font-medium">{rep.desc}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Hành động cập nhật */}
+                    <div className="flex items-center gap-2 self-start md:self-center mt-2 md:mt-0">
+                      {rep.status === 'Chờ xử lý' ? (
+                        <button 
+                          onClick={() => {
+                            setSelectedReport(rep);
+                            setReviewData({ priority: 'Trung bình', note: '' });
+                            setShowReviewModal(true);
+                          }}
+                          className="px-5 py-2.5 bg-[#001f3f] hover:bg-slate-800 text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-lg">assignment_add</span>
+                          Duyệt & Giao Task
+                        </button>
+                      ) : (
+                        <button disabled className="px-5 py-2.5 bg-slate-100 text-slate-400 text-sm font-bold rounded-xl flex items-center gap-2 cursor-not-allowed">
+                          <span className="material-symbols-outlined text-lg">check_circle</span>
+                          Đã chuyển thành Task
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* VIEW 3: XỬ LÝ SỰ CỐ (Chỉ Technical) */}
         {activeTab === 'incidents' && isTechnical && (
           <div className="space-y-4">
             {incidentTasks.length === 0 ? (
@@ -296,8 +432,8 @@ export default function TechnicalPage() {
                     )}
                   </div>
                   
-                  <div className="bg-slate-50 p-4 rounded-xl text-sm font-medium text-slate-600">
-                    <p className="font-bold text-slate-700 mb-1">Mô tả sự cố (Từ {task.requestedBy}):</p>
+                  <div className="bg-slate-50 p-4 rounded-xl text-sm font-medium text-slate-600 whitespace-pre-line">
+                    <p className="font-bold text-slate-700 mb-1">Nội dung từ Quản lý:</p>
                     {task.description}
                   </div>
                 </div>
@@ -362,10 +498,83 @@ export default function TechnicalPage() {
               <div className="flex justify-end gap-3 pt-3">
                 <button type="button" onClick={() => setShowReportModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
                 <button type="submit" className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
-                  Gửi lên Quản lý
+                  Gửi Hộp thư Quản lý
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DUYỆT BÁO CÁO (Dành cho Manager) */}
+      {showReviewModal && selectedReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowReviewModal(false)}></div>
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in z-50 flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-[#001f3f]">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                <span className="material-symbols-outlined">assignment_add</span>
+                Duyệt & Giao Task Kỹ thuật
+              </h3>
+              <button type="button" onClick={() => setShowReviewModal(false)} className="p-1 hover:bg-slate-700 rounded-lg text-slate-300 transition-all">
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              {/* Nội dung báo cáo cũ */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Báo cáo từ {selectedReport.reportedBy}</p>
+                <h4 className="font-bold text-slate-800 mb-1">{selectedReport.issueName}</h4>
+                <p className="text-sm text-slate-600">{selectedReport.desc}</p>
+              </div>
+
+              <form id="reviewForm" onSubmit={handleReviewReport} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Phân loại & Mức độ</label>
+                  <select
+                    required
+                    value={reviewData.priority}
+                    onChange={(e) => setReviewData({...reviewData, priority: e.target.value})}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-slate-700"
+                  >
+                    <option value="Khẩn cấp">🔴 Khẩn cấp (Sửa ngay lập tức)</option>
+                    <option value="Cao">🟠 Cao (Sửa trong ngày)</option>
+                    <option value="Trung bình">🟡 Trung bình (Đưa vào lịch bảo trì)</option>
+                    <option value="Thấp">🟢 Thấp (Chưa ảnh hưởng vận hành)</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Người đảm nhận</label>
+                  <select
+                    required
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-slate-700"
+                  >
+                    <option value="team">Team Kỹ thuật chung (Ai rảnh nhận)</option>
+                    <option value="tech1">Nguyễn Văn Kỹ Thuật (Đang trực)</option>
+                    <option value="tech2">Trần Thợ Máy (Nghỉ ca)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Chỉ đạo từ Quản lý</label>
+                  <textarea
+                    placeholder="VD: Kiểm tra kỹ phần motor, nếu hỏng nặng thì báo giá anh ngay..."
+                    value={reviewData.note}
+                    onChange={(e) => setReviewData({...reviewData, note: e.target.value})}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium h-24 resize-none"
+                  />
+                </div>
+              </form>
+            </div>
+
+            <div className="flex justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50">
+              <button type="button" onClick={() => setShowReviewModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
+              <button type="submit" form="reviewForm" className="px-6 py-3 bg-[#001f3f] hover:bg-slate-800 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
+                Xác nhận Giao Task
+              </button>
+            </div>
           </div>
         </div>
       )}
