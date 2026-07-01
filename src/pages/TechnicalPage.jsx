@@ -1,227 +1,78 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 
+// --- MOCK DATA ---
+const mockEquipments = [
+  { id: 'EQ-001', name: 'Máy rửa xe tự động Karcher', category: 'Máy rửa tự động', status: 'Hoạt động', lastMaintenance: '15/06/2026', nextMaintenance: '15/07/2026', priority: 'Bình thường', statusColor: 'border-emerald-200 text-emerald-700 bg-emerald-50' },
+  { id: 'EQ-002', name: 'Máy nén khí Pegasus', category: 'Thiết bị phụ trợ', status: 'Lỗi', lastMaintenance: '10/06/2026', nextMaintenance: '10/07/2026', priority: 'Cao', statusColor: 'border-rose-200 text-rose-700 bg-rose-50' },
+  { id: 'EQ-003', name: 'Hệ thống bơm áp lực', category: 'Hệ thống bơm', status: 'Cần kiểm tra', lastMaintenance: '01/06/2026', nextMaintenance: '01/07/2026', priority: 'Trung bình', statusColor: 'border-amber-200 text-amber-700 bg-amber-50' }
+];
+
+const mockTasks = [
+  { id: 'TASK-101', name: 'Máy nén khí kêu to, tụt áp', equipmentId: 'EQ-002', equipmentName: 'Máy nén khí Pegasus', status: 'Chưa làm', description: 'Nhân viên báo máy nén khí kêu to thất thường, áp lực yếu không đủ bọt tuyết.', type: 'incident', requestedBy: 'Staff', createdAt: '01/07/2026 08:30' },
+  { id: 'TASK-102', name: 'Bảo dưỡng định kỳ tháng 7', equipmentId: 'EQ-001', equipmentName: 'Máy rửa xe tự động Karcher', status: 'Đang làm', description: 'Tra dầu mỡ ray trượt, vệ sinh béc phun.', type: 'maintenance', requestedBy: 'Manager', createdAt: '01/07/2026 07:00' }
+];
+
 export default function TechnicalPage() {
-  const [equipments, setEquipments] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  
-  // Modal states
-  const [showModal, setShowModal] = useState(false);
-  const [incidentEqId, setIncidentEqId] = useState('');
-  const [incidentPriority, setIncidentPriority] = useState('Bình thường');
-  const [incidentDesc, setIncidentDesc] = useState('');
-
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const isReadOnly = storedUser?.tier !== 'BranchManager';
+  const isManager = storedUser?.tier === 'BranchManager' || storedUser?.tier === 'Admin';
+  const isTechnical = storedUser?.tier === 'TechnicalStaff';
+  const isStaff = storedUser?.tier === 'Staff';
+  
+  // State for Demo
+  const [equipments, setEquipments] = useState(mockEquipments);
+  const [tasks, setTasks] = useState(mockTasks);
+  const [activeTab, setActiveTab] = useState(isTechnical ? 'maintenance' : 'overview'); 
 
-  // Report Modal states
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportEqId, setReportEqId] = useState('');
-  const [reportIssueName, setReportIssueName] = useState('');
-  const [reportDesc, setReportDesc] = useState('');
-  const [reportStatus, setReportStatus] = useState('Cần kiểm tra');
-  const [reportTaskStatus, setReportTaskStatus] = useState('Cần kiểm tra');
+  // Modals
+  const [showReportModal, setShowReportModal] = useState(false); // Cho Nhân viên / Kỹ thuật báo lỗi
+  const [reportData, setReportData] = useState({ eqId: '', issueName: '', desc: '' });
 
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportData, setSupportData] = useState({ taskId: '', requestType: 'Linh kiện', note: '' });
 
-  const branchId = storedUser?.branchId || 'BR-HCM-01';
-  const baseUrl = `${import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5010`}/api/equipments`;
-
-  const fetchData = async () => {
-    try {
-      await fetch(`${baseUrl}/seed?branchId=${branchId}`, { method: 'POST' });
-      const res = await fetch(`${baseUrl}/branch/${branchId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setEquipments(data.equipments || []);
-        setTasks(data.tasks || []);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // 1. Toggle Task Status
-  const toggleTaskStatus = async (id) => {
-    if (isReadOnly) return;
-    try {
-      const res = await fetch(`${baseUrl}/tasks/${id}/toggle?branchId=${branchId}`, { method: 'PUT' });
-      if (res.ok) {
-        fetchData();
-        toast.success("Đổi trạng thái công việc thành công");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // Change Priority Status
-  const handleChangePriority = async (id, newPriority) => {
-    if (isReadOnly) return;
-    try {
-      const res = await fetch(`${baseUrl}/${id}/priority?branchId=${branchId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priority: newPriority })
-      });
-      if (res.ok) {
-        fetchData();
-        toast.success("Đã lưu ưu tiên mới");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // Change Next Maintenance Date
-  const handleChangeNextDate = async (id, newDateStr) => {
-    if (isReadOnly) return;
-    if (!newDateStr) return;
-    const [year, month, day] = newDateStr.split('-');
-    const formattedDate = `${day}/${month}/${year}`;
-
-    try {
-      const res = await fetch(`${baseUrl}/${id}/schedule?branchId=${branchId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nextMaintenance: formattedDate })
-      });
-      if (res.ok) {
-        fetchData();
-        toast.success("Đã lưu ngày bảo trì");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // 2. Change Equipment Status
-  const handleChangeEqStatus = async (id) => {
-    if (isReadOnly) return;
-    const eq = equipments.find(e => e.id === id);
-    if (!eq) return;
-
-    const states = ['Hoạt động', 'Cần kiểm tra', 'Đang bảo trì', 'Lỗi'];
-    const currIdx = states.indexOf(eq.status);
-    const nextStatus = states[(currIdx + 1) % states.length];
-
-    try {
-      const res = await fetch(`${baseUrl}/${id}/status?branchId=${branchId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
-      });
-      if (res.ok) {
-        fetchData();
-        toast.success("Cập nhật trạng thái thành công");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // 3. Handle Submit Incident Ticket
-  const handleCreateIncident = async (e) => {
+  // Handle Report Submit
+  const handleSubmitReport = (e) => {
     e.preventDefault();
-    if (isReadOnly) return;
-    if (!incidentEqId || !incidentDesc) return;
+    if(!reportData.eqId || !reportData.issueName) return;
     
-    try {
-      const res = await fetch(`${baseUrl}/incidents?branchId=${branchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          equipmentId: incidentEqId,
-          priority: incidentPriority,
-          description: incidentDesc
-        })
-      });
+    const newTask = {
+      id: `TASK-${Math.floor(Math.random() * 1000)}`,
+      name: reportData.issueName,
+      equipmentId: reportData.eqId,
+      equipmentName: equipments.find(eq => eq.id === reportData.eqId)?.name || '',
+      status: 'Chưa làm',
+      description: reportData.desc,
+      type: 'incident',
+      requestedBy: storedUser?.tier || 'Staff',
+      createdAt: new Date().toLocaleString('vi-VN')
+    };
 
-      if (res.ok) {
-        fetchData();
-        toast.success("Tạo phiếu sự cố thành công");
-        setShowModal(false);
-        setIncidentEqId('');
-        setIncidentDesc('');
-        setIncidentPriority('Bình thường');
-      } else {
-        toast.error("Lỗi khi tạo phiếu");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi kết nối server");
+    setTasks([newTask, ...tasks]);
+    toast.success("Đã gửi báo cáo cho Quản lý!");
+    setShowReportModal(false);
+    setReportData({ eqId: '', issueName: '', desc: '' });
+  };
+
+  // Change Task Status (For Tech)
+  const handleUpdateTaskStatus = (taskId, newStatus) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    toast.success(`Đã cập nhật trạng thái: ${newStatus}`);
+    
+    if(newStatus === 'Cần hỗ trợ') {
+      setSupportData({ taskId: taskId, requestType: 'Linh kiện', note: '' });
+      setShowSupportModal(true);
     }
   };
 
-  const handleOpenReport = (eqId) => {
-    const eq = equipments.find(e => e.id === eqId);
-    setReportEqId(eqId);
-    setReportIssueName(`Báo cáo: ${eq?.name || eqId}`);
-    setReportDesc('');
-    setReportStatus(eq ? eq.status : 'Cần kiểm tra');
-    setReportTaskStatus('Cần kiểm tra');
-    setShowReportModal(true);
-  };
-
-  const handleOpenDetail = (task) => {
-    setSelectedTask(task);
-    setShowDetailModal(true);
-  };
-
-  const handleChangeTaskStatus = async (taskId, newStatus) => {
-    try {
-      const res = await fetch(`${baseUrl}/tasks/${taskId}/status?branchId=${branchId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (res.ok) {
-        fetchData();
-        toast.success("Cập nhật trạng thái báo cáo thành công");
-        setSelectedTask(prev => ({ ...prev, status: newStatus }));
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleCreateReport = async (e) => {
+  // Submit Support Request (Kỹ thuật xin linh kiện/kinh phí)
+  const handleSubmitSupport = (e) => {
     e.preventDefault();
-    if (!reportEqId || !reportDesc) return;
-    
-    try {
-      const res = await fetch(`${baseUrl}/${reportEqId}/report?branchId=${branchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ issueName: reportIssueName, description: reportDesc, status: reportStatus, taskStatus: reportTaskStatus })
-      });
-
-      if (res.ok) {
-        fetchData();
-        toast.success("Gửi báo cáo thành công");
-        setShowReportModal(false);
-        setReportEqId('');
-        setReportIssueName('');
-        setReportDesc('');
-      } else {
-        toast.error("Lỗi khi gửi báo cáo");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi kết nối server");
-    }
+    toast.success(`Đã gửi yêu cầu cấp ${supportData.requestType} lên Quản lý!`);
+    setShowSupportModal(false);
   };
 
-  // Tính toán số lượng thống kê động dựa vào state
-  const totalEq = equipments.length;
-  const countActive = equipments.filter(eq => eq.status === 'Hoạt động').length;
-  const countWarning = equipments.filter(eq => eq.status === 'Cần kiểm tra').length;
-  const countError = equipments.filter(eq => eq.status === 'Lỗi').length;
+  const incidentTasks = tasks.filter(t => t.type === 'incident');
 
   return (
     <main className="min-h-screen bg-[#f8fafc] pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
@@ -237,266 +88,331 @@ export default function TechnicalPage() {
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1 font-medium">
-              Theo dõi tình trạng, lịch bảo trì và sự cố thiết bị tại chi nhánh
+              {isStaff ? 'Xem tình trạng máy và báo cáo sự cố' : 
+               isTechnical ? 'Quy trình bảo trì và xử lý sự cố thiết bị' : 
+               'Theo dõi tổng quan tình trạng thiết bị tại chi nhánh'}
             </p>
           </div>
-          {!isReadOnly && (
+          
+          <button 
+            onClick={() => {
+              setReportData({ eqId: '', issueName: '', desc: '' });
+              setShowReportModal(true);
+            }}
+            className={`flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all active:scale-95 shadow-md ${
+              isManager ? 'bg-[#001f3f] text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-700'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xl">
+              {isManager ? 'add_task' : 'warning'}
+            </span>
+            {isManager ? 'Giao Task Kỹ thuật' : 'Báo cáo sự cố khẩn'}
+          </button>
+        </div>
+
+        {/* TABS CHO KỸ THUẬT VIÊN */}
+        {isTechnical && (
+          <div className="flex gap-4 border-b border-slate-200">
             <button 
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#001f3f] text-white font-bold rounded-lg hover:bg-slate-800 transition-all active:scale-95 shadow-md"
+              className={`pb-3 px-4 font-bold text-sm transition-colors ${activeTab === 'maintenance' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('maintenance')}
             >
-              <span className="material-symbols-outlined text-xl">add_circle</span>
-              Tạo phiếu sự cố
+              Bảo trì hằng ngày
             </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* LEFT: STATS */}
-          <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-slate-500 text-xl">precision_manufacturing</span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tổng thiết bị</span>
-              </div>
-              <p className="text-[2.5rem] font-black text-slate-800 leading-none">{totalEq.toString().padStart(2, '0')}</p>
-            </div>
-            
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 rounded-full p-1 text-sm">check_circle</span>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Hoạt động</span>
-              </div>
-              <p className="text-[2.5rem] font-black text-emerald-600 leading-none">{countActive.toString().padStart(2, '0')}</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-500 bg-amber-50 rounded-full p-1 text-sm">build</span>
-                <span className="text-xs font-bold text-amber-500 uppercase tracking-wide">Cần kiểm tra</span>
-              </div>
-              <p className="text-[2.5rem] font-black text-amber-500 leading-none">{countWarning.toString().padStart(2, '0')}</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-rose-600 bg-rose-50 rounded-full p-1 text-sm">error</span>
-                <span className="text-xs font-bold text-rose-600 uppercase tracking-wide">Khẩn cấp</span>
-              </div>
-              <p className="text-[2.5rem] font-black text-rose-600 leading-none">{countError.toString().padStart(2, '0')}</p>
-            </div>
-          </div>
-
-          {/* RIGHT: TODAY TASKS -> REPORTS */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 h-full">
-            <div className="flex items-center gap-2 text-slate-700 mb-4 border-b border-slate-100 pb-3">
-              <span className="material-symbols-outlined text-lg">assignment</span>
-              <h3 className="font-bold text-sm">Danh sách Báo cáo</h3>
-            </div>
-            <ul className="space-y-4 h-[250px] overflow-y-auto pr-2">
-              {tasks.length === 0 && (
-                <p className="text-xs text-slate-400 italic">Không có báo cáo nào.</p>
+            <button 
+              className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'incidents' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setActiveTab('incidents')}
+            >
+              Xử lý sự cố
+              {incidentTasks.filter(t => t.status !== 'Hoàn thành').length > 0 && (
+                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                  {incidentTasks.filter(t => t.status !== 'Hoàn thành').length}
+                </span>
               )}
-              {tasks.map((task) => (
-                <li key={task.id} className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full mt-2 bg-slate-300"></div>
-                  <div 
-                    className="cursor-pointer group flex-1"
-                    onClick={() => handleOpenDetail(task)}
-                    title="Nhấn để xem chi tiết"
-                  >
-                    <p className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{task.name}</p>
-                    <p className="text-[11px] font-medium text-slate-500 mt-0.5"><span className="material-symbols-outlined text-[12px] align-middle mr-1">precision_manufacturing</span>{task.equipmentName || task.equipmentId}</p>
+            </button>
+          </div>
+        )}
+
+        {/* NỘI DUNG THEO TABS VÀ ROLE */}
+        
+        {/* VIEW 1: BẢO TRÍ HẰNG NGÀY HOẶC OVERVIEW (Cho Manager/Staff) */}
+        {(activeTab === 'maintenance' || activeTab === 'overview') && (
+          <>
+            {/* THỐNG KÊ (Chỉ Manager hoặc Tech xem) */}
+            {(isManager || isTechnical) && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-500 text-xl">precision_manufacturing</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tổng thiết bị</span>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* DATA TABLE SECTION */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          {/* Filters */}
-          <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-                <input 
-                  type="text" 
-                  placeholder="Tìm mã hoặc tên thiết bị..." 
-                  className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 w-64"
-                />
+                  <p className="text-[2.5rem] font-black text-slate-800 leading-none">03</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 rounded-full p-1 text-sm">check_circle</span>
+                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Hoạt động</span>
+                  </div>
+                  <p className="text-[2.5rem] font-black text-emerald-600 leading-none">01</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-rose-600 bg-rose-50 rounded-full p-1 text-sm">error</span>
+                    <span className="text-xs font-bold text-rose-600 uppercase tracking-wide">Đang lỗi</span>
+                  </div>
+                  <p className="text-[2.5rem] font-black text-rose-600 leading-none">01</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col justify-between h-32 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-600 bg-blue-50 rounded-full p-1 text-sm">assignment</span>
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Task Sự Cố</span>
+                  </div>
+                  <p className="text-[2.5rem] font-black text-blue-600 leading-none">{incidentTasks.length}</p>
+                </div>
               </div>
-              <button className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Tất cả trạng thái
-              </button>
-              <button className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Ưu tiên: Tất cả
-              </button>
-            </div>
-            <p className="text-xs text-slate-400">Hiển thị {equipments.length} / {equipments.length} kết quả</p>
-          </div>
+            )}
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mã thiết bị</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tên thiết bị</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bảo trì gần nhất</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lịch tiếp theo</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ưu tiên</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {equipments.map((eq) => (
-                  <tr key={eq.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-black text-slate-800">{eq.id}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-slate-800">{eq.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{eq.category}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border select-none ${eq.statusColor}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                        {eq.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-slate-600">
-                      {eq.lastMaintenance}
-                    </td>
-                    <td className={`px-6 py-4 text-xs font-semibold text-slate-600 relative group ${isReadOnly ? '' : 'cursor-pointer hover:bg-blue-50/50'} transition-colors`} title={isReadOnly ? '' : 'Nhấn để đổi ngày'}>
-                      <div className="flex items-center gap-2">
-                        <span className={eq.nextMaintenanceColor || ''}>{eq.nextMaintenance}</span>
-                        <span className="material-symbols-outlined text-[14px] text-slate-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">edit_calendar</span>
-                      </div>
-                      <input 
-                        type="date"
-                        onChange={(e) => handleChangeNextDate(eq.id, e.target.value)}
-                        disabled={isReadOnly}
-                        className={`absolute inset-0 opacity-0 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} w-full h-full`}
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <select 
-                        value={eq.priority}
-                        onChange={(e) => handleChangePriority(eq.id, e.target.value)}
-                        disabled={isReadOnly}
-                        className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold outline-none border-none appearance-none text-center ${eq.priorityColor} ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-                      >
-                        <option value="Bình thường" className="text-slate-600 bg-white">Bình thường</option>
-                        <option value="Trung bình" className="text-sky-700 bg-white">Trung bình</option>
-                        <option value="Cao" className="text-blue-700 bg-white">Cao</option>
-                        <option value="Khẩn cấp" className="text-rose-600 bg-white">Khẩn cấp</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {!isReadOnly ? (
-                        <button 
-                          onClick={() => handleChangeEqStatus(eq.id)}
-                          className="text-slate-400 hover:text-[#00236f] hover:bg-slate-100 p-2 rounded-full transition-all active:scale-90"
-                          title="Đổi trạng thái bảo trì"
-                        >
-                          <span className="material-symbols-outlined text-xl">swap_horiz</span>
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => handleOpenReport(eq.id)}
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-full transition-all active:scale-90"
-                          title="Báo cáo thiết bị"
-                        >
-                          <span className="material-symbols-outlined text-xl">report</span>
-                        </button>
+            {/* DANH SÁCH THIẾT BỊ */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-slate-700">Danh sách Thiết bị / Máy móc</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mã thiết bị</th>
+                      <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tên thiết bị</th>
+                      <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                      {(isManager || isTechnical) && (
+                        <>
+                          <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bảo trì gần nhất</th>
+                          <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lịch tiếp theo</th>
+                        </>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {equipments.map((eq) => (
+                      <tr key={eq.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4"><span className="text-xs font-black text-slate-800">{eq.id}</span></td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-bold text-slate-800">{eq.name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{eq.category}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border select-none ${eq.statusColor}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            {eq.status}
+                          </span>
+                        </td>
+                        {(isManager || isTechnical) && (
+                          <>
+                            <td className="px-6 py-4 text-xs font-semibold text-slate-600">{eq.lastMaintenance}</td>
+                            <td className="px-6 py-4 text-xs font-semibold text-slate-600">{eq.nextMaintenance}</td>
+                          </>
+                        )}
+                        <td className="px-6 py-4 text-center">
+                          {isManager ? (
+                            <button className="text-slate-400 hover:text-blue-600 p-2 rounded-full transition-all" title="Cập nhật thông số">
+                              <span className="material-symbols-outlined text-xl">edit</span>
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                setReportData({ eqId: eq.id, issueName: '', desc: '' });
+                                setShowReportModal(true);
+                              }}
+                              className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 rounded-full transition-all font-bold text-xs flex items-center justify-center gap-1 mx-auto"
+                            >
+                              <span className="material-symbols-outlined text-lg">report</span>
+                              Báo lỗi
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* VIEW 2: XỬ LÝ SỰ CỐ (Chỉ Technical) */}
+        {activeTab === 'incidents' && isTechnical && (
+          <div className="space-y-4">
+            {incidentTasks.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-slate-100">
+                <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">check_circle</span>
+                <p className="text-slate-500 font-medium">Hiện không có sự cố nào cần xử lý!</p>
+              </div>
+            ) : (
+              incidentTasks.map(task => (
+                <div key={task.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:border-blue-300 transition-colors">
+                  <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-md uppercase tracking-wider ${
+                          task.status === 'Chưa làm' ? 'bg-slate-100 text-slate-600' :
+                          task.status === 'Đang làm' ? 'bg-blue-100 text-blue-700' :
+                          task.status === 'Cần hỗ trợ' ? 'bg-amber-100 text-amber-700' :
+                          'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {task.status}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400"># {task.id}</span>
+                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">schedule</span> {task.createdAt}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-extrabold text-slate-800">{task.name}</h3>
+                      <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px] text-blue-500">precision_manufacturing</span>
+                        Thiết bị: <strong className="text-slate-700">{task.equipmentName}</strong> ({task.equipmentId})
+                      </p>
+                    </div>
+                    
+                    {/* Hành động cập nhật */}
+                    {task.status !== 'Hoàn thành' && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {task.status === 'Chưa làm' && (
+                          <button onClick={() => handleUpdateTaskStatus(task.id, 'Đang làm')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
+                            Bắt đầu sửa
+                          </button>
+                        )}
+                        {(task.status === 'Đang làm' || task.status === 'Cần hỗ trợ') && (
+                          <>
+                            <button onClick={() => handleUpdateTaskStatus(task.id, 'Cần hỗ trợ')} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
+                              Yêu cầu hỗ trợ (Linh kiện/Kinh phí)
+                            </button>
+                            <button onClick={() => handleUpdateTaskStatus(task.id, 'Hoàn thành')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95">
+                              Xác nhận Hoàn thành
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-slate-50 p-4 rounded-xl text-sm font-medium text-slate-600">
+                    <p className="font-bold text-slate-700 mb-1">Mô tả sự cố (Từ {task.requestedBy}):</p>
+                    {task.description}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* POP-UP MODAL TẠO PHIẾU SỰ CỐ */}
-      {showModal && (
+      {/* MODAL BÁO LỖI (Dành cho Staff/Tech) */}
+      {showReportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
-            onClick={() => setShowModal(false)}
-          ></div>
-          
-          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
-              <h3 className="font-extrabold text-base text-[#00236f]">Tạo phiếu sự cố thiết bị</h3>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
-              >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowReportModal(false)}></div>
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-rose-50">
+              <h3 className="font-extrabold text-base text-rose-700 flex items-center gap-2">
+                <span className="material-symbols-outlined">warning</span>
+                Báo cáo sự cố khẩn
+              </h3>
+              <button type="button" onClick={() => setShowReportModal(false)} className="p-1 hover:bg-rose-100 rounded-lg text-rose-700 transition-all">
                 <span className="material-symbols-outlined text-xl font-bold">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleCreateIncident} className="p-6 space-y-5">
+            <form onSubmit={handleSubmitReport} className="p-6 space-y-5">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Chọn thiết bị gặp sự cố</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Thiết bị hỏng</label>
                 <select
                   required
-                  value={incidentEqId}
-                  onChange={(e) => setIncidentEqId(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
+                  value={reportData.eqId}
+                  onChange={(e) => setReportData({...reportData, eqId: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-bold text-slate-700"
                 >
                   <option value="">-- Chọn thiết bị --</option>
-                  {equipments.map(eq => (
-                    <option key={eq.id} value={eq.id}>{eq.id} - {eq.name}</option>
-                  ))}
+                  {equipments.map(eq => <option key={eq.id} value={eq.id}>{eq.name} ({eq.id})</option>)}
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mức độ ưu tiên</label>
-                <select
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Tóm tắt sự cố</label>
+                <input
                   required
-                  value={incidentPriority}
-                  onChange={(e) => setIncidentPriority(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
-                >
-                  <option value="Bình thường">Bình thường</option>
-                  <option value="Trung bình">Trung bình</option>
-                  <option value="Cao">Cao</option>
-                  <option value="Khẩn cấp">Khẩn cấp</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mô tả sự cố / Triệu chứng</label>
-                <textarea
-                  required
-                  placeholder="Ví dụ: Máy bơm có tiếng kêu to bất thường, rỉ nước..."
-                  value={incidentDesc}
-                  onChange={(e) => setIncidentDesc(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium h-24 resize-none"
+                  type="text"
+                  placeholder="VD: Máy kêu to, xịt nước yếu..."
+                  value={reportData.issueName}
+                  onChange={(e) => setReportData({...reportData, issueName: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-bold text-slate-700"
                 />
               </div>
 
-              <div className="flex justify-end items-center gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline"
-                >
-                  Hủy
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mô tả chi tiết</label>
+                <textarea
+                  required
+                  placeholder="Mô tả cụ thể hiện tượng gặp phải..."
+                  value={reportData.desc}
+                  onChange={(e) => setReportData({...reportData, desc: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setShowReportModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
+                <button type="submit" className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
+                  Gửi lên Quản lý
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[#00236f] hover:bg-[#00236f]/90 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2"
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL YÊU CẦU HỖ TRỢ (Cho Tech) */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSupportModal(false)}></div>
+          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in z-50">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-amber-50">
+              <h3 className="font-extrabold text-base text-amber-700 flex items-center gap-2">
+                <span className="material-symbols-outlined">help_center</span>
+                Yêu cầu hỗ trợ từ Quản lý
+              </h3>
+              <button type="button" onClick={() => setShowSupportModal(false)} className="p-1 hover:bg-amber-100 rounded-lg text-amber-700 transition-all">
+                <span className="material-symbols-outlined text-xl font-bold">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitSupport} className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loại hỗ trợ</label>
+                <select
+                  value={supportData.requestType}
+                  onChange={(e) => setSupportData({...supportData, requestType: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 text-sm font-bold text-slate-700"
                 >
-                  <span className="material-symbols-outlined text-sm">assignment_add</span>
+                  <option value="Linh kiện">Cần cấp vật tư / Linh kiện thay thế</option>
+                  <option value="Kinh phí">Cần duyệt kinh phí mua ngoài</option>
+                  <option value="Thợ ngoài">Cần gọi thợ chuyên nghiệp bên ngoài</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung / Số tiền đề xuất</label>
+                <textarea
+                  required
+                  placeholder="VD: Đề xuất thay nguyên cụm motor giá 2tr, hoặc xin xuất kho 1 bơm áp lực..."
+                  value={supportData.note}
+                  onChange={(e) => setSupportData({...supportData, note: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 text-sm font-medium h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline">Hủy</button>
+                <button type="submit" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md active:scale-95">
                   Gửi yêu cầu
                 </button>
               </div>
@@ -505,186 +421,6 @@ export default function TechnicalPage() {
         </div>
       )}
 
-      {/* POP-UP MODAL BÁO CÁO THIẾT BỊ */}
-      {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
-            onClick={() => setShowReportModal(false)}
-          ></div>
-          
-          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
-              <h3 className="font-extrabold text-base text-[#00236f]">Báo cáo thiết bị</h3>
-              <button
-                type="button"
-                onClick={() => setShowReportModal(false)}
-                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
-              >
-                <span className="material-symbols-outlined text-xl font-bold">close</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateReport} className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mã thiết bị</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={reportEqId}
-                  className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-600 cursor-not-allowed"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Vấn đề cần báo cáo</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ví dụ: Máy bơm kêu to, rỉ nước..."
-                  value={reportIssueName}
-                  onChange={(e) => setReportIssueName(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái thiết bị</label>
-                <select
-                  required
-                  value={reportStatus}
-                  onChange={(e) => setReportStatus(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
-                >
-                  <option value="Hoạt động">Hoạt động</option>
-                  <option value="Cần kiểm tra">Cần kiểm tra</option>
-                  <option value="Đang bảo trì">Đang bảo trì</option>
-                  <option value="Lỗi">Lỗi</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái xử lý</label>
-                <select
-                  required
-                  value={reportTaskStatus}
-                  onChange={(e) => setReportTaskStatus(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700"
-                >
-                  <option value="Cần kiểm tra">Cần kiểm tra</option>
-                  <option value="Đã hoàn thành">Đã hoàn thành</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung báo cáo</label>
-                <textarea
-                  required
-                  placeholder="Ví dụ: Cần tra thêm dầu mỡ, máy kêu to..."
-                  value={reportDesc}
-                  onChange={(e) => setReportDesc(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium h-24 resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end items-center gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowReportModal(false)}
-                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[#00236f] hover:bg-[#00236f]/90 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-sm">send</span>
-                  Gửi báo cáo
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* POP-UP MODAL CHI TIẾT BÁO CÁO */}
-      {showDetailModal && selectedTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
-            onClick={() => setShowDetailModal(false)}
-          ></div>
-          
-          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-on-surface z-50">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-outline-variant/35 bg-surface-container-lowest">
-              <h3 className="font-extrabold text-base text-[#00236f]">Chi tiết báo cáo</h3>
-              <button
-                type="button"
-                onClick={() => setShowDetailModal(false)}
-                className="p-1 hover:bg-surface-container-low rounded-lg transition-all text-outline"
-              >
-                <span className="material-symbols-outlined text-xl font-bold">close</span>
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Tên báo cáo</label>
-                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
-                  {selectedTask.name}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mã thiết bị</label>
-                  <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
-                    {selectedTask.equipmentId || 'Không xác định'}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái xử lý</label>
-                  {!isReadOnly ? (
-                    <select
-                      value={selectedTask.status}
-                      onChange={(e) => handleChangeTaskStatus(selectedTask.id, e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-slate-700 cursor-pointer"
-                    >
-                      <option value="Chưa làm">Chưa làm</option>
-                      <option value="Cần kiểm tra">Cần kiểm tra</option>
-                      <option value="Đang làm">Đang làm</option>
-                      <option value="Đã hoàn thành">Đã hoàn thành</option>
-                      <option value="Trễ hạn">Trễ hạn</option>
-                    </select>
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold flex items-center gap-2">
-                      <span className={selectedTask.statusColor || "text-slate-700"}>{selectedTask.status}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nội dung chi tiết</label>
-                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 min-h-[6rem] whitespace-pre-wrap">
-                  {selectedTask.description || 'Không có mô tả'}
-                </div>
-              </div>
-
-              <div className="flex justify-end items-center gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:underline"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
