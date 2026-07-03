@@ -84,16 +84,31 @@ export default function UserProfile() {
             throw new Error('Đồng bộ thông tin user không thành công.');
           })
           .then(data => {
-            setUser(prev => ({
-              ...prev,
-              fullName: data.fullName || prev.fullName,
-              email: data.email || prev.email,
-              tier: data.role === 'Customer' ? (data.tier || prev.tier) : data.role,
-              points: data.currentPoints || 0,
-              address: data.address || prev.address,
-              phone: data.phone || data.phoneNumber || prev.phone,
-              isActive: data.isActive
-            }));
+            setUser(prev => {
+              const updatedUser = {
+                ...prev,
+                fullName: data.fullName || prev.fullName,
+                email: data.email || prev.email,
+                tier: data.role === 'Customer' ? (data.loyalty?.tierName || prev.tier) : data.role,
+                points: data.loyalty?.currentPoints || 0,
+                address: data.address || prev.address,
+                phone: data.phone || data.phoneNumber || prev.phone,
+                isActive: data.isActive
+              };
+            
+            // Cập nhật localStorage để Navbar nhận được thông tin mới
+            if (parsed) {
+               localStorage.setItem('user', JSON.stringify({
+                 ...parsed,
+                 tier: updatedUser.tier,
+                 points: updatedUser.points
+               }));
+               // Dispatch custom event để Navbar tự động cập nhật
+               window.dispatchEvent(new Event('userUpdated'));
+            }
+
+            return updatedUser;
+            });
           })
           .catch(err => console.warn('Lỗi đồng bộ user:', err));
 
