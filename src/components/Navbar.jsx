@@ -38,16 +38,23 @@ export default function Navbar() {
   };
   const tierInfo = getTierInfo();
 
-  // Lấy thông tin user từ localStorage khi mount
+  // Lấy thông tin user từ localStorage khi mount và khi có event
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Lỗi phân tích cú pháp user từ localStorage:', e);
+    const loadUser = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error('Lỗi phân tích cú pháp user từ localStorage:', e);
+        }
       }
-    }
+    };
+    
+    loadUser();
+    
+    window.addEventListener('userUpdated', loadUser);
+    return () => window.removeEventListener('userUpdated', loadUser);
   }, []);
 
   // Đóng dropdown khi click ra ngoài
