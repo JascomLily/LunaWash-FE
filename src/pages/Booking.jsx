@@ -1225,10 +1225,24 @@ export default function Booking() {
                   </div>
 
                   <div className="mt-6 space-y-4">
-                    <div className="flex justify-between items-baseline">
-                      <p className="text-2xl font-black">{(pkg.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || pkg.prices?.[0]?.price || 0).toLocaleString('vi-VN') + 'đ'}</p>
-                      <p className="text-[10px] text-outline font-bold">~{(pkg.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.durationMinutes || pkg.prices?.[0]?.durationMinutes || 0)} phút</p>
-                    </div>
+                    {(() => {
+                      const sp = pkg.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId) || pkg.prices?.[0];
+                      const pts = sp?.pointsRewarded || 0;
+                      return (
+                        <div className="flex flex-col gap-2">
+                          {pts > 0 && (
+                            <div className="flex items-center gap-1 w-max px-2 py-0.5 bg-amber-50 rounded text-amber-600 border border-amber-100">
+                              <span className="material-symbols-outlined text-[14px]">stars</span>
+                              <span className="text-[11px] font-bold">+{pts} điểm</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-baseline">
+                            <p className="text-2xl font-black">{(sp?.price || 0).toLocaleString('vi-VN') + 'đ'}</p>
+                            <p className="text-[10px] text-outline font-bold">~{(sp?.durationMinutes || 0)} phút</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
 
                     <button 
@@ -1385,6 +1399,18 @@ export default function Booking() {
                           <span className="material-symbols-outlined text-sm">schedule</span>
                           +{duration}p
                         </div>
+                        {(() => {
+                          const pts = addon.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.pointsRewarded || addon.prices?.[0]?.pointsRewarded || 0;
+                          if (pts > 0) {
+                            return (
+                              <div className="bg-amber-50 text-amber-600 border border-amber-100 px-3 py-1.5 rounded-lg font-bold text-sm flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">stars</span>
+                                +{pts} điểm
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </div>
