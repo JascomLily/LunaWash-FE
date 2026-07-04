@@ -249,10 +249,10 @@ export default function BookingHistory() {
                     <div className="text-right">
                       <p className="text-xl font-black text-[#0d2e61]">{activeBooking.price}</p>
                       <p className="text-[10px] text-outline font-semibold">
-                        {activeBooking.paymentMethod === 'vnpay' 
-                          ? 'Thanh toán qua VNPay (Đã thanh toán)' 
-                          : activeBooking.paymentMethod === 'vnpay_pending' 
-                            ? 'Thanh toán qua VNPay (Chờ thanh toán)' 
+                        {activeBooking.status === 'Pending' && activeBooking.paymentMethod === 'vnpay'
+                          ? 'Thanh toán qua VNPay (Chờ thanh toán)'
+                          : activeBooking.paymentMethod === 'vnpay'
+                            ? 'Thanh toán qua VNPay (Đã thanh toán)'
                             : 'Thanh toán tại quầy (Tiền mặt)'}
                       </p>
                     </div>
@@ -596,14 +596,14 @@ export default function BookingHistory() {
                 </div>
                 <div className="mt-4 flex justify-between items-center bg-surface-container-lowest p-3 rounded-xl text-xs font-bold">
                   <span className="text-outline">Phương thức: <span className="text-on-surface ml-1">
-                    {detailsBooking.paymentMethod === 'vnpay' 
-                      ? 'Thanh toán qua VNPay (Đã thanh toán)' 
-                      : detailsBooking.paymentMethod === 'vnpay_pending' 
-                        ? 'Thanh toán qua VNPay (Chờ thanh toán)' 
+                    {detailsBooking.status === 'Pending' && detailsBooking.paymentMethod === 'vnpay'
+                      ? 'Thanh toán qua VNPay (Chờ thanh toán)'
+                      : detailsBooking.paymentMethod === 'vnpay'
+                        ? 'Thanh toán qua VNPay (Đã thanh toán)'
                         : 'Thanh toán tại quầy (Tiền mặt)'}
                   </span></span>
-                  <span className={`px-2 py-1 rounded ${detailsBooking.paymentMethod === 'vnpay' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
-                    {detailsBooking.paymentMethod === 'vnpay' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  <span className={`px-2 py-1 rounded ${detailsBooking.status !== 'Pending' && detailsBooking.paymentMethod === 'vnpay' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
+                    {detailsBooking.status !== 'Pending' && detailsBooking.paymentMethod === 'vnpay' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                   </span>
                 </div>
               </div>
