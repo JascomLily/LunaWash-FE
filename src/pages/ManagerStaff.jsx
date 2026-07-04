@@ -60,7 +60,7 @@ export default function ManagerStaff() {
 
   const fetchEmployees = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Users/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
         if (res.ok) {
           const data = await res.json();
           const mappedData = data.map(emp => ({
@@ -75,63 +75,18 @@ export default function ManagerStaff() {
           }));
           setEmployees(mappedData);
         } else {
-          setEmployees(DEFAULT_EMPLOYEES); // Fallback to mock data
+          setEmployees([]); // Fallback to mock data
         }
       } catch (err) {
         console.log("Dùng dữ liệu mock do API lỗi: " + err.message);
-        setEmployees(DEFAULT_EMPLOYEES);
+        setEmployees([]);
       }
     };
 
     fetchEmployees();
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      if (!user?.branchId) return;
-      setIsAttendanceLoading(true);
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/attendance?date=${selectedDate}&shift=${selectedShiftFilter}`);
-        if (response.ok) {
-          const data = await response.json();
-          const mapped = data.map(item => ({
-            id: item.employeeId,
-            fullName: item.fullName,
-            role: item.roleName,
-            status: item.status,
-            checkInTime: item.checkInTime,
-            note: item.notes
-          }));
-          setAttendanceData(mapped);
-        } else {
-          // Fallback to mock data
-          const fallbackAttendance = DEFAULT_EMPLOYEES.map(emp => ({
-            id: emp.id,
-            fullName: emp.fullName,
-            role: emp.role,
-            status: emp.status === 'Active' ? 'Có mặt' : 'Vắng mặt',
-            checkInTime: emp.checkIn || '--:--',
-            note: emp.note
-          }));
-          setAttendanceData(fallbackAttendance);
-        }
-      } catch (error) {
-        console.log("Dùng dữ liệu điểm danh mock do lỗi API: " + error.message);
-        const fallbackAttendance = DEFAULT_EMPLOYEES.map(emp => ({
-          id: emp.id,
-          fullName: emp.fullName,
-          role: emp.role,
-          status: emp.status === 'Active' ? 'Có mặt' : 'Vắng mặt',
-          checkInTime: emp.checkIn || '--:--',
-          note: emp.note
-        }));
-        setAttendanceData(fallbackAttendance);
-      } finally {
-        setIsAttendanceLoading(false);
-      }
-    };
-    fetchAttendance();
-  }, [user?.branchId, selectedDate, selectedShiftFilter]);
+
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -279,7 +234,8 @@ const handleAddEmployee = async (e) => {
             })));
         }
       } else {
-        toast.error("Thêm nhân viên thất bại");
+        const errorText = await response.text();
+        toast.error(errorText || "Thêm nhân viên thất bại");
       }
     } catch (err) {
       toast.error("Lỗi: " + err.message);
@@ -457,7 +413,8 @@ const handleAddEmployee = async (e) => {
                         <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Vai Trò</th>
                         <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Mức Lương</th>
                         <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center">Nghỉ phép</th>
-                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right">Trạng thái</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center">Trạng thái</th>
+                        <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/10">
@@ -468,12 +425,21 @@ const handleAddEmployee = async (e) => {
                           <td className="px-6 py-4 font-medium text-on-surface-variant">{emp.role}</td>
                           <td className="px-6 py-4 font-mono font-bold">{emp.wages}</td>
                           <td className="px-6 py-4 text-center font-bold text-amber-700">{emp.leaveDays} ngày</td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4 text-center">
                             <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
                               emp.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-300'
                             }`}>
                               {emp.status === 'Active' ? 'Đang trực' : 'Đã nghỉ'}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleDeleteEmployee(emp.id)}
+                              className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors border border-rose-200 shadow-sm ml-auto"
+                              title="Xóa nhân viên"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
