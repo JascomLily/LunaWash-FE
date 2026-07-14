@@ -137,6 +137,7 @@ export default function StaffQueue() {
   const [statusFilter, setStatusFilter] = useState('Pending');
   const [addingInteriorBooking, setAddingInteriorBooking] = useState(null);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [selectedExtraServices, setSelectedExtraServices] = useState(null);
 
   // Date picker states
   const getVietnamTime = () => {
