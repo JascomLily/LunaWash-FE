@@ -12,7 +12,9 @@ const BRANCHES = [
     hours: '06:00 - 22:00',
     description: 'Chi nhánh Linh Đông sở hữu hệ thống rửa xe tự động vòi phun đa điểm hiện đại bậc nhất Thủ Đức, công suất lớn, phòng chờ lạnh và quầy café phục vụ khách.',
     image: '/linh-dong-branch.jpg',
-    mapUrl: 'https://maps.google.com/maps?q=10.852445,106.748364&z=16&ie=UTF8&iwloc=&output=embed'
+    mapUrl: 'https://maps.google.com/maps?q=10.852445,106.748364&z=16&ie=UTF8&iwloc=&output=embed',
+    lat: 10.852445,
+    lng: 106.748364
   },
   { 
     id: 'BRN-TTH-01', 
@@ -22,7 +24,9 @@ const BRANCHES = [
     hours: '06:00 - 22:00',
     description: 'Chi nhánh Quận 12 trang bị máy sấy phản lực gió siêu tốc và quy trình rửa gầm chuyên sâu, tối ưu cho dòng xe SUV và xe bán tải.',
     image: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=400&q=80',
-    mapUrl: 'https://maps.google.com/maps?q=10.861789,106.657512&z=16&ie=UTF8&iwloc=&output=embed'
+    mapUrl: 'https://maps.google.com/maps?q=10.861789,106.657512&z=16&ie=UTF8&iwloc=&output=embed',
+    lat: 10.861789,
+    lng: 106.657512
   },
   { 
     id: 'BRN-Q1-01', 
@@ -32,7 +36,9 @@ const BRANCHES = [
     hours: '07:00 - 23:00',
     description: 'Vị trí đắc địa ngay trung tâm thành phố. Chi nhánh Quận 1 cung cấp dịch vụ rửa xe kết hợp đánh bóng nhanh và sáp phủ bóng Ceramic cao cấp.',
     image: 'https://images.unsplash.com/photo-1552930294-6b595f4c2974?auto=format&fit=crop&w=400&q=80',
-    mapUrl: 'https://maps.google.com/maps?q=10.772564,106.698047&z=16&ie=UTF8&iwloc=&output=embed'
+    mapUrl: 'https://maps.google.com/maps?q=10.772564,106.698047&z=16&ie=UTF8&iwloc=&output=embed',
+    lat: 10.772564,
+    lng: 106.698047
   },
   { 
     id: 'BRN-Q7-01', 
@@ -42,7 +48,9 @@ const BRANCHES = [
     hours: '06:00 - 22:00',
     description: 'Trạm rửa siêu rộng rãi tại khu đô thị Phú Mỹ Hưng với 3 làn rửa chạy song song, rút ngắn tối đa thời gian chờ đợi của quý khách.',
     image: 'https://images.unsplash.com/photo-1528190336454-13cd56b45b5a?auto=format&fit=crop&w=400&q=80',
-    mapUrl: 'https://maps.google.com/maps?q=10.729351,106.702983&z=16&ie=UTF8&iwloc=&output=embed'
+    mapUrl: 'https://maps.google.com/maps?q=10.729351,106.702983&z=16&ie=UTF8&iwloc=&output=embed',
+    lat: 10.729351,
+    lng: 106.702983
   },
   { 
     id: 'BRN-TB-01', 
@@ -52,9 +60,24 @@ const BRANCHES = [
     hours: '06:00 - 22:30',
     description: 'Chi nhánh Cộng Hòa nổi bật với khu vực chăm sóc nội thất chuyên sâu và hệ thống lọc nước RO tiêu chuẩn, bảo vệ tối đa lớp sơn bóng của xe.',
     image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80',
-    mapUrl: 'https://maps.google.com/maps?q=10.801648,106.640954&z=16&ie=UTF8&iwloc=&output=embed'
+    mapUrl: 'https://maps.google.com/maps?q=10.801648,106.640954&z=16&ie=UTF8&iwloc=&output=embed',
+    lat: 10.801648,
+    lng: 106.640954
   }
 ];
+
+// Hàm tính khoảng cách Haversine giữa 2 tọa độ (trả về km)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Bán kính Trái Đất (km)
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+};
 
 const WASH_SLOTS = [
   { id: 'SL-01', name: 'Trạm 1', status: 'Sẵn sàng', color: 'text-emerald-600 bg-emerald-50' },
@@ -99,6 +122,77 @@ export default function Booking() {
   const location = useLocation();
   const [promoCode, setPromoCode] = useState(location.state?.promoCode || '');
   const navState = location.state || {};
+
+  const [isFindingLocation, setIsFindingLocation] = useState(false);
+
+  const handleFindNearestBranch = () => {
+    if (!navigator.geolocation) {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị GPS!');
+      return;
+    }
+    
+    setIsFindingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        let nearestBranch = null;
+        let minDistance = Infinity;
+
+        BRANCHES.forEach(branch => {
+          if (branch.lat && branch.lng) {
+            const distance = calculateDistance(latitude, longitude, branch.lat, branch.lng);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestBranch = branch;
+            }
+          }
+        });
+
+        if (nearestBranch) {
+          setSelectedBranch(nearestBranch.id);
+          toast.success(`Đã tự động chọn chi nhánh gần nhất: ${nearestBranch.name} (cách bạn khoảng ${minDistance.toFixed(1)} km)`, { duration: 5000, icon: '📍' });
+        }
+        setIsFindingLocation(false);
+      },
+      (error) => {
+        toast.error('Không thể lấy vị trí. Vui lòng cho phép quyền truy cập Vị trí!');
+        setIsFindingLocation(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const [hasActiveBooking, setHasActiveBooking] = useState(false);
+  const [activeBookingInfo, setActiveBookingInfo] = useState(null);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+
+  useEffect(() => {
+    const checkActiveBooking = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          const res = await fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
+            headers: { 'Authorization': `Bearer ${parsed.token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const validData = data.filter(b => !(b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending')));
+            const active = validData.find(b => ['Pending', 'Confirmed', 'InProgress', 'Sắp đến', 'Đang rửa'].includes(b.status));
+            if (active) {
+              setHasActiveBooking(true);
+              setActiveBookingInfo(active);
+            }
+          }
+        } catch (e) {
+          console.error('Error checking active booking:', e);
+        }
+      }
+    };
+    checkActiveBooking();
+  }, []);
+
 
   // Cuộn lên đầu trang khi component được mount (đặc biệt khi chuyển từ trang chủ sang)
   useEffect(() => {
@@ -750,6 +844,10 @@ export default function Booking() {
 
   const handleOpenPaymentModal = () => {
     if (requireLogin()) return;
+    if (hasActiveBooking) {
+      setShowBlockModal(true);
+      return;
+    }
     if (!selectedBranch) {
       toast.error('Vui lòng chọn chi nhánh!');
       return;
@@ -900,6 +998,7 @@ export default function Booking() {
     }
   };
 
+
   return (
     <main className="min-h-screen bg-background relative w-full pt-[80px]">
       <style>{`
@@ -1036,9 +1135,23 @@ export default function Booking() {
 
         {/* 1. CHỌN CHI NHÁNH */}
         <section id="step-1" className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${activeStep === 'step-1' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
-          <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">location_on</span>
-            Chọn chi nhánh
+          <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">location_on</span>
+              Chọn chi nhánh
+            </div>
+            <button 
+              onClick={handleFindNearestBranch}
+              disabled={isFindingLocation}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-xl transition-all text-xs border border-primary/20 normal-case tracking-normal"
+            >
+              {isFindingLocation ? (
+                <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
+              ) : (
+                <span className="material-symbols-outlined text-sm">my_location</span>
+              )}
+              {isFindingLocation ? 'Đang định vị...' : 'Gợi ý gần nhất'}
+            </button>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
             {BRANCHES.map((b) => (
@@ -1818,6 +1931,36 @@ export default function Booking() {
       </div>
       
       </div> {/* End Flex Wrapper */}
+
+      {showBlockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" 
+            onClick={() => setShowBlockModal(false)}
+          ></div>
+          <div className="relative bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center border border-outline-variant/30 z-50">
+            <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 animate-bounce">warning</span>
+            <h2 className="text-2xl font-black text-[#00236f] mb-2">Đang có lịch hẹn chưa hoàn thành!</h2>
+            <p className="text-on-surface-variant mb-6 text-sm">
+              Bạn hiện đang có một lịch đặt dịch vụ <strong>{activeBookingInfo?.status === 'Pending' ? 'đang chờ xác nhận' : 'đang thực hiện'}</strong>. Để đảm bảo chất lượng dịch vụ và tránh tình trạng đặt quá tải, vui lòng hoàn thành hoặc hủy lịch hẹn hiện tại trước khi đặt lịch mới.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => navigate('/history')}
+                className="w-full py-3 bg-[#00236f] text-white rounded-xl font-bold shadow-md hover:bg-[#001b54] transition-all"
+              >
+                Xem lịch đặt hiện tại
+              </button>
+              <button 
+                onClick={() => setShowBlockModal(false)}
+                className="w-full py-3 bg-white text-[#00236f] border border-[#00236f] rounded-xl font-bold hover:bg-[#00236f]/5 transition-all"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">

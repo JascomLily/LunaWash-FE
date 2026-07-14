@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 // Cấu hình tọa độ bản đồ Google Map cho các chi nhánh của LunaWash
 const HOME_BRANCHES = [
@@ -9,6 +10,19 @@ const HOME_BRANCHES = [
   { id: 'BR-Q7', name: 'LunaWash Quận 7', address: '456 Nguyễn Văn Linh', lat: 10.729351, lng: 106.702983 },
   { id: 'BR-TB', name: 'LunaWash Tân Bình', address: '789 Cộng Hòa, Phường 13', lat: 10.801648, lng: 106.640954 }
 ];
+
+// Hàm tính khoảng cách Haversine giữa 2 tọa độ (trả về km)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Bán kính Trái Đất (km)
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+};
 
 /**
  * Trang chủ (Home) - Hệ thống Rửa xe Thông minh LunaWash.
@@ -38,9 +52,75 @@ export default function Home() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isFindingLocation, setIsFindingLocation] = useState(false);
 
   const [mainPackages, setMainPackages] = useState([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+
+  // Tự động xin quyền vị trí khi vào trang chủ để load trạm gần nhất
+  useEffect(() => {
+    if (navigator.geolocation && !isStaffOrManager) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          let nearestBranch = null;
+          let minDistance = Infinity;
+
+          HOME_BRANCHES.forEach(branch => {
+            const distance = calculateDistance(latitude, longitude, branch.lat, branch.lng);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestBranch = branch;
+            }
+          });
+
+          if (nearestBranch && selectedBranchId !== nearestBranch.id) {
+            setSelectedBranchId(nearestBranch.id);
+          }
+        },
+        (error) => {
+          console.log("Auto-location failed or denied:", error);
+        },
+        { timeout: 5000 }
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFindNearestBranch = () => {
+    if (!navigator.geolocation) {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị GPS!');
+      return;
+    }
+    
+    setIsFindingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        let nearestBranch = null;
+        let minDistance = Infinity;
+
+        HOME_BRANCHES.forEach(branch => {
+          const distance = calculateDistance(latitude, longitude, branch.lat, branch.lng);
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestBranch = branch;
+          }
+        });
+
+        if (nearestBranch) {
+          setSelectedBranchId(nearestBranch.id);
+          toast.success(`Đã tự động chọn trạm gần nhất: ${nearestBranch.name} (cách bạn khoảng ${minDistance.toFixed(1)} km)`, { duration: 4000, icon: '📍' });
+        }
+        setIsFindingLocation(false);
+      },
+      (error) => {
+        toast.error('Không thể lấy vị trí. Vui lòng cho phép quyền truy cập Vị trí!');
+        setIsFindingLocation(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   // Lấy danh sách các gói dịch vụ (MainPackage)
   useEffect(() => {
@@ -64,20 +144,41 @@ export default function Home() {
     fetchPackages();
   }, []);
 
-  const [banners, setBanners] = useState([
-    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
-    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
-    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
-  ]);
+  const [banners, setBanners] = useState([]);
 
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
-    const timer = setTimeout(() => {
-      setIsTransitioning(false);
-    }, 700);
+    const timer = setTimeout(() => setIsTransitioning(false), 500);
     return () => clearTimeout(timer);
   }, [selectedBranchId]);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}/api/banners`);
+        const data = await response.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setBanners(data.data);
+        } else {
+          setBanners([
+            { id: 1, imageUrl: '/promo_1.png' },
+            { id: 2, imageUrl: '/promo_2.png' },
+            { id: 3, imageUrl: '/promo_3.png' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải banners:', error);
+        setBanners([
+          { id: 1, imageUrl: '/promo_1.png' },
+          { id: 2, imageUrl: '/promo_2.png' },
+          { id: 3, imageUrl: '/promo_3.png' }
+        ]);
+      }
+    };
+    fetchBanners();
+  }, []);
 
   // Tính toán URL Map nhúng động theo chi nhánh được chọn
   const selectedBranch = HOME_BRANCHES.find(b => b.id === selectedBranchId) || HOME_BRANCHES[0];
@@ -97,13 +198,6 @@ export default function Home() {
       } catch (e) {
         console.error(e);
       }
-    }
-
-    const storedBanners = localStorage.getItem('ads_banners');
-    if (storedBanners) {
-      try {
-        setBanners(JSON.parse(storedBanners));
-      } catch (e) {}
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -162,9 +256,23 @@ export default function Home() {
             
             {/* Khối danh sách trạm */}
             <div className="space-y-3" id="locations">
-              <h2 className="text-sm font-bold text-[#00236f] border-b border-outline-variant pb-2 uppercase tracking-wider">
-                Danh sách trạm khu vực
-              </h2>
+              <div className="flex items-center justify-between border-b border-outline-variant pb-2">
+                <h2 className="text-sm font-bold text-[#00236f] uppercase tracking-wider">
+                  Danh sách trạm khu vực
+                </h2>
+                <button 
+                  onClick={handleFindNearestBranch}
+                  disabled={isFindingLocation}
+                  title="Tìm trạm gần nhất"
+                  className="flex items-center justify-center p-1.5 bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/40 text-[#00236f] rounded-lg transition-all"
+                >
+                  {isFindingLocation ? (
+                    <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">my_location</span>
+                  )}
+                </button>
+              </div>
               <ul className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {HOME_BRANCHES.map((b) => (
                   <li 
@@ -217,10 +325,17 @@ export default function Home() {
               {banners.map((b) => (
                 <div 
                   key={b.id} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
+                      navigate('/booking');
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>
@@ -229,10 +344,17 @@ export default function Home() {
               {banners.map((b) => (
                 <div 
                   key={`dup-${b.id}`} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
+                      navigate('/booking');
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>

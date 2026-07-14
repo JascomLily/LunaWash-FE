@@ -53,6 +53,9 @@ export default function UserProfile() {
   // Modal thêm xe states
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [isAddingCar, setIsAddingCar] = useState(false);
+
+  const [vouchers, setVouchers] = useState([]);
+
   const [carName, setCarName] = useState('');
   const [carLicense, setCarLicense] = useState('');
   const [carColor, setCarColor] = useState('');
@@ -91,7 +94,6 @@ export default function UserProfile() {
                 email: data.email || prev.email,
                 tier: data.role === 'Customer' ? (data.loyalty?.tierName || prev.tier) : data.role,
                 points: data.loyalty?.currentPoints || 0,
-                maxBookingDays: data.loyalty?.maxBookingDays || 3,
                 address: data.address || prev.address,
                 phone: data.phone || data.phoneNumber || prev.phone,
                 isActive: data.isActive
@@ -102,8 +104,7 @@ export default function UserProfile() {
                localStorage.setItem('user', JSON.stringify({
                  ...parsed,
                  tier: updatedUser.tier,
-                 points: updatedUser.points,
-                 maxBookingDays: updatedUser.maxBookingDays
+                 points: updatedUser.points
                }));
                // Dispatch custom event để Navbar tự động cập nhật
                window.dispatchEvent(new Event('userUpdated'));
@@ -155,6 +156,27 @@ export default function UserProfile() {
         }
       } catch (e) {
         console.error(e);
+      }
+
+      // Lấy danh sách Voucher của tôi
+      const tokenStr = localStorage.getItem('token');
+      if (tokenStr) {
+        try {
+          const pToken = JSON.parse(tokenStr);
+          fetch(import.meta.env.VITE_API_URL + '/api/Vouchers/my-vouchers', {
+            headers: { 'Authorization': `Bearer ${pToken.token}` }
+          })
+            .then(res => {
+              if (res.ok) return res.json();
+              throw new Error('Lỗi lấy khuyến mãi');
+            })
+            .then(data => {
+              if (data.success && data.data) {
+                setVouchers(data.data.filter(v => v.voucher.isActive && !v.isUsed));
+              }
+            })
+            .catch(e => console.error('Lỗi lấy khuyến mãi:', e));
+        } catch (e) {}
       }
     }
   }, []);
@@ -313,7 +335,8 @@ export default function UserProfile() {
       <div className="max-w-container-max mx-auto grid grid-cols-1 lg:grid-cols-4 gap-gutter items-start">
         
         {/* CỘT TRÁI - SIDEBAR HỒ SƠ */}
-        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl flex flex-col items-center">
+        <div className="flex flex-col gap-6">
+          <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl flex flex-col items-center">
           {/* Avatar với nút Chỉnh sửa */}
           <div className="relative w-32 h-32 mb-6">
             <img 
@@ -367,7 +390,45 @@ export default function UserProfile() {
               Cài đặt tài khoản
             </button>
           </nav>
-        </section>
+          </section>
+
+          {/* VOUCHER BOX */}
+          <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col">
+            <h3 className="font-bold text-lg text-primary mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500">local_activity</span>
+              Mã giảm giá của bạn
+            </h3>
+            
+            <div className="space-y-3">
+              {vouchers.length === 0 ? (
+                <div className="text-center text-sm text-on-surface-variant italic py-4">
+                  Chưa có mã giảm giá nào.
+                </div>
+              ) : (
+                vouchers.slice(0, 3).map((v) => (
+                  <div key={v.id} className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
+                    <div>
+                      <p className="text-sm font-bold text-primary">{v.voucher.voucherName}</p>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5">{v.voucher.description} - Giảm {v.voucher.discountValue}đ</p>
+                    </div>
+                    <button 
+                      onClick={() => alert(`Mã ${v.voucher.voucherName} sẽ tự động được áp dụng ở bước Thanh toán.`)}
+                      className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
+                    >
+                      Dùng
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {vouchers.length > 3 && (
+              <button className="text-xs text-primary font-bold hover:underline mt-4 text-center w-full">
+                Xem tất cả ưu đãi &rarr;
+              </button>
+            )}
+          </section>
+        </div>
 
         {/* CỘT PHẢI - NỘI DUNG CHÍNH */}
         <section className="col-span-1 lg:col-span-3 flex flex-col gap-6">
