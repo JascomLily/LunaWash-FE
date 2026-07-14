@@ -238,7 +238,7 @@ export default function Home() {
       const response = await fetch(`${baseUrl}/api/vouchers/save/${selectedVoucher.voucherId}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user') || '{}').token}`
         }
       });
       const data = await response.json();

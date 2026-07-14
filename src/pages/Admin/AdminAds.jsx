@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 
+const getToken = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.token || null;
+  } catch { return null; }
+};
+
 export default function AdminAds() {
   const [activeTab, setActiveTab] = useState('Web'); // 'Web' or 'App'
   
@@ -28,7 +35,7 @@ export default function AdminAds() {
       try {
         const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
         const response = await fetch(`${baseUrl}/api/vouchers/all`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await response.json();
         if (data.success) {
@@ -82,7 +89,7 @@ export default function AdminAds() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getToken()}`
         },
         body: JSON.stringify(payload)
       });
@@ -128,7 +135,7 @@ export default function AdminAds() {
         const response = await fetch(`${baseUrl}/api/banners/upload`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${getToken()}`
           },
           body: formData
         });

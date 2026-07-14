@@ -159,12 +159,12 @@ export default function UserProfile() {
       }
 
       // Lấy danh sách Voucher của tôi
-      const tokenStr = localStorage.getItem('token');
-      if (tokenStr) {
+      const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+      const userToken = userObj.token;
+      if (userToken) {
         try {
-          const pToken = JSON.parse(tokenStr);
           fetch(import.meta.env.VITE_API_URL + '/api/Vouchers/my-vouchers', {
-            headers: { 'Authorization': `Bearer ${pToken.token}` }
+            headers: { 'Authorization': `Bearer ${userToken}` }
           })
             .then(res => {
               if (res.ok) return res.json();

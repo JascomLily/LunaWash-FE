@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
+const getToken = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.token || null;
+  } catch { return null; }
+};
+
 const AdminPromotions = () => {
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +36,7 @@ const AdminPromotions = () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
       const response = await fetch(`${baseUrl}/api/vouchers/all`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       const data = await response.json();
       if (data.success) {
@@ -68,7 +75,7 @@ const AdminPromotions = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getToken()}`
         },
         body: JSON.stringify(payload)
       });
