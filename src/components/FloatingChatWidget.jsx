@@ -122,14 +122,18 @@ export default function FloatingChatWidget() {
   // Hide on support page to prevent double chat boxes
   // Must be after all hooks to obey React Rules of Hooks
   const userString = localStorage.getItem('user');
-  let userRole = 'Customer';
+  let isStaffOrAdmin = false;
   if (userString) {
     try {
-      userRole = JSON.parse(userString).role || 'Customer';
+      const user = JSON.parse(userString);
+      const tier = user.tier || '';
+      if (['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(tier)) {
+        isStaffOrAdmin = true;
+      }
     } catch (e) {}
   }
   
-  if (userRole !== 'Customer') return null;
+  if (isStaffOrAdmin) return null;
   if (location.pathname === '/support') return null;
 
   return (
