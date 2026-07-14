@@ -3,23 +3,72 @@ import toast from 'react-hot-toast';
 
 export default function AdminAds() {
   const [banners, setBanners] = useState([
-    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
-    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
-    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
+    { id: 1, url: '/promo_1.png', voucherId: '' },
+    { id: 2, url: '/promo_2.png', voucherId: '' },
+    { id: 3, url: '/promo_3.png', voucherId: '' },
   ]);
+  const [vouchers, setVouchers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('ads_banners');
-    if (stored) {
+    const fetchVouchers = async () => {
       try {
-        setBanners(JSON.parse(stored));
-      } catch(e) {}
-    }
+        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}/api/vouchers/all`);
+        const data = await response.json();
+        if (data.success) {
+          setVouchers(data.data);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải vouchers:', error);
+      }
+    };
+
+    const fetchBanners = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}/api/banners`);
+        const data = await response.json();
+        if (data.success && data.data && data.data.length > 0) {
+          const newBanners = data.data.map((b, idx) => ({
+            id: idx + 1,
+            url: b.imageUrl,
+            voucherId: b.voucherId || ''
+          }));
+          setBanners(prev => prev.map((p, i) => newBanners[i] || p));
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải banners:', error);
+      }
+    };
+
+    fetchVouchers();
+    fetchBanners();
   }, []);
 
-  const handleSave = () => {
-    localStorage.setItem('ads_banners', JSON.stringify(banners));
-    toast.success('Đã lưu cấu hình quảng cáo!');
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const payload = banners.map(b => ({
+        ImageUrl: b.url,
+        VoucherId: b.voucherId || null
+      }));
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/api/banners/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Đã lưu cấu hình quảng cáo vào máy chủ!');
+      } else {
+        toast.error('Có lỗi xảy ra khi lưu quảng cáo.');
+      }
+    } catch (error) {
+      toast.error('Lỗi kết nối máy chủ!');
+    }
+    setIsLoading(false);
   };
 
   const handleUpdateBanner = (index, field, value) => {
@@ -104,16 +153,16 @@ export default function AdminAds() {
                 <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">Mã Giảm Giá (Tự động điền)</label>
                 <div className="relative h-[42px]">
                   <select 
-                    value={banner.promoCode} 
-                    onChange={(e) => handleUpdateBanner(index, 'promoCode', e.target.value)}
+                    value={banner.voucherId} 
+                    onChange={(e) => handleUpdateBanner(index, 'voucherId', e.target.value)}
                     className="w-full h-full px-3 bg-surface-container-low border border-outline-variant/60 rounded-xl text-sm focus:outline-none focus:border-primary uppercase appearance-none cursor-pointer"
                   >
                     <option value="">-- Không đính kèm mã --</option>
-                    <option value="SUMMER20">SUMMER20 - Ưu đãi Hè 20%</option>
-                    <option value="WELCOME20">WELCOME20 - Khách mới (Giảm 20%)</option>
-                    <option value="FLASH50">FLASH50 - Flash Sale Cuối Tuần (Giảm 50%)</option>
-                    <option value="VIPWASH">VIPWASH - Ưu đãi thành viên VIP (Giảm 30%)</option>
-                    <option value="EXPRESS15">EXPRESS15 - Rửa nhanh (Giảm 15%)</option>
+                    {vouchers.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.voucherName} - Giảm {v.discountValue}%
+                      </option>
+                    ))}
                   </select>
                   <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant pointer-events-none">expand_more</span>
                 </div>
@@ -131,9 +180,10 @@ export default function AdminAds() {
       <div className="mt-8 pt-6 border-t border-outline-variant/20">
         <button 
           onClick={handleSave}
-          className="bg-primary hover:bg-primary-container text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm uppercase tracking-wider"
+          disabled={isLoading}
+          className="bg-primary hover:bg-primary-container disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm uppercase tracking-wider"
         >
-          Lưu thiết lập
+          {isLoading ? 'Đang lưu...' : 'Lưu thiết lập'}
         </button>
       </div>
     </div>
