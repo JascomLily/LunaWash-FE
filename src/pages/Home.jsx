@@ -144,20 +144,39 @@ export default function Home() {
     fetchPackages();
   }, []);
 
-  const [banners, setBanners] = useState([
-    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
-    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
-    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
-  ]);
-
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
-    const timer = setTimeout(() => {
-      setIsTransitioning(false);
-    }, 700);
+    const timer = setTimeout(() => setIsTransitioning(false), 500);
     return () => clearTimeout(timer);
   }, [selectedBranchId]);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}/api/banners`);
+        const data = await response.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setBanners(data.data);
+        } else {
+          setBanners([
+            { id: 1, imageUrl: '/promo_1.png' },
+            { id: 2, imageUrl: '/promo_2.png' },
+            { id: 3, imageUrl: '/promo_3.png' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải banners:', error);
+        setBanners([
+          { id: 1, imageUrl: '/promo_1.png' },
+          { id: 2, imageUrl: '/promo_2.png' },
+          { id: 3, imageUrl: '/promo_3.png' }
+        ]);
+      }
+    };
+    fetchBanners();
+  }, []);
 
   // Tính toán URL Map nhúng động theo chi nhánh được chọn
   const selectedBranch = HOME_BRANCHES.find(b => b.id === selectedBranchId) || HOME_BRANCHES[0];
@@ -177,13 +196,6 @@ export default function Home() {
       } catch (e) {
         console.error(e);
       }
-    }
-
-    const storedBanners = localStorage.getItem('ads_banners');
-    if (storedBanners) {
-      try {
-        setBanners(JSON.parse(storedBanners));
-      } catch (e) {}
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -311,10 +323,17 @@ export default function Home() {
               {banners.map((b) => (
                 <div 
                   key={b.id} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
+                      navigate('/booking');
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>
@@ -323,10 +342,17 @@ export default function Home() {
               {banners.map((b) => (
                 <div 
                   key={`dup-${b.id}`} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
+                      navigate('/booking');
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>
