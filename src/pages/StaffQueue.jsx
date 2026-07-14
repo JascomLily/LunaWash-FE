@@ -283,10 +283,10 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasExtraServices: !!(dto.services || dto.extras) && (dto.services || dto.extras).trim().length > 0,
+            hasExtraServices: !!dto.extras && dto.extras.trim().length > 0 && dto.extras !== '[]',
             price: dto.totalPrice,
             customerName: 'Khách hàng',
-            notes: dto.services || dto.extras,
+            notes: dto.extras,
             paymentMethod: dto.paymentMethod,
             rawDto: dto
           };
