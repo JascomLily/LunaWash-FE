@@ -56,6 +56,8 @@ export default function Home() {
 
   const [mainPackages, setMainPackages] = useState([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
 
   // Tự động xin quyền vị trí khi vào trang chủ để load trạm gần nhất
   useEffect(() => {
@@ -157,7 +159,7 @@ export default function Home() {
     const fetchBanners = async () => {
       try {
         const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-        const response = await fetch(`${baseUrl}/api/banners`);
+        const response = await fetch(`${baseUrl}/api/banners?platform=Web`);
         const data = await response.json();
         if (data.success && data.data && data.data.length > 0) {
           setBanners(data.data);
@@ -220,6 +222,36 @@ export default function Home() {
 
   const handleActionClick = (packageName) => {
     navigate('/booking');
+  };
+
+  const handleClaimVoucher = async () => {
+    if (!selectedVoucher) return;
+    
+    if (!isLoggedIn) {
+      setShowVoucherModal(false);
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/api/vouchers/save/${selectedVoucher.voucherId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(data.message || 'Đã lưu voucher vào ví!');
+      } else {
+        toast.error(data.message || 'Không thể lưu voucher này.');
+      }
+    } catch (error) {
+      toast.error('Lỗi kết nối máy chủ!');
+    }
+    setShowVoucherModal(false);
   };
 
   return (
@@ -322,13 +354,13 @@ export default function Home() {
           <div className="animate-marquee flex gap-6">
             {/* Set 1 */}
             <div className="flex gap-6">
-              {banners.map((b) => (
+              {banners.filter(b => !b.isHidden).map((b) => (
                 <div 
                   key={b.id} 
                   onClick={() => {
                     if (b.voucherId) {
-                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
-                      navigate('/booking');
+                      setSelectedVoucher(b);
+                      setShowVoucherModal(true);
                     } else {
                       navigate('/booking');
                     }
@@ -341,13 +373,13 @@ export default function Home() {
             </div>
             {/* Set 2 (Duplicated for infinite scroll effect) */}
             <div className="flex gap-6">
-              {banners.map((b) => (
+              {banners.filter(b => !b.isHidden).map((b) => (
                 <div 
                   key={`dup-${b.id}`} 
                   onClick={() => {
                     if (b.voucherId) {
-                      toast('Vui lòng lưu Voucher trong trang Khuyến mãi nhé!', { icon: '🎁' });
-                      navigate('/booking');
+                      setSelectedVoucher(b);
+                      setShowVoucherModal(true);
                     } else {
                       navigate('/booking');
                     }
@@ -616,6 +648,35 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voucher Claim Modal */}
+      {showVoucherModal && selectedVoucher && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-[24px] w-full max-w-sm shadow-2xl overflow-hidden animate-slideUp border border-outline-variant/20 flex flex-col relative p-6 text-center">
+             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-green-600 text-3xl">local_activity</span>
+             </div>
+             <h3 className="font-black text-xl text-primary mb-2">Lưu mã giảm giá?</h3>
+             <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                Banner này có đính kèm một mã giảm giá. Bạn có muốn lưu mã này vào ví của mình để sử dụng sau không?
+             </p>
+             <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowVoucherModal(false)}
+                  className="flex-1 py-3 bg-surface-container hover:bg-outline-variant/20 text-on-surface font-bold rounded-xl transition-all"
+                >
+                  Không, cảm ơn
+                </button>
+                <button 
+                  onClick={handleClaimVoucher}
+                  className="flex-1 py-3 bg-[#00236f] hover:bg-[#001d5c] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all"
+                >
+                  Lưu vào ví
+                </button>
+             </div>
           </div>
         </div>
       )}
