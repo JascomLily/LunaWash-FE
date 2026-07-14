@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 // Cấu hình tọa độ bản đồ Google Map cho các chi nhánh của LunaWash
 const HOME_BRANCHES = [
@@ -9,6 +10,19 @@ const HOME_BRANCHES = [
   { id: 'BR-Q7', name: 'LunaWash Quận 7', address: '456 Nguyễn Văn Linh', lat: 10.729351, lng: 106.702983 },
   { id: 'BR-TB', name: 'LunaWash Tân Bình', address: '789 Cộng Hòa, Phường 13', lat: 10.801648, lng: 106.640954 }
 ];
+
+// Hàm tính khoảng cách Haversine giữa 2 tọa độ (trả về km)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Bán kính Trái Đất (km)
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+};
 
 /**
  * Trang chủ (Home) - Hệ thống Rửa xe Thông minh LunaWash.
@@ -38,9 +52,75 @@ export default function Home() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isFindingLocation, setIsFindingLocation] = useState(false);
 
   const [mainPackages, setMainPackages] = useState([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+
+  // Tự động xin quyền vị trí khi vào trang chủ để load trạm gần nhất
+  useEffect(() => {
+    if (navigator.geolocation && !isStaffOrManager) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          let nearestBranch = null;
+          let minDistance = Infinity;
+
+          HOME_BRANCHES.forEach(branch => {
+            const distance = calculateDistance(latitude, longitude, branch.lat, branch.lng);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestBranch = branch;
+            }
+          });
+
+          if (nearestBranch && selectedBranchId !== nearestBranch.id) {
+            setSelectedBranchId(nearestBranch.id);
+          }
+        },
+        (error) => {
+          console.log("Auto-location failed or denied:", error);
+        },
+        { timeout: 5000 }
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFindNearestBranch = () => {
+    if (!navigator.geolocation) {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị GPS!');
+      return;
+    }
+    
+    setIsFindingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        let nearestBranch = null;
+        let minDistance = Infinity;
+
+        HOME_BRANCHES.forEach(branch => {
+          const distance = calculateDistance(latitude, longitude, branch.lat, branch.lng);
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestBranch = branch;
+          }
+        });
+
+        if (nearestBranch) {
+          setSelectedBranchId(nearestBranch.id);
+          toast.success(`Đã tự động chọn trạm gần nhất: ${nearestBranch.name} (cách bạn khoảng ${minDistance.toFixed(1)} km)`, { duration: 4000, icon: '📍' });
+        }
+        setIsFindingLocation(false);
+      },
+      (error) => {
+        toast.error('Không thể lấy vị trí. Vui lòng cho phép quyền truy cập Vị trí!');
+        setIsFindingLocation(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   // Lấy danh sách các gói dịch vụ (MainPackage)
   useEffect(() => {
@@ -162,9 +242,23 @@ export default function Home() {
             
             {/* Khối danh sách trạm */}
             <div className="space-y-3" id="locations">
-              <h2 className="text-sm font-bold text-[#00236f] border-b border-outline-variant pb-2 uppercase tracking-wider">
-                Danh sách trạm khu vực
-              </h2>
+              <div className="flex items-center justify-between border-b border-outline-variant pb-2">
+                <h2 className="text-sm font-bold text-[#00236f] uppercase tracking-wider">
+                  Danh sách trạm khu vực
+                </h2>
+                <button 
+                  onClick={handleFindNearestBranch}
+                  disabled={isFindingLocation}
+                  title="Tìm trạm gần nhất"
+                  className="flex items-center justify-center p-1.5 bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/40 text-[#00236f] rounded-lg transition-all"
+                >
+                  {isFindingLocation ? (
+                    <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">my_location</span>
+                  )}
+                </button>
+              </div>
               <ul className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {HOME_BRANCHES.map((b) => (
                   <li 
