@@ -52,12 +52,12 @@ const AdminPromotions = () => {
     setIsLoading(true);
     try {
       const payload = {
-        name,
-        code,
-        discountPercent: parseInt(discountPercent),
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        maxUsage: isLimited ? parseInt(maxUsage) : null
+        VoucherName: name,
+        Description: `${name} - Giảm ${discountPercent}%`,
+        DiscountValue: parseInt(discountPercent),
+        PointsRequired: 0,
+        ExpiryDate: new Date(endDate).toISOString(),
+        IsActive: true
       };
 
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
@@ -244,21 +244,22 @@ const AdminPromotions = () => {
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px]">celebration</span>
                       </div>
-                      <span className="font-bold text-on-surface">{promo.name}</span>
+                      <span className="font-bold text-on-surface">{promo.voucherName}</span>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="bg-surface-container px-2 py-1 rounded text-xs font-mono font-bold">{promo.code}</span>
+                    <span className="font-mono bg-surface-container px-2.5 py-1 rounded-md font-bold text-on-surface text-xs">{promo.id}</span>
                   </td>
-                  <td className="p-4 font-bold text-error">
-                    -{promo.discountPercent}%
+                  <td className="p-4">
+                    <span className="text-error font-bold">-{promo.discountValue}%</span>
                   </td>
-                  <td className="p-4 text-xs font-medium">
-                    {promo.currentUsage} / {promo.maxUsage || '∞'}
+                  <td className="p-4">
+                    <span className="text-on-surface-variant text-xs">- / -</span>
                   </td>
-                  <td className="p-4 text-on-surface-variant text-[11px]">
-                    {new Date(promo.startDate).toLocaleDateString('vi-VN')} <br/>
-                    {new Date(promo.endDate).toLocaleDateString('vi-VN')}
+                  <td className="p-4">
+                    <div className="text-xs space-y-0.5">
+                      <p><span className="text-on-surface-variant">Kết thúc:</span> <span className="font-bold">{new Date(promo.expiryDate).toLocaleDateString('vi-VN')}</span></p>
+                    </div>
                   </td>
                   <td className="p-4">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full inline-flex items-center gap-1 ${
