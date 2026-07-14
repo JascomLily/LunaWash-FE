@@ -115,12 +115,14 @@ export default function BranchHistory() {
     if (dateFilter === 'Today') {
       const today = new Date();
       const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-      if (b.date !== todayStr) return false;
+      const normalizedDate = b.date?.replace(/-/g, '/');
+      if (normalizedDate !== todayStr) return false;
     } else if (dateFilter === 'Yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = `${yesterday.getDate().toString().padStart(2, '0')}/${(yesterday.getMonth() + 1).toString().padStart(2, '0')}/${yesterday.getFullYear()}`;
-      if (b.date !== yesterdayStr) return false;
+      const normalizedDate = b.date?.replace(/-/g, '/');
+      if (normalizedDate !== yesterdayStr) return false;
     }
 
     const term = searchTerm.toLowerCase();
