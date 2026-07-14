@@ -163,6 +163,34 @@ export default function Booking() {
     );
   };
 
+  const [hasActiveBooking, setHasActiveBooking] = useState(false);
+  const [activeBookingInfo, setActiveBookingInfo] = useState(null);
+
+  useEffect(() => {
+    const checkActiveBooking = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          const res = await fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
+            headers: { 'Authorization': `Bearer ${parsed.token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const active = data.find(b => ['Pending', 'Confirmed', 'InProgress'].includes(b.status));
+            if (active) {
+              setHasActiveBooking(true);
+              setActiveBookingInfo(active);
+            }
+          }
+        } catch (e) {
+          console.error('Error checking active booking:', e);
+        }
+      }
+    };
+    checkActiveBooking();
+  }, []);
+
 
   // Cuộn lên đầu trang khi component được mount (đặc biệt khi chuyển từ trang chủ sang)
   useEffect(() => {
@@ -963,6 +991,34 @@ export default function Booking() {
       toast.error(err.message, { id: 'booking' });
     }
   };
+
+  if (hasActiveBooking) {
+    return (
+      <main className="min-h-screen bg-background relative w-full pt-[80px] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center border border-outline-variant/30">
+          <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 animate-bounce">warning</span>
+          <h2 className="text-2xl font-black text-[#00236f] mb-2">Đang có lịch hẹn chưa hoàn thành!</h2>
+          <p className="text-on-surface-variant mb-6">
+            Bạn hiện đang có một lịch đặt dịch vụ <strong>{activeBookingInfo?.status === 'Pending' ? 'đang chờ xác nhận' : 'đang thực hiện'}</strong>. Để đảm bảo chất lượng dịch vụ và tránh tình trạng đặt quá tải, vui lòng hoàn thành hoặc hủy lịch hẹn hiện tại trước khi đặt lịch mới.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => navigate('/history')}
+              className="w-full py-3 bg-[#00236f] text-white rounded-xl font-bold shadow-md hover:bg-[#001b54] transition-all"
+            >
+              Xem lịch đặt hiện tại
+            </button>
+            <button 
+              onClick={() => navigate('/')}
+              className="w-full py-3 bg-white text-[#00236f] border border-[#00236f] rounded-xl font-bold hover:bg-[#00236f]/5 transition-all"
+            >
+              Quay lại Trang chủ
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background relative w-full pt-[80px]">
