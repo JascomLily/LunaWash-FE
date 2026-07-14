@@ -34,10 +34,19 @@ const AdminPromotions = () => {
 
   const fetchPromotions = async () => {
     try {
+      const token = getToken();
+      if (!token) {
+        console.warn('Không có token - chưa đăng nhập hoặc session hết hạn');
+        return;
+      }
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
       const response = await fetch(`${baseUrl}/api/vouchers/all`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) {
+        console.error('Lỗi lấy vouchers:', response.status, response.statusText);
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setPromotions(data.data);
@@ -58,6 +67,12 @@ const AdminPromotions = () => {
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const payload = {
@@ -75,14 +90,20 @@ const AdminPromotions = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
-      
+
+      // Xử lý 401 riêng để tránh crash khi body rỗng
+      if (response.status === 401) {
+        toast.error('Không có quyền thực hiện. Vui lòng đăng nhập lại với tài khoản Admin!');
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
-        toast.success(data.message);
+        toast.success(data.message || 'Tạo mã thành công!');
         fetchPromotions();
         // Reset form
         setName('');
@@ -94,7 +115,8 @@ const AdminPromotions = () => {
         toast.error(data.message || 'Có lỗi xảy ra');
       }
     } catch (error) {
-      toast.error('Lỗi kết nối máy chủ');
+      console.error('Lỗi tạo voucher:', error);
+      toast.error('Lỗi kết nối máy chủ: ' + error.message);
     } finally {
       setIsLoading(false);
     }
