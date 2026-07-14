@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import PullToRefresh from 'react-simple-pull-to-refresh';
 
 /**
  * Trang Lịch Sử Rửa Xe / Quản lý lịch rửa xe (BookingHistory) - LunaWash.
@@ -212,9 +211,8 @@ export default function BookingHistory() {
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-16 text-on-background">
-      <PullToRefresh onRefresh={fetchBookings}>
-        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop space-y-10 min-h-[80vh]">
-          
+      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop space-y-10">
+        
         {/* TIÊU ĐỀ CHÍNH */}
         <header className="border-b border-outline-variant/35 pb-4">
           <h1 className="text-3xl font-extrabold text-[#00236f] tracking-tight">
@@ -613,8 +611,7 @@ export default function BookingHistory() {
           </div>
         </div>
       )}
-        </div>
-      </PullToRefresh>
+
     </main>
   );
 }
