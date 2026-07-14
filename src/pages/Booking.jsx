@@ -177,7 +177,8 @@ export default function Booking() {
           });
           if (res.ok) {
             const data = await res.json();
-            const active = data.find(b => ['Pending', 'Confirmed', 'InProgress'].includes(b.status));
+            const validData = data.filter(b => !(b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending')));
+            const active = validData.find(b => ['Pending', 'Confirmed', 'InProgress', 'Sắp đến', 'Đang rửa'].includes(b.status));
             if (active) {
               setHasActiveBooking(true);
               setActiveBookingInfo(active);
