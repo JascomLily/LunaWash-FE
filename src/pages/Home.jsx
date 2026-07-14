@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import API_BASE from '../config';
 
 // Cấu hình tọa độ bản đồ Google Map cho các chi nhánh của LunaWash
 const HOME_BRANCHES = [
@@ -158,7 +159,7 @@ export default function Home() {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const baseUrl = API_BASE;
         const response = await fetch(`${baseUrl}/api/banners?platform=Web`);
         const data = await response.json();
         if (data.success && data.data && data.data.length > 0) {

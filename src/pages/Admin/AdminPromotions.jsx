@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import API_BASE from '../../config';
 
 const getToken = () => {
   try {
@@ -39,7 +40,7 @@ const AdminPromotions = () => {
         console.warn('Không có token - chưa đăng nhập hoặc session hết hạn');
         return;
       }
-      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const baseUrl = API_BASE;
       const response = await fetch(`${baseUrl}/api/vouchers/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -85,7 +86,7 @@ const AdminPromotions = () => {
         IsActive: true
       };
 
-      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const baseUrl = API_BASE;
       const response = await fetch(`${baseUrl}/api/vouchers`, {
         method: 'POST',
         headers: { 

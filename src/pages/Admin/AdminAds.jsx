@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
+import API_BASE from '../../config';
 
 const getToken = () => {
   try {
@@ -33,7 +34,7 @@ export default function AdminAds() {
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const baseUrl = API_BASE;
         const response = await fetch(`${baseUrl}/api/vouchers/all`, {
           headers: { 'Authorization': `Bearer ${getToken()}` }
         });
@@ -48,7 +49,7 @@ export default function AdminAds() {
 
     const fetchBanners = async (platform, setter) => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const baseUrl = API_BASE;
         const response = await fetch(`${baseUrl}/api/banners?platform=${platform}`);
         const data = await response.json();
         
@@ -84,7 +85,7 @@ export default function AdminAds() {
         IsHidden: b.isHidden
       }));
 
-      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const baseUrl = API_BASE;
       const response = await fetch(`${baseUrl}/api/banners/save`, {
         method: 'POST',
         headers: { 
@@ -131,7 +132,7 @@ export default function AdminAds() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const baseUrl = API_BASE;
         const response = await fetch(`${baseUrl}/api/banners/upload`, {
           method: 'POST',
           headers: {
