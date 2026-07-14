@@ -91,6 +91,7 @@ export default function UserProfile() {
                 email: data.email || prev.email,
                 tier: data.role === 'Customer' ? (data.loyalty?.tierName || prev.tier) : data.role,
                 points: data.loyalty?.currentPoints || 0,
+                maxBookingDays: data.loyalty?.maxBookingDays || 3,
                 address: data.address || prev.address,
                 phone: data.phone || data.phoneNumber || prev.phone,
                 isActive: data.isActive
@@ -101,7 +102,8 @@ export default function UserProfile() {
                localStorage.setItem('user', JSON.stringify({
                  ...parsed,
                  tier: updatedUser.tier,
-                 points: updatedUser.points
+                 points: updatedUser.points,
+                 maxBookingDays: updatedUser.maxBookingDays
                }));
                // Dispatch custom event để Navbar tự động cập nhật
                window.dispatchEvent(new Event('userUpdated'));
