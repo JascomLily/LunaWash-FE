@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
+const getExtraServicesDetails = (notesStr) => {
+  if (!notesStr) return null;
+  try {
+    const parsed = JSON.parse(notesStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
 // Seed data for bookings if not already in localStorage
 // DEMO: Dữ liệu mẫu tạm thời. Đợi BE viết API trả về danh sách lịch hẹn của trạm
 const DEFAULT_BOOKINGS = [
@@ -269,7 +282,7 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasInterior: (dto.services?.toLowerCase()?.includes('nội thất') || dto.packageName?.toLowerCase()?.includes('nội thất')),
+            hasExtraServices: !!(dto.services || dto.extras) && (dto.services || dto.extras).trim().length > 0,
             price: dto.totalPrice,
             customerName: 'Khách hàng',
             notes: dto.services || dto.extras,
@@ -592,13 +605,13 @@ export default function StaffQueue() {
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="bg-[#f8fafc] border-b border-outline-variant/20">
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Biển Số Xe</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Loại Xe</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Biển Số Xe</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Loại Xe</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Dịch Vụ Đặt</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Giờ Hẹn</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Trạng Thái</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center">Nội Thất</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right">Thao Tác</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Giờ Hẹn</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Trạng Thái</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center whitespace-nowrap">Dịch Vụ Kèm Theo</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right whitespace-nowrap">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
@@ -611,46 +624,45 @@ export default function StaffQueue() {
                 ) : (
                   filteredBookings.map((b) => (
                     <tr key={b.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1.5 bg-slate-100 text-slate-800 font-mono font-bold border border-slate-300 rounded-lg text-sm shadow-sm">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-block px-3 py-1.5 bg-slate-100 text-slate-800 font-mono font-bold border border-slate-300 rounded-lg text-sm shadow-sm whitespace-nowrap">
                           {b.licensePlate}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-medium text-on-surface">{b.vehicleType}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">{b.vehicleType}</td>
+                      <td className="px-6 py-4 min-w-[250px]">
                         <div>
                           <p className="font-bold text-primary">{b.packageName}</p>
-                          <p className="text-xs text-outline leading-tight mt-0.5">{b.notes}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-bold text-on-surface-variant">{b.timeRange}</td>
-                      <td className="px-6 py-4">{getStatusBadge(b.status)}</td>
-                      <td className="px-6 py-4 text-center">
-                        {b.hasInterior ? (
-                          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
-                            Có
-                          </span>
+                      <td className="px-6 py-4 font-bold text-on-surface-variant whitespace-nowrap">{b.timeRange}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(b.status)}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        {b.hasExtraServices ? (
+                          <div className="flex items-center justify-center gap-1.5 relative">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
+                              Có
+                            </span>
+                            <button 
+                              onClick={() => setSelectedExtraServices(b.notes)}
+                              className="material-symbols-outlined text-base text-blue-500 hover:bg-blue-50 p-1 rounded-full transition-colors cursor-pointer"
+                            >
+                              info
+                            </button>
+                          </div>
                         ) : (
                           <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-lg font-medium text-xs">
                             Không
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right relative">
+                      <td className="px-6 py-4 text-right relative whitespace-nowrap">
                         {user.tier === 'Staff' ? (
-                          <div className="flex gap-2 justify-end">
-                            {b.status === 'Pending' && !b.hasInterior && (
-                              <button
-                                onClick={() => setAddingInteriorBooking(b)}
-                                className="px-3 py-1 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all text-xs"
-                              >
-                                Tùy chọn thêm
-                              </button>
-                            )}
+                          <div className="flex gap-2 justify-end items-center">
                             {b.status === 'Pending' ? (
                               <button
                                 onClick={() => updateBookingStatus(b.id, 'Washing')}
-                                className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto"
+                                className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
                               >
                                 <span className="material-symbols-outlined text-sm">play_arrow</span>
                                 Bắt đầu
@@ -683,15 +695,6 @@ export default function StaffQueue() {
 
                             {activeMenuId === b.id && (
                               <div className="absolute right-0 mt-1 w-52 min-w-[200px] rounded-xl bg-white shadow-xl border border-outline-variant/30 z-50 p-2 animate-fadeIn text-left">
-                                {b.status === 'Pending' && !b.hasInterior && (
-                                  <button
-                                    onClick={() => { setAddingInteriorBooking(b); setActiveMenuId(null); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all whitespace-nowrap"
-                                  >
-                                    <span className="material-symbols-outlined text-base text-blue-500">add_circle</span>
-                                    Tùy chọn thêm
-                                  </button>
-                                )}
                                 {b.status === 'Pending' && (
                                   <button
                                     onClick={() => updateBookingStatus(b.id, 'Washing')}
@@ -799,6 +802,57 @@ export default function StaffQueue() {
                 >
                   <span className="material-symbols-outlined text-sm">add_task</span>
                   Xác nhận thêm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* EXTRA SERVICES MODAL */}
+        {selectedExtraServices && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative animate-fadeIn">
+              <button 
+                onClick={() => setSelectedExtraServices(null)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center text-sky-600 mb-3">
+                  <span className="material-symbols-outlined text-[24px]">library_add</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Dịch Vụ Kèm Theo</h3>
+                <p className="text-sm text-slate-500 mt-1 text-center">Các dịch vụ do khách hàng chọn thêm</p>
+              </div>
+
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  const details = getExtraServicesDetails(selectedExtraServices);
+                  if (details) {
+                    return details.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden group hover:border-sky-300 transition-colors">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-sky-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <p className="font-bold text-base text-slate-800">{item.name || item.Name}</p>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 font-medium">
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{(item.price || item.Price || 0).toLocaleString('vi-VN')}đ</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.duration || item.Duration}p</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.points || item.Points}</span>
+                        </div>
+                      </div>
+                    ));
+                  } else {
+                    return <p className="text-sm text-slate-600 whitespace-normal text-center bg-slate-50 p-4 rounded-xl border border-slate-200">{selectedExtraServices}</p>;
+                  }
+                })()}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setSelectedExtraServices(null)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-800/20 active:scale-[0.98]"
+                >
+                  Đóng
                 </button>
               </div>
             </div>
