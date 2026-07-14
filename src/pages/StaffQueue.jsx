@@ -834,11 +834,11 @@ export default function StaffQueue() {
                     return details.map((item, idx) => (
                       <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden group hover:border-sky-300 transition-colors">
                         <div className="absolute top-0 left-0 w-1 h-full bg-sky-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <p className="font-bold text-base text-slate-800">{item.name || item.Name}</p>
+                        <p className="font-bold text-base text-slate-800">{item.n || item.name || item.Name}</p>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 font-medium">
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{(item.price || item.Price || 0).toLocaleString('vi-VN')}đ</span>
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.duration || item.Duration}p</span>
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.points || item.Points}</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{(item.p || item.price || item.Price || 0).toLocaleString('vi-VN')}đ</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.d || item.duration || item.Duration}p</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.pt || item.points || item.Points}</span>
                         </div>
                       </div>
                     ));

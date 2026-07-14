@@ -632,9 +632,16 @@ export default function UserProfile() {
                       <td className="py-4 pr-4">
                         <p className="font-extrabold text-primary">{item.packageName}</p>
                         <p className="text-xs text-on-surface-variant font-medium mt-1">{item.vehicle}</p>
-                        {item.extras && (
+                        {item.extras && item.extras !== '[]' && (
                           <span className="inline-block bg-sky-100 text-sky-800 text-[9px] font-black px-2 py-0.5 rounded mt-1.5">
-                            {item.extras}
+                            {(() => {
+                              try {
+                                const parsed = JSON.parse(item.extras);
+                                return 'Kèm: ' + parsed.map(x => x.n || x.name || x.Name).join(', ');
+                              } catch {
+                                return 'Kèm: ' + item.extras;
+                              }
+                            })()}
                           </span>
                         )}
                       </td>
