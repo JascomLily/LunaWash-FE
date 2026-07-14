@@ -592,13 +592,13 @@ export default function StaffQueue() {
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="bg-[#f8fafc] border-b border-outline-variant/20">
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Biển Số Xe</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Loại Xe</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Biển Số Xe</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Loại Xe</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Dịch Vụ Đặt</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Giờ Hẹn</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Trạng Thái</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center">Nội Thất</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right">Thao Tác</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Giờ Hẹn</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Trạng Thái</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center whitespace-nowrap">Nội Thất</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right whitespace-nowrap">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
@@ -611,21 +611,21 @@ export default function StaffQueue() {
                 ) : (
                   filteredBookings.map((b) => (
                     <tr key={b.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1.5 bg-slate-100 text-slate-800 font-mono font-bold border border-slate-300 rounded-lg text-sm shadow-sm">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-block px-3 py-1.5 bg-slate-100 text-slate-800 font-mono font-bold border border-slate-300 rounded-lg text-sm shadow-sm whitespace-nowrap">
                           {b.licensePlate}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-medium text-on-surface">{b.vehicleType}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">{b.vehicleType}</td>
+                      <td className="px-6 py-4 min-w-[250px]">
                         <div>
                           <p className="font-bold text-primary">{b.packageName}</p>
                           <p className="text-xs text-outline leading-tight mt-0.5">{b.notes}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-bold text-on-surface-variant">{b.timeRange}</td>
-                      <td className="px-6 py-4">{getStatusBadge(b.status)}</td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 font-bold text-on-surface-variant whitespace-nowrap">{b.timeRange}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(b.status)}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
                         {b.hasInterior ? (
                           <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
                             Có
@@ -636,21 +636,22 @@ export default function StaffQueue() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right relative">
+                      <td className="px-6 py-4 text-right relative whitespace-nowrap">
                         {user.tier === 'Staff' ? (
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex gap-2 justify-end items-center">
                             {b.status === 'Pending' && !b.hasInterior && (
                               <button
                                 onClick={() => setAddingInteriorBooking(b)}
-                                className="px-3 py-1 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all text-xs"
+                                className="w-8 h-8 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all flex items-center justify-center shrink-0"
+                                title="Tùy chọn thêm nội thất"
                               >
-                                Tùy chọn thêm
+                                <span className="material-symbols-outlined text-sm">add</span>
                               </button>
                             )}
                             {b.status === 'Pending' ? (
                               <button
                                 onClick={() => updateBookingStatus(b.id, 'Washing')}
-                                className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto"
+                                className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
                               >
                                 <span className="material-symbols-outlined text-sm">play_arrow</span>
                                 Bắt đầu
