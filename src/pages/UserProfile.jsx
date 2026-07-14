@@ -53,6 +53,9 @@ export default function UserProfile() {
   // Modal thêm xe states
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [isAddingCar, setIsAddingCar] = useState(false);
+
+  const [vouchers, setVouchers] = useState([]);
+
   const [carName, setCarName] = useState('');
   const [carLicense, setCarLicense] = useState('');
   const [carColor, setCarColor] = useState('');
@@ -153,6 +156,20 @@ export default function UserProfile() {
         }
       } catch (e) {
         console.error(e);
+      }
+
+      // Lấy danh sách Voucher (Promotions)
+      try {
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Promotions');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            // Chỉ hiển thị các voucher đang Active
+            setVouchers(data.data.filter(v => v.isActive));
+          }
+        }
+      } catch (e) {
+        console.error('Lỗi lấy khuyến mãi:', e);
       }
     }
   }, []);
@@ -376,37 +393,33 @@ export default function UserProfile() {
             </h3>
             
             <div className="space-y-3">
-              {/* Dummy voucher 1 */}
-              <div className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
-                <div>
-                  <p className="text-sm font-bold text-primary">TUESDAY50</p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">Giảm 50K thứ 3 hàng tuần</p>
+              {vouchers.length === 0 ? (
+                <div className="text-center text-sm text-on-surface-variant italic py-4">
+                  Chưa có mã giảm giá nào.
                 </div>
-                <button 
-                  onClick={() => alert('Mã giảm giá sẽ tự động được áp dụng ở bước Thanh toán.')}
-                  className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
-                >
-                  Dùng
-                </button>
-              </div>
-
-              {/* Dummy voucher 2 */}
-              <div className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
-                <div>
-                  <p className="text-sm font-bold text-primary">LUNA20K</p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">Giảm 20K dịch vụ cao cấp</p>
-                </div>
-                <button 
-                  onClick={() => alert('Mã giảm giá sẽ tự động được áp dụng ở bước Thanh toán.')}
-                  className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
-                >
-                  Dùng
-                </button>
-              </div>
+              ) : (
+                vouchers.slice(0, 3).map((voucher) => (
+                  <div key={voucher.id} className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
+                    <div>
+                      <p className="text-sm font-bold text-primary">{voucher.code}</p>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5">{voucher.name} - Giảm {voucher.discountPercent}%</p>
+                    </div>
+                    <button 
+                      onClick={() => alert(`Mã ${voucher.code} sẽ tự động được áp dụng ở bước Thanh toán.`)}
+                      className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
+                    >
+                      Dùng
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-            <button className="text-xs text-primary font-bold hover:underline mt-4 text-center w-full">
-              Xem tất cả ưu đãi &rarr;
-            </button>
+            
+            {vouchers.length > 3 && (
+              <button className="text-xs text-primary font-bold hover:underline mt-4 text-center w-full">
+                Xem tất cả ưu đãi &rarr;
+              </button>
+            )}
           </section>
         </div>
 
