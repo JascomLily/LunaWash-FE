@@ -382,9 +382,16 @@ export default function BookingHistory() {
                       <td className="py-5 px-6">
                         <p className="font-extrabold text-primary">{item.packageName}</p>
                         <p className="text-xs text-on-surface-variant font-medium mt-1">{item.vehicle}</p>
-                        {item.extras && (
+                        {item.extras && item.extras !== '[]' && (
                           <span className="inline-block bg-sky-100 text-sky-800 text-[9px] font-black px-2 py-0.5 rounded mt-1.5">
-                            {item.extras}
+                            {(() => {
+                              try {
+                                const parsed = JSON.parse(item.extras);
+                                return 'Kèm: ' + parsed.map(x => x.n || x.name || x.Name).join(', ');
+                              } catch {
+                                return 'Kèm: ' + item.extras;
+                              }
+                            })()}
                           </span>
                         )}
                       </td>
@@ -545,7 +552,18 @@ export default function BookingHistory() {
                 <div>
                   <p className="text-xs text-outline mb-0.5">Dịch vụ & Gói</p>
                   <p className="font-extrabold text-primary">{detailsBooking.packageName}</p>
-                  {detailsBooking.extras && <p className="text-xs text-on-surface-variant font-medium mt-1">Kèm: {detailsBooking.extras}</p>}
+                  {detailsBooking.extras && detailsBooking.extras !== '[]' && (
+                    <p className="text-xs text-on-surface-variant font-medium mt-1">
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(detailsBooking.extras);
+                          return 'Kèm: ' + parsed.map(x => x.n || x.name || x.Name).join(', ');
+                        } catch {
+                          return 'Kèm: ' + detailsBooking.extras;
+                        }
+                      })()}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-outline mb-0.5">Phương tiện</p>
