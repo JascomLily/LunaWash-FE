@@ -144,6 +144,8 @@ export default function Home() {
     fetchPackages();
   }, []);
 
+  const [banners, setBanners] = useState([]);
+
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
