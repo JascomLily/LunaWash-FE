@@ -639,38 +639,16 @@ export default function StaffQueue() {
                       <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(b.status)}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">
                         {b.hasExtraServices ? (
-                          <div className="flex items-center justify-center gap-1.5 relative group cursor-help">
+                          <div className="flex items-center justify-center gap-1.5 relative">
                             <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
                               Có
                             </span>
-                            <span className="material-symbols-outlined text-base text-blue-500 hover:text-blue-700 transition-colors">
+                            <button 
+                              onClick={() => setSelectedExtraServices(b.notes)}
+                              className="material-symbols-outlined text-base text-blue-500 hover:bg-blue-50 p-1 rounded-full transition-colors cursor-pointer"
+                            >
                               info
-                            </span>
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[320px] bg-slate-800 text-white rounded-xl py-2 px-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none text-left border border-slate-700/50">
-                              <p className="font-bold text-xs text-slate-300 mb-1.5 uppercase tracking-wider pb-1.5 border-b border-slate-700">Chi tiết dịch vụ kèm theo</p>
-                              {(() => {
-                                const details = getExtraServicesDetails(b.notes);
-                                if (details) {
-                                  return (
-                                    <div className="flex flex-col gap-1.5">
-                                      {details.map((item, idx) => (
-                                        <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-700/50 last:border-0 last:pb-0">
-                                          <p className="font-semibold text-sm text-sky-300">{item.name}</p>
-                                          <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
-                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">payments</span>{item.price.toLocaleString('vi-VN')}đ</span>
-                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span>{item.duration}p</span>
-                                            <span className="flex items-center gap-1 text-amber-400/90"><span className="material-symbols-outlined text-[14px]">stars</span>+{item.points}đ</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  );
-                                } else {
-                                  return <p className="text-sm whitespace-normal">{b.notes}</p>;
-                                }
-                              })()}
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                            </div>
+                            </button>
                           </div>
                         ) : (
                           <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-lg font-medium text-xs">
@@ -855,11 +833,11 @@ export default function StaffQueue() {
                     return details.map((item, idx) => (
                       <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden group hover:border-sky-300 transition-colors">
                         <div className="absolute top-0 left-0 w-1 h-full bg-sky-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <p className="font-bold text-base text-slate-800">{item.name}</p>
+                        <p className="font-bold text-base text-slate-800">{item.name || item.Name}</p>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 font-medium">
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{item.price?.toLocaleString('vi-VN')}đ</span>
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.duration}p</span>
-                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.points}</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{(item.price || item.Price || 0).toLocaleString('vi-VN')}đ</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.duration || item.Duration}p</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.points || item.Points}</span>
                         </div>
                       </div>
                     ));
