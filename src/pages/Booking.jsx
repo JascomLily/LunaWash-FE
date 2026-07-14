@@ -165,6 +165,7 @@ export default function Booking() {
 
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
   const [activeBookingInfo, setActiveBookingInfo] = useState(null);
+  const [showBlockModal, setShowBlockModal] = useState(false);
 
   useEffect(() => {
     const checkActiveBooking = async () => {
@@ -843,6 +844,10 @@ export default function Booking() {
 
   const handleOpenPaymentModal = () => {
     if (requireLogin()) return;
+    if (hasActiveBooking) {
+      setShowBlockModal(true);
+      return;
+    }
     if (!selectedBranch) {
       toast.error('Vui lòng chọn chi nhánh!');
       return;
@@ -993,33 +998,6 @@ export default function Booking() {
     }
   };
 
-  if (hasActiveBooking) {
-    return (
-      <main className="min-h-screen bg-background relative w-full pt-[80px] flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center border border-outline-variant/30">
-          <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 animate-bounce">warning</span>
-          <h2 className="text-2xl font-black text-[#00236f] mb-2">Đang có lịch hẹn chưa hoàn thành!</h2>
-          <p className="text-on-surface-variant mb-6">
-            Bạn hiện đang có một lịch đặt dịch vụ <strong>{activeBookingInfo?.status === 'Pending' ? 'đang chờ xác nhận' : 'đang thực hiện'}</strong>. Để đảm bảo chất lượng dịch vụ và tránh tình trạng đặt quá tải, vui lòng hoàn thành hoặc hủy lịch hẹn hiện tại trước khi đặt lịch mới.
-          </p>
-          <div className="flex flex-col gap-3">
-            <button 
-              onClick={() => navigate('/history')}
-              className="w-full py-3 bg-[#00236f] text-white rounded-xl font-bold shadow-md hover:bg-[#001b54] transition-all"
-            >
-              Xem lịch đặt hiện tại
-            </button>
-            <button 
-              onClick={() => navigate('/')}
-              className="w-full py-3 bg-white text-[#00236f] border border-[#00236f] rounded-xl font-bold hover:bg-[#00236f]/5 transition-all"
-            >
-              Quay lại Trang chủ
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background relative w-full pt-[80px]">
@@ -1953,6 +1931,36 @@ export default function Booking() {
       </div>
       
       </div> {/* End Flex Wrapper */}
+
+      {showBlockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" 
+            onClick={() => setShowBlockModal(false)}
+          ></div>
+          <div className="relative bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center border border-outline-variant/30 z-50">
+            <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 animate-bounce">warning</span>
+            <h2 className="text-2xl font-black text-[#00236f] mb-2">Đang có lịch hẹn chưa hoàn thành!</h2>
+            <p className="text-on-surface-variant mb-6 text-sm">
+              Bạn hiện đang có một lịch đặt dịch vụ <strong>{activeBookingInfo?.status === 'Pending' ? 'đang chờ xác nhận' : 'đang thực hiện'}</strong>. Để đảm bảo chất lượng dịch vụ và tránh tình trạng đặt quá tải, vui lòng hoàn thành hoặc hủy lịch hẹn hiện tại trước khi đặt lịch mới.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => navigate('/history')}
+                className="w-full py-3 bg-[#00236f] text-white rounded-xl font-bold shadow-md hover:bg-[#001b54] transition-all"
+              >
+                Xem lịch đặt hiện tại
+              </button>
+              <button 
+                onClick={() => setShowBlockModal(false)}
+                className="w-full py-3 bg-white text-[#00236f] border border-[#00236f] rounded-xl font-bold hover:bg-[#00236f]/5 transition-all"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
