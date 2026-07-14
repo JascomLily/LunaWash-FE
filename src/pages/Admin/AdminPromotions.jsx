@@ -28,7 +28,7 @@ const AdminPromotions = () => {
   const fetchPromotions = async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-      const response = await fetch(`${baseUrl}/api/promotions`);
+      const response = await fetch(`${baseUrl}/api/vouchers/all`);
       const data = await response.json();
       if (data.success) {
         setPromotions(data.data);
@@ -61,7 +61,7 @@ const AdminPromotions = () => {
       };
 
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-      const response = await fetch(`${baseUrl}/api/promotions`, {
+      const response = await fetch(`${baseUrl}/api/vouchers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
