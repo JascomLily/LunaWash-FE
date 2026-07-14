@@ -311,7 +311,8 @@ export default function UserProfile() {
       <div className="max-w-container-max mx-auto grid grid-cols-1 lg:grid-cols-4 gap-gutter items-start">
         
         {/* CỘT TRÁI - SIDEBAR HỒ SƠ */}
-        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl flex flex-col items-center">
+        <div className="flex flex-col gap-6">
+          <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl flex flex-col items-center">
           {/* Avatar với nút Chỉnh sửa */}
           <div className="relative w-32 h-32 mb-6">
             <img 
@@ -365,7 +366,49 @@ export default function UserProfile() {
               Cài đặt tài khoản
             </button>
           </nav>
-        </section>
+          </section>
+
+          {/* VOUCHER BOX */}
+          <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col">
+            <h3 className="font-bold text-lg text-primary mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500">local_activity</span>
+              Mã giảm giá của bạn
+            </h3>
+            
+            <div className="space-y-3">
+              {/* Dummy voucher 1 */}
+              <div className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
+                <div>
+                  <p className="text-sm font-bold text-primary">TUESDAY50</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">Giảm 50K thứ 3 hàng tuần</p>
+                </div>
+                <button 
+                  onClick={() => alert('Mã giảm giá sẽ tự động được áp dụng ở bước Thanh toán.')}
+                  className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
+                >
+                  Dùng
+                </button>
+              </div>
+
+              {/* Dummy voucher 2 */}
+              <div className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
+                <div>
+                  <p className="text-sm font-bold text-primary">LUNA20K</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">Giảm 20K dịch vụ cao cấp</p>
+                </div>
+                <button 
+                  onClick={() => alert('Mã giảm giá sẽ tự động được áp dụng ở bước Thanh toán.')}
+                  className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
+                >
+                  Dùng
+                </button>
+              </div>
+            </div>
+            <button className="text-xs text-primary font-bold hover:underline mt-4 text-center w-full">
+              Xem tất cả ưu đãi &rarr;
+            </button>
+          </section>
+        </div>
 
         {/* CỘT PHẢI - NỘI DUNG CHÍNH */}
         <section className="col-span-1 lg:col-span-3 flex flex-col gap-6">
