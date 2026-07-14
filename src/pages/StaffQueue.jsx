@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
+const getExtraServicesDetails = (notesStr) => {
+  if (!notesStr) return null;
+  try {
+    const parsed = JSON.parse(notesStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
 // Seed data for bookings if not already in localStorage
 // DEMO: Dữ liệu mẫu tạm thời. Đợi BE viết API trả về danh sách lịch hẹn của trạm
 const DEFAULT_BOOKINGS = [
@@ -633,8 +646,29 @@ export default function StaffQueue() {
                             <span className="material-symbols-outlined text-base text-blue-500 hover:text-blue-700 transition-colors">
                               info
                             </span>
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[250px] bg-slate-800 text-white text-xs rounded-lg py-1.5 px-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none whitespace-normal text-center">
-                              {b.notes}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[320px] bg-slate-800 text-white rounded-xl py-2 px-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none text-left border border-slate-700/50">
+                              <p className="font-bold text-xs text-slate-300 mb-1.5 uppercase tracking-wider pb-1.5 border-b border-slate-700">Chi tiết dịch vụ kèm theo</p>
+                              {(() => {
+                                const details = getExtraServicesDetails(b.notes);
+                                if (details) {
+                                  return (
+                                    <div className="flex flex-col gap-1.5">
+                                      {details.map((item, idx) => (
+                                        <div key={idx} className="flex flex-col gap-0.5 pb-1.5 border-b border-slate-700/50 last:border-0 last:pb-0">
+                                          <p className="font-semibold text-sm text-sky-300">{item.name}</p>
+                                          <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">payments</span>{item.price.toLocaleString('vi-VN')}đ</span>
+                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span>{item.duration}p</span>
+                                            <span className="flex items-center gap-1 text-amber-400/90"><span className="material-symbols-outlined text-[14px]">stars</span>+{item.points}đ</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                } else {
+                                  return <p className="text-sm whitespace-normal">{b.notes}</p>;
+                                }
+                              })()}
                               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                             </div>
                           </div>
@@ -790,6 +824,57 @@ export default function StaffQueue() {
                 >
                   <span className="material-symbols-outlined text-sm">add_task</span>
                   Xác nhận thêm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* EXTRA SERVICES MODAL */}
+        {selectedExtraServices && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative animate-fadeIn">
+              <button 
+                onClick={() => setSelectedExtraServices(null)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center text-sky-600 mb-3">
+                  <span className="material-symbols-outlined text-[24px]">library_add</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Dịch Vụ Kèm Theo</h3>
+                <p className="text-sm text-slate-500 mt-1 text-center">Các dịch vụ do khách hàng chọn thêm</p>
+              </div>
+
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  const details = getExtraServicesDetails(selectedExtraServices);
+                  if (details) {
+                    return details.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden group hover:border-sky-300 transition-colors">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-sky-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <p className="font-bold text-base text-slate-800">{item.name}</p>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 font-medium">
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-sky-500">payments</span>{item.price?.toLocaleString('vi-VN')}đ</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-emerald-500">schedule</span>{item.duration}p</span>
+                          <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[18px] text-amber-500">stars</span>+{item.points}</span>
+                        </div>
+                      </div>
+                    ));
+                  } else {
+                    return <p className="text-sm text-slate-600 whitespace-normal text-center bg-slate-50 p-4 rounded-xl border border-slate-200">{selectedExtraServices}</p>;
+                  }
+                })()}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setSelectedExtraServices(null)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-800/20 active:scale-[0.98]"
+                >
+                  Đóng
                 </button>
               </div>
             </div>
