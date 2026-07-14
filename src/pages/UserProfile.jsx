@@ -159,18 +159,17 @@ export default function UserProfile() {
       }
 
       // Lấy danh sách Voucher (Promotions)
-      try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Promotions');
-        if (res.ok) {
-          const data = await res.json();
+      fetch(import.meta.env.VITE_API_URL + '/api/Promotions')
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Lỗi lấy khuyến mãi');
+        })
+        .then(data => {
           if (data.success && data.data) {
-            // Chỉ hiển thị các voucher đang Active
             setVouchers(data.data.filter(v => v.isActive));
           }
-        }
-      } catch (e) {
-        console.error('Lỗi lấy khuyến mãi:', e);
-      }
+        })
+        .catch(e => console.error('Lỗi lấy khuyến mãi:', e));
     }
   }, []);
 
