@@ -269,7 +269,7 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasInterior: (dto.services?.toLowerCase()?.includes('nội thất') || dto.packageName?.toLowerCase()?.includes('nội thất')),
+            hasExtraServices: !!(dto.services || dto.extras) && (dto.services || dto.extras).trim().length > 0,
             price: dto.totalPrice,
             customerName: 'Khách hàng',
             notes: dto.services || dto.extras,
@@ -597,7 +597,7 @@ export default function StaffQueue() {
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Dịch Vụ Đặt</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Giờ Hẹn</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Trạng Thái</th>
-                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center whitespace-nowrap">Nội Thất</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center whitespace-nowrap">Dịch Vụ Kèm Theo</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right whitespace-nowrap">Thao Tác</th>
                 </tr>
               </thead>
@@ -620,16 +620,24 @@ export default function StaffQueue() {
                       <td className="px-6 py-4 min-w-[250px]">
                         <div>
                           <p className="font-bold text-primary">{b.packageName}</p>
-                          <p className="text-xs text-outline leading-tight mt-0.5">{b.notes}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 font-bold text-on-surface-variant whitespace-nowrap">{b.timeRange}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(b.status)}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">
-                        {b.hasInterior ? (
-                          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
-                            Có
-                          </span>
+                        {b.hasExtraServices ? (
+                          <div className="flex items-center justify-center gap-1.5 relative group cursor-help">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs">
+                              Có
+                            </span>
+                            <span className="material-symbols-outlined text-base text-blue-500 hover:text-blue-700 transition-colors">
+                              info
+                            </span>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[250px] bg-slate-800 text-white text-xs rounded-lg py-1.5 px-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none whitespace-normal text-center">
+                              {b.notes}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                            </div>
+                          </div>
                         ) : (
                           <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-lg font-medium text-xs">
                             Không
@@ -639,15 +647,6 @@ export default function StaffQueue() {
                       <td className="px-6 py-4 text-right relative whitespace-nowrap">
                         {user.tier === 'Staff' ? (
                           <div className="flex gap-2 justify-end items-center">
-                            {b.status === 'Pending' && !b.hasInterior && (
-                              <button
-                                onClick={() => setAddingInteriorBooking(b)}
-                                className="w-8 h-8 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all flex items-center justify-center shrink-0"
-                                title="Tùy chọn thêm nội thất"
-                              >
-                                <span className="material-symbols-outlined text-sm">add</span>
-                              </button>
-                            )}
                             {b.status === 'Pending' ? (
                               <button
                                 onClick={() => updateBookingStatus(b.id, 'Washing')}
@@ -684,15 +683,6 @@ export default function StaffQueue() {
 
                             {activeMenuId === b.id && (
                               <div className="absolute right-0 mt-1 w-52 min-w-[200px] rounded-xl bg-white shadow-xl border border-outline-variant/30 z-50 p-2 animate-fadeIn text-left">
-                                {b.status === 'Pending' && !b.hasInterior && (
-                                  <button
-                                    onClick={() => { setAddingInteriorBooking(b); setActiveMenuId(null); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all whitespace-nowrap"
-                                  >
-                                    <span className="material-symbols-outlined text-base text-blue-500">add_circle</span>
-                                    Tùy chọn thêm
-                                  </button>
-                                )}
                                 {b.status === 'Pending' && (
                                   <button
                                     onClick={() => updateBookingStatus(b.id, 'Washing')}
