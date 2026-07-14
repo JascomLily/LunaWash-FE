@@ -54,6 +54,7 @@ const AdminPromotions = () => {
     setIsLoading(true);
     try {
       const payload = {
+        Id: code,
         VoucherName: name,
         Description: `${name} - Giảm ${discountPercent}%`,
         DiscountValue: parseInt(discountPercent),
