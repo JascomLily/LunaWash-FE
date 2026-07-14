@@ -13,6 +13,8 @@ export default function BranchHistory() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('Today');
 
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     // Check auth
     const storedUser = localStorage.getItem('user');
@@ -23,15 +25,69 @@ export default function BranchHistory() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
 
-    // Get bookings
-    const storedBookings = localStorage.getItem('lunaWash_bookings');
-    if (storedBookings) {
+    const branchIdToFetch = parsedUser.branchId || 'BRN-LD-01';
+
+    const fetchHistory = async () => {
       try {
-        setBookings(JSON.parse(storedBookings));
-      } catch (e) {
-        console.error(e);
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/history/${branchIdToFetch}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          // We need to parse minified JSON in notes/extras if necessary, but the backend GetBranchHistoryAsync 
+          // already extracts 'extras', 'services', 'packageName'.
+          // Wait, the API returns BookingResponseDTO with Extras as a string.
+          // Let's just set the bookings array directly.
+          
+          // Map to match frontend structure expectations if needed
+          const mapped = data.map(b => {
+            // b.extras could be a minified json string: '{"n":"Rửa Gầm","p":"50.000đ","i":"12"}'
+            let parsedExtras = [];
+            if (b.extras) {
+                try {
+                    const parsed = JSON.parse(b.extras);
+                    if (Array.isArray(parsed)) {
+                        parsedExtras = parsed.map(ext => ({
+                            name: ext.name || ext.n || 'Dịch vụ thêm',
+                            price: ext.price || ext.p || '0đ'
+                        }));
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            return {
+              id: b.id,
+              branchId: b.branchInfo, // Used for frontend filtering if any, though backend already filters
+              licensePlate: b.vehicleInfo?.split('•')[1]?.trim() || 'N/A',
+              customerName: b.customerName,
+              packageName: b.packageName,
+              hasInterior: parsedExtras.some(e => e.name.toLowerCase().includes('nội thất')),
+              timeRange: b.timeRange?.split('\n')[0] || b.timeRange,
+              date: b.timeRange?.split('\n')[1] || '',
+              price: b.totalPrice ? b.totalPrice.toLocaleString('vi-VN') + 'đ' : '0đ',
+              status: b.status === 'Hoàn thành' ? 'Completed' : (b.status === 'Đã hủy' ? 'Cancelled' : b.status)
+            };
+          });
+
+          setBookings(mapped);
+        } else {
+          console.error("Failed to fetch history:", res.status);
+        }
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    fetchHistory();
   }, [navigate]);
 
   if (!user) return null;
@@ -55,6 +111,18 @@ export default function BranchHistory() {
 
   // Search filter
   const filteredHistory = completedBookings.filter(b => {
+    // Filter by date
+    if (dateFilter === 'Today') {
+      const today = new Date();
+      const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+      if (b.date !== todayStr) return false;
+    } else if (dateFilter === 'Yesterday') {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = `${yesterday.getDate().toString().padStart(2, '0')}/${(yesterday.getMonth() + 1).toString().padStart(2, '0')}/${yesterday.getFullYear()}`;
+      if (b.date !== yesterdayStr) return false;
+    }
+
     const term = searchTerm.toLowerCase();
     return (b.licensePlate || '').toLowerCase().includes(term) ||
            (b.packageName || '').toLowerCase().includes(term) ||
