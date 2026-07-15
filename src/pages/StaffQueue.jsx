@@ -632,9 +632,9 @@ export default function StaffQueue() {
                         </span>
                       </td>
                       <td className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">{b.vehicleType}</td>
-                      <td className="px-6 py-4 min-w-[250px]">
-                        <div>
-                          <p className="font-bold text-primary">{b.packageName}</p>
+                      <td className="px-6 py-4 max-w-[180px]">
+                        <div className="truncate" title={b.packageName}>
+                          <p className="font-bold text-primary truncate">{b.packageName}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 font-bold text-on-surface-variant whitespace-nowrap">{b.timeRange}</td>
