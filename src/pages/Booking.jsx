@@ -395,8 +395,8 @@ export default function Booking() {
         headers: { 'Authorization': `Bearer ${parsed.token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setMyVouchers(data);
+        const result = await res.json();
+        setMyVouchers(result.data || []);
       }
     } catch (err) {
       console.error(err);
