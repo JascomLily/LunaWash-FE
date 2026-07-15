@@ -109,7 +109,7 @@ export default function Login() {
         branchName: data.branchName || null,
         token: data.token,
         points: data.currentPoints || 0,
-        
+        maxBookingDays: data.maxBookingDays || 3,
         avatarUrl: null
       };
 
@@ -179,7 +179,7 @@ export default function Login() {
         branchName: data.branchName || null,
         token: data.token,
         points: data.currentPoints || 0,
-        
+        maxBookingDays: data.maxBookingDays || 3,
         avatarUrl: null
       };
 

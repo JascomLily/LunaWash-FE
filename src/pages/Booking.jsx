@@ -549,17 +549,15 @@ export default function Booking() {
   const getUserMaxBookingDays = () => {
     const storedUser = localStorage.getItem('user');
     let tier = 'Đồng';
+    let days = 3;
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
         tier = parsed.tier || 'Đồng';
+        days = parseInt(parsed.maxBookingDays, 10) || 3;
       } catch(e) {}
     }
-    const t = tier.toLowerCase();
-    if (t.includes('platinum')) return { days: 30, tier };
-    if (t.includes('vàng') || t.includes('gold')) return { days: 21, tier };
-    if (t.includes('bạc') || t.includes('silver')) return { days: 14, tier };
-    return { days: 7, tier }; // Đồng / Member / Chưa đăng nhập
+    return { days, tier };
   };
 
   const { days: maxBookingDays, tier: currentTier } = getUserMaxBookingDays();

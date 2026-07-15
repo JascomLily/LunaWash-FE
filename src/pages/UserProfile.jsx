@@ -39,6 +39,32 @@ export default function UserProfile() {
   const [bookings, setBookings] = useState([]);
 
   const [showTierRulesModal, setShowTierRulesModal] = useState(false);
+  const [membershipTiers, setMembershipTiers] = useState([]);
+
+  useEffect(() => {
+    if (showTierRulesModal && membershipTiers.length === 0) {
+      fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings')
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          if (Array.isArray(data)) setMembershipTiers(data);
+        })
+        .catch(err => console.error('Lỗi lấy settings hạng:', err));
+    }
+  }, [showTierRulesModal]);
+
+  const getMinPoints = (tierName) => {
+    const tier = membershipTiers.find(t => t.tierName.toLowerCase() === tierName.toLowerCase());
+    return tier ? tier.minPoints : null;
+  };
+
+  const getMinMaintainPoints = (tierName) => {
+    const tier = membershipTiers.find(t => t.tierName.toLowerCase() === tierName.toLowerCase());
+    return tier ? tier.minMaintainPoints : null;
+  };
+
+  const formatPoints = (points) => {
+    return new Intl.NumberFormat('vi-VN').format(points);
+  };
 
   // Edit Profile states
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
@@ -897,12 +923,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 1.000 pt
+                          Từ {getMinPoints('Silver') != null ? formatPoints(getMinPoints('Silver')) : '1.000'} pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 800 pt
+                          Từ {getMinMaintainPoints('Silver') != null ? formatPoints(getMinMaintainPoints('Silver')) : '800'} pt
                         </span>
                       </td>
                     </tr>
@@ -927,12 +953,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 3.000 pt
+                          Từ {getMinPoints('Gold') != null ? formatPoints(getMinPoints('Gold')) : '3.000'} pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 2.400 pt
+                          Từ {getMinMaintainPoints('Gold') != null ? formatPoints(getMinMaintainPoints('Gold')) : '2.400'} pt
                         </span>
                       </td>
                     </tr>
@@ -957,12 +983,12 @@ export default function UserProfile() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-[#00236f] font-black text-[12.5px] md:text-[13.5px] border border-blue-200/60 rounded-xl shadow-sm">
-                          Từ 5.000 pt
+                          Từ {getMinPoints('Platinum') != null ? formatPoints(getMinPoints('Platinum')) : '5.000'} pt
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1.5 bg-slate-50 text-slate-700 font-extrabold text-[12.5px] md:text-[13.5px] border border-slate-200 rounded-xl shadow-sm">
-                          Từ 4.000 pt
+                          Từ {getMinMaintainPoints('Platinum') != null ? formatPoints(getMinMaintainPoints('Platinum')) : '4.000'} pt
                         </span>
                       </td>
                     </tr>
