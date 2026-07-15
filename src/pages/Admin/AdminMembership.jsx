@@ -5,6 +5,7 @@ const AdminMembership = () => {
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     fetchTiers();
@@ -72,6 +73,7 @@ const AdminMembership = () => {
       if (!syncRes.ok) throw new Error('Lưu cấu hình thành công nhưng không thể đồng bộ khách hàng.');
 
       toast.success('Đã lưu cấu hình và đồng bộ dữ liệu thành viên thành công!');
+      setShowConfirm(false);
       fetchTiers();
     } catch (err) {
       toast.error(err.message);
@@ -94,7 +96,7 @@ const AdminMembership = () => {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-[1400px] mx-auto min-h-full space-y-8 animate-fade-in">
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto min-h-full space-y-8 animate-fade-in pb-24">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
@@ -102,8 +104,8 @@ const AdminMembership = () => {
           <p className="text-sm text-on-surface-variant">Thiết lập lộ trình thăng hạng và đặc quyền cho khách hàng LunaWash.</p>
         </div>
         <button 
-          onClick={handleSaveAll} 
-          disabled={saving}
+          onClick={() => setShowConfirm(true)} 
+          disabled={saving || showConfirm}
           className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-on-secondary rounded-xl hover:bg-secondary/90 transition-all font-bold shadow-md disabled:opacity-50"
         >
           {saving ? <span className="material-symbols-outlined animate-spin text-[18px]">sync</span> : <span className="material-symbols-outlined text-[18px]">save</span>}
@@ -231,24 +233,33 @@ const AdminMembership = () => {
         </div>
       </section>
 
-      {/* Footer Alert */}
-      <div className="bg-sky-50 border border-sky-100 text-[#00236f] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 mt-8 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
-            <span className="material-symbols-outlined text-[24px]">info</span>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg">Lưu ý khi cập nhật</h3>
-            <p className="text-sm opacity-90">Những thay đổi trên đây sẽ lập tức ảnh hưởng đến quyền lợi của tất cả khách hàng. Hãy kiểm tra thật kỹ trước khi lưu.</p>
+      {/* Footer Alert / Confirm Bar */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-in-out transform ${showConfirm ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 pb-6 pt-2">
+          <div className="bg-sky-50 border border-sky-100 text-[#00236f] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl relative">
+            
+            <button onClick={() => setShowConfirm(false)} className="absolute top-4 right-4 text-sky-400 hover:text-sky-700 transition-colors">
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
+                <span className="material-symbols-outlined text-[24px]">info</span>
+              </div>
+              <div className="pr-8">
+                <h3 className="font-bold text-lg">Lưu ý khi cập nhật</h3>
+                <p className="text-sm opacity-90">Những thay đổi trên đây sẽ lập tức ảnh hưởng đến quyền lợi của tất cả khách hàng. Hãy kiểm tra thật kỹ trước khi lưu.</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleSaveAll}
+              disabled={saving}
+              className="w-full md:w-auto px-8 py-3 bg-[#00236f] text-white rounded-xl font-bold hover:bg-[#00236f]/90 transition-colors shadow-md disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? 'Đang lưu...' : 'Xác nhận Lưu'}
+            </button>
           </div>
         </div>
-        <button 
-          onClick={handleSaveAll}
-          disabled={saving}
-          className="w-full md:w-auto px-6 py-2.5 bg-[#00236f] text-white rounded-xl font-bold hover:bg-[#00236f]/90 transition-colors shadow-md disabled:opacity-50"
-        >
-          {saving ? 'Đang lưu...' : 'Xác nhận Lưu'}
-        </button>
       </div>
 
     </div>
