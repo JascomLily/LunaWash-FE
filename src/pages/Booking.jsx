@@ -377,6 +377,33 @@ export default function Booking() {
   // Trạng thái modal thêm xe mới
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
+  // Trạng thái modal voucher
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [myVouchers, setMyVouchers] = useState([]);
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
+
+  const handleOpenVoucherModal = async () => {
+    if (requireLogin()) return;
+    setShowVoucherModal(true);
+    setIsLoadingVouchers(true);
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/vouchers/my-vouchers', {
+        headers: { 'Authorization': `Bearer ${parsed.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMyVouchers(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingVouchers(false);
+    }
+  };
 
   const requireLogin = () => {
     const user = localStorage.getItem('user');
@@ -1892,7 +1919,10 @@ export default function Booking() {
           <div className="mb-4">
             <div className="flex justify-between items-center mb-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-white/60">Mã giảm giá</span>
-              <button className="flex items-center gap-0.5 text-[10px] font-bold text-[#4cd7f6] hover:underline">
+              <button 
+                onClick={handleOpenVoucherModal}
+                className="flex items-center gap-0.5 text-[10px] font-bold text-[#4cd7f6] hover:underline"
+              >
                 <span className="material-symbols-outlined text-[12px]">local_activity</span>
                 Xem thêm mã giảm giá
               </button>
@@ -2089,6 +2119,60 @@ export default function Booking() {
               >
                 Thêm xe ngay
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pop-up modal voucher */}
+      {showVoucherModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVoucherModal(false)}></div>
+          <div className="relative bg-[#0b132b] border border-white/10 rounded-2xl w-full max-w-md flex flex-col max-h-[80vh] shadow-2xl">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-[#0b132b] to-[#1a295c] rounded-t-2xl">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#4cd7f6]">local_activity</span>
+                Mã giảm giá của bạn
+              </h3>
+              <button onClick={() => setShowVoucherModal(false)} className="text-white/50 hover:text-white transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
+              {isLoadingVouchers ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#4cd7f6]"></div>
+                </div>
+              ) : myVouchers.length === 0 ? (
+                <div className="text-center py-8 text-white/50">
+                  <span className="material-symbols-outlined text-4xl mb-2 opacity-50">money_off</span>
+                  <p>Bạn chưa có mã giảm giá nào</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {myVouchers.map((voucher) => (
+                    <div 
+                      key={voucher.id || Math.random().toString()} 
+                      onClick={() => {
+                        const code = voucher.voucherId || voucher.id;
+                        setPromoCode(code);
+                        handleApplyPromo(code);
+                        setShowVoucherModal(false);
+                      }}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 cursor-pointer transition-all flex justify-between items-center group hover:border-[#4cd7f6]/50"
+                    >
+                      <div>
+                        <div className="font-bold text-[#4cd7f6]">{voucher.voucherName || voucher.voucherId || voucher.id}</div>
+                        <div className="text-xs text-white/70 mt-1">{voucher.description}</div>
+                        <div className="text-[10px] text-emerald-400 mt-2">Hết hạn: {new Date(voucher.expiryDate).toLocaleDateString('vi-VN')}</div>
+                      </div>
+                      <div className="bg-[#4cd7f6]/10 text-[#4cd7f6] p-2 rounded-lg group-hover:bg-[#4cd7f6] group-hover:text-[#0b132b] transition-colors">
+                        <span className="text-xs font-bold whitespace-nowrap">ÁP DỤNG</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
