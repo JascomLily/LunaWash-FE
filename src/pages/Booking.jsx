@@ -246,8 +246,18 @@ export default function Booking() {
     setDiscountInfo(null);
     setPromoError(null);
     try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setPromoError("Vui lòng đăng nhập để sử dụng mã.");
+        setIsVerifyingPromo(false);
+        return;
+      }
+      const parsed = JSON.parse(storedUser);
       const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-      const res = await fetch(`${baseUrl}/api/promotions/validate?code=${encodeURIComponent(code)}`);
+      
+      const res = await fetch(`${baseUrl}/api/vouchers/my-vouchers`, {
+        headers: { 'Authorization': `Bearer ${parsed.token}` }
+      });
       
       let data;
       try {
@@ -256,25 +266,40 @@ export default function Booking() {
         throw new Error(`Server returned non-JSON. Status: ${res.status}`);
       }
 
-      if (data.success) {
-        setDiscountInfo(data.data);
-        toast.success(`Áp dụng mã ${data.data.name || code} thành công!`, {
-          icon: '🎁',
-          duration: 4000,
-          style: {
-            borderRadius: '16px',
-            background: '#ffffff',
-            color: '#00236f',
-            fontWeight: '900',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-            border: '2px solid #4cd7f6'
-          },
-        });
-        setHighlightPromo(true);
-        setTimeout(() => setHighlightPromo(false), 3000);
+      if (res.ok) {
+        const vouchers = data.data || [];
+        const found = vouchers.find(v => (v.voucherId === code || v.id === code));
+        
+        if (found) {
+          const isExpired = new Date(found.expiryDate) < new Date();
+          if (isExpired) {
+            setPromoError("Mã giảm giá đã hết hạn.");
+          } else {
+            setDiscountInfo({
+              discountPercent: found.discountValue || null,
+              discountAmount: found.discountAmount || null,
+              name: found.voucherName || code
+            });
+            toast.success(`Áp dụng mã ${found.voucherName || code} thành công!`, {
+              icon: '🎁',
+              duration: 4000,
+              style: {
+                borderRadius: '16px',
+                background: '#ffffff',
+                color: '#00236f',
+                fontWeight: '900',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                border: '2px solid #4cd7f6'
+              },
+            });
+            setHighlightPromo(true);
+            setTimeout(() => setHighlightPromo(false), 3000);
+          }
+        } else {
+          setPromoError("Mã giảm giá không hợp lệ hoặc bạn chưa lưu mã này.");
+        }
       } else {
-        setPromoError(data.message || 'Mã khuyến mãi không hợp lệ.');
-        toast.error(data.message || 'Mã khuyến mãi không hợp lệ.');
+        setPromoError(data.message || "Không thể xác thực mã giảm giá.");
       }
     } catch (error) {
       console.error('Lỗi khi check mã:', error);
@@ -1957,7 +1982,7 @@ export default function Booking() {
               ) : discountInfo ? (
                 <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fade-in-up">
                   <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                  Mã hợp lệ! Bạn được giảm {discountInfo.discountPercent}% cho dịch vụ này.
+                  Mã hợp lệ! Bạn được giảm {discountInfo.discountPercent ? `${discountInfo.discountPercent}%` : `${discountInfo.discountAmount?.toLocaleString('vi-VN')}đ`} cho dịch vụ này.
                 </span>
               ) : promoError ? (
                 <span className="text-[10px] text-error font-bold flex items-center gap-1 animate-fade-in-up text-red-400">
