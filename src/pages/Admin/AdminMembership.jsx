@@ -82,11 +82,11 @@ const AdminMembership = () => {
 
   const getTierColor = (tierName) => {
     const name = tierName.toLowerCase();
-    if (name.includes('đồng') || name.includes('bronze')) return 'border-[#cd7f32] text-[#8c521f] bg-[#fdf3eb]';
+    if (name.includes('member') || name.includes('đồng') || name.includes('bronze')) return 'border-[#cd7f32] text-[#8c521f] bg-[#fdf3eb]';
     if (name.includes('bạc') || name.includes('silver')) return 'border-slate-400 text-slate-700 bg-slate-200';
     if (name.includes('vàng') || name.includes('gold')) return 'border-amber-400 text-amber-700 bg-amber-100';
     if (name.includes('platinum')) return 'border-slate-800 text-white bg-gradient-to-r from-slate-700 to-slate-900';
-    return 'border-primary text-primary bg-primary-container';
+    return 'border-primary text-primary bg-primary/10';
   };
 
   if (loading) {
@@ -232,9 +232,9 @@ const AdminMembership = () => {
       </section>
 
       {/* Footer Alert */}
-      <div className="bg-primary-container text-on-primary-container rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 mt-8 shadow-sm">
+      <div className="bg-sky-50 border border-sky-100 text-[#00236f] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 mt-8 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <div className="h-12 w-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
             <span className="material-symbols-outlined text-[24px]">info</span>
           </div>
           <div>
@@ -245,7 +245,7 @@ const AdminMembership = () => {
         <button 
           onClick={handleSaveAll}
           disabled={saving}
-          className="w-full md:w-auto px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50"
+          className="w-full md:w-auto px-6 py-2.5 bg-[#00236f] text-white rounded-xl font-bold hover:bg-[#00236f]/90 transition-colors shadow-md disabled:opacity-50"
         >
           {saving ? 'Đang lưu...' : 'Xác nhận Lưu'}
         </button>
