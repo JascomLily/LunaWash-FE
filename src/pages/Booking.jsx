@@ -546,27 +546,55 @@ export default function Booking() {
   const [showCalendarPopup, setShowCalendarPopup] = useState(false);
 
   // Tính toán giới hạn ngày đặt lịch dựa trên hạng thành viên
-  const getUserMaxBookingDays = () => {
-    const storedUser = localStorage.getItem('user');
-    let tier = 'Đồng';
-    let days = 3;
-    if (storedUser) {
+  const [maxBookingDays, setMaxBookingDays] = useState(3);
+  const [currentTier, setCurrentTier] = useState('Đồng');
+
+  useEffect(() => {
+    const fetchTierSettings = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
       try {
         const parsed = JSON.parse(storedUser);
-        tier = parsed.tier || 'Đồng';
-        days = parseInt(parsed.maxBookingDays, 10) || 3;
-      } catch(e) {}
-    }
-    return { days, tier };
-  };
+        const userTier = parsed.tier || 'Đồng';
+        setCurrentTier(userTier);
+        
+        // Cố gắng đọc từ localStorage trước để render nhanh
+        const localDays = parseInt(parsed.maxBookingDays, 10);
+        if (localDays) setMaxBookingDays(localDays);
 
-  const { days: maxBookingDays, tier: currentTier } = getUserMaxBookingDays();
+        // Fetch API để cập nhật chính xác cấu hình mới nhất
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings', {
+          headers: { 'Authorization': `Bearer ${parsed.token}` }
+        });
+        if (res.ok) {
+          const tiers = await res.json();
+          // Tìm tier khớp (xử lý ngoại lệ "Member" == "Đồng")
+          const checkTier = userTier.toLowerCase() === 'member' ? 'đồng' : userTier.toLowerCase();
+          const match = tiers.find(t => {
+            const tName = t.tierName.toLowerCase();
+            return tName === checkTier || (tName.includes('đồng') && checkTier.includes('member'));
+          });
+          
+          if (match && match.maxBookingDays) {
+            setMaxBookingDays(match.maxBookingDays);
+            
+            // Cập nhật lại vào localStorage
+            parsed.maxBookingDays = match.maxBookingDays;
+            localStorage.setItem('user', JSON.stringify(parsed));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching tier settings:', err);
+      }
+    };
+    fetchTierSettings();
+  }, []);
+
   const todayStart = getVietnamTime();
   todayStart.setHours(0, 0, 0, 0);
   const maxAllowedDate = getVietnamTime();
   maxAllowedDate.setDate(maxAllowedDate.getDate() + maxBookingDays);
   maxAllowedDate.setHours(23, 59, 59, 999);
-
 
   // Lấy năm và tháng từ selectedDate để hiển thị lịch ban đầu
   const [calendarYear, setCalendarYear] = useState(() => {
