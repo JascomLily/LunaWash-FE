@@ -7,12 +7,24 @@ const AdminMainLayout = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Mock Admin User
-  const user = {
-    fullName: "Admin User",
-    tier: "Admin",
-    email: "admin@lunawash.com",
-    avatarUrl: null
+  // Đọc user thật từ localStorage
+  const storedUser = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  })();
+
+  // Guard: nếu không có user hoặc không có token → redirect về login
+  useEffect(() => {
+    if (!storedUser || !storedUser.token || storedUser.tier !== 'Admin') {
+      navigate('/login', { replace: true });
+    }
+  }, [storedUser, navigate]);
+
+  const user = storedUser || {
+    fullName: 'Admin',
+    tier: 'Admin',
+    email: '',
+    avatarUrl: null,
+    token: null
   };
 
   useEffect(() => {

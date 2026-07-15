@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import API_BASE from '../config';
 
 // Cấu hình tọa độ bản đồ Google Map cho các chi nhánh của LunaWash
 const HOME_BRANCHES = [
@@ -56,6 +57,8 @@ export default function Home() {
 
   const [mainPackages, setMainPackages] = useState([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
 
   // Tự động xin quyền vị trí khi vào trang chủ để load trạm gần nhất
   useEffect(() => {
@@ -144,20 +147,41 @@ export default function Home() {
     fetchPackages();
   }, []);
 
-  const [banners, setBanners] = useState([
-    { id: 1, url: '/promo_1.png', promoCode: 'SUMMER20' },
-    { id: 2, url: '/promo_2.png', promoCode: 'VIPWASH' },
-    { id: 3, url: '/promo_3.png', promoCode: 'EXPRESS15' },
-  ]);
+  const [banners, setBanners] = useState([]);
 
   // Hiệu ứng camera bay (lướt cái vèo) khi đổi chi nhánh
   useEffect(() => {
     setIsTransitioning(true);
-    const timer = setTimeout(() => {
-      setIsTransitioning(false);
-    }, 700);
+    const timer = setTimeout(() => setIsTransitioning(false), 500);
     return () => clearTimeout(timer);
   }, [selectedBranchId]);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const baseUrl = API_BASE;
+        const response = await fetch(`${baseUrl}/api/banners?platform=Web`);
+        const data = await response.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setBanners(data.data);
+        } else {
+          setBanners([
+            { id: 1, imageUrl: '/promo_1.png' },
+            { id: 2, imageUrl: '/promo_2.png' },
+            { id: 3, imageUrl: '/promo_3.png' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải banners:', error);
+        setBanners([
+          { id: 1, imageUrl: '/promo_1.png' },
+          { id: 2, imageUrl: '/promo_2.png' },
+          { id: 3, imageUrl: '/promo_3.png' }
+        ]);
+      }
+    };
+    fetchBanners();
+  }, []);
 
   // Tính toán URL Map nhúng động theo chi nhánh được chọn
   const selectedBranch = HOME_BRANCHES.find(b => b.id === selectedBranchId) || HOME_BRANCHES[0];
@@ -177,13 +201,6 @@ export default function Home() {
       } catch (e) {
         console.error(e);
       }
-    }
-
-    const storedBanners = localStorage.getItem('ads_banners');
-    if (storedBanners) {
-      try {
-        setBanners(JSON.parse(storedBanners));
-      } catch (e) {}
     }
 
     // Hiệu ứng tương tác micro-interactions nhẹ nhàng cho các nút bấm
@@ -206,6 +223,36 @@ export default function Home() {
 
   const handleActionClick = (packageName) => {
     navigate('/booking');
+  };
+
+  const handleClaimVoucher = async () => {
+    if (!selectedVoucher) return;
+    
+    if (!isLoggedIn) {
+      setShowVoucherModal(false);
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/api/vouchers/save/${selectedVoucher.voucherId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user') || '{}').token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(data.message || 'Đã lưu voucher vào ví!');
+      } else {
+        toast.error(data.message || 'Không thể lưu voucher này.');
+      }
+    } catch (error) {
+      toast.error('Lỗi kết nối máy chủ!');
+    }
+    setShowVoucherModal(false);
   };
 
   return (
@@ -308,25 +355,39 @@ export default function Home() {
           <div className="animate-marquee flex gap-6">
             {/* Set 1 */}
             <div className="flex gap-6">
-              {banners.map((b) => (
+              {banners.filter(b => !b.isHidden).map((b) => (
                 <div 
                   key={b.id} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      setSelectedVoucher(b);
+                      setShowVoucherModal(true);
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>
             {/* Set 2 (Duplicated for infinite scroll effect) */}
             <div className="flex gap-6">
-              {banners.map((b) => (
+              {banners.filter(b => !b.isHidden).map((b) => (
                 <div 
                   key={`dup-${b.id}`} 
-                  onClick={() => navigate('/booking', { state: { promoCode: b.promoCode } })} 
-                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group"
+                  onClick={() => {
+                    if (b.voucherId) {
+                      setSelectedVoucher(b);
+                      setShowVoucherModal(true);
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
                 >
-                  <img src={b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
                 </div>
               ))}
             </div>
@@ -588,6 +649,35 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voucher Claim Modal */}
+      {showVoucherModal && selectedVoucher && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-[24px] w-full max-w-sm shadow-2xl overflow-hidden animate-slideUp border border-outline-variant/20 flex flex-col relative p-6 text-center">
+             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-green-600 text-3xl">local_activity</span>
+             </div>
+             <h3 className="font-black text-xl text-primary mb-2">Lưu mã giảm giá?</h3>
+             <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                Banner này có đính kèm một mã giảm giá. Bạn có muốn lưu mã này vào ví của mình để sử dụng sau không?
+             </p>
+             <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowVoucherModal(false)}
+                  className="flex-1 py-3 bg-surface-container hover:bg-outline-variant/20 text-on-surface font-bold rounded-xl transition-all"
+                >
+                  Không, cảm ơn
+                </button>
+                <button 
+                  onClick={handleClaimVoucher}
+                  className="flex-1 py-3 bg-[#00236f] hover:bg-[#001d5c] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all"
+                >
+                  Lưu vào ví
+                </button>
+             </div>
           </div>
         </div>
       )}

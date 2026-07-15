@@ -158,18 +158,26 @@ export default function UserProfile() {
         console.error(e);
       }
 
-      // Lấy danh sách Voucher (Promotions)
-      fetch(import.meta.env.VITE_API_URL + '/api/Promotions')
-        .then(res => {
-          if (res.ok) return res.json();
-          throw new Error('Lỗi lấy khuyến mãi');
-        })
-        .then(data => {
-          if (data.success && data.data) {
-            setVouchers(data.data.filter(v => v.isActive));
-          }
-        })
-        .catch(e => console.error('Lỗi lấy khuyến mãi:', e));
+      // Lấy danh sách Voucher của tôi
+      const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+      const userToken = userObj.token;
+      if (userToken) {
+        try {
+          fetch(import.meta.env.VITE_API_URL + '/api/Vouchers/my-vouchers', {
+            headers: { 'Authorization': `Bearer ${userToken}` }
+          })
+            .then(res => {
+              if (res.ok) return res.json();
+              throw new Error('Lỗi lấy khuyến mãi');
+            })
+            .then(data => {
+              if (data.success && data.data) {
+                setVouchers(data.data.filter(v => v.voucher.isActive && !v.isUsed));
+              }
+            })
+            .catch(e => console.error('Lỗi lấy khuyến mãi:', e));
+        } catch (e) {}
+      }
     }
   }, []);
 
@@ -397,14 +405,14 @@ export default function UserProfile() {
                   Chưa có mã giảm giá nào.
                 </div>
               ) : (
-                vouchers.slice(0, 3).map((voucher) => (
-                  <div key={voucher.id} className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
+                vouchers.slice(0, 3).map((v) => (
+                  <div key={v.id} className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
                     <div>
-                      <p className="text-sm font-bold text-primary">{voucher.code}</p>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5">{voucher.name} - Giảm {voucher.discountPercent}%</p>
+                      <p className="text-sm font-bold text-primary">{v.voucher.voucherName}</p>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5">{v.voucher.description} - Giảm {v.voucher.discountValue}đ</p>
                     </div>
                     <button 
-                      onClick={() => alert(`Mã ${voucher.code} sẽ tự động được áp dụng ở bước Thanh toán.`)}
+                      onClick={() => alert(`Mã ${v.voucher.voucherName} sẽ tự động được áp dụng ở bước Thanh toán.`)}
                       className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
                     >
                       Dùng
@@ -624,9 +632,16 @@ export default function UserProfile() {
                       <td className="py-4 pr-4">
                         <p className="font-extrabold text-primary">{item.packageName}</p>
                         <p className="text-xs text-on-surface-variant font-medium mt-1">{item.vehicle}</p>
-                        {item.extras && (
+                        {item.extras && item.extras !== '[]' && (
                           <span className="inline-block bg-sky-100 text-sky-800 text-[9px] font-black px-2 py-0.5 rounded mt-1.5">
-                            {item.extras}
+                            {(() => {
+                              try {
+                                const parsed = JSON.parse(item.extras);
+                                return 'Kèm: ' + parsed.map(x => x.n || x.name || x.Name).join(', ');
+                              } catch {
+                                return 'Kèm: ' + item.extras;
+                              }
+                            })()}
                           </span>
                         )}
                       </td>
