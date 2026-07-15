@@ -177,18 +177,16 @@ export default function AdminAds() {
         )}
       </div>
 
-      {currentBanners.length > 0 && (
-        <div className="mt-8 pt-6 border-t border-outline-variant/20 flex justify-end">
-          <button 
-            onClick={handleSave}
-            disabled={isLoading || isUploading}
-            className="bg-[#00236f] hover:bg-slate-800 disabled:opacity-50 text-white font-black py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-xs uppercase tracking-wider flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">save</span>
-            {isLoading ? 'Đang lưu...' : 'Lưu thiết lập Banners'}
-          </button>
-        </div>
-      )}
+      <div className="mt-8 pt-6 border-t border-outline-variant/20 flex justify-end">
+        <button 
+          onClick={handleSave}
+          disabled={isLoading || isUploading}
+          className="bg-[#00236f] hover:bg-slate-800 disabled:opacity-50 text-white font-black py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-xs uppercase tracking-wider flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-[18px]">save</span>
+          {isLoading ? 'Đang lưu...' : 'Lưu thiết lập Banners'}
+        </button>
+      </div>
     </div>
   );
 }
