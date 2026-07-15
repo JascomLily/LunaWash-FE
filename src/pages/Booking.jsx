@@ -271,16 +271,18 @@ export default function Booking() {
         const found = vouchers.find(v => (v.voucherId === code || v.id === code));
         
         if (found) {
-          const isExpired = new Date(found.expiryDate) < new Date();
+          const v = found.voucher || found;
+          const isExpired = new Date(v.expiryDate) < new Date();
           if (isExpired) {
             setPromoError("Mã giảm giá đã hết hạn.");
           } else {
+            const val = v.discountValue || 0;
             setDiscountInfo({
-              discountPercent: found.discountValue || null,
-              discountAmount: found.discountAmount || null,
-              name: found.voucherName || code
+              discountPercent: val <= 100 ? val : null,
+              discountAmount: val > 100 ? val : null,
+              name: v.voucherName || code
             });
-            toast.success(`Áp dụng mã ${found.voucherName || code} thành công!`, {
+            toast.success(`Áp dụng mã ${v.voucherName || code} thành công!`, {
               icon: '🎁',
               duration: 4000,
               style: {
@@ -998,7 +1000,8 @@ export default function Booking() {
       Duration: totalDuration,
       Notes: notesStr,
       ServicePriceIds: serviceIds,
-      PromoCode: discountInfo ? promoCode : undefined
+      PromoCode: discountInfo ? promoCode : undefined,
+      TotalPrice: totalCost
     };
 
     const bookingState = {
