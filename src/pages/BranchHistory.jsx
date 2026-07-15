@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const BRANCH_NAMES = {
@@ -11,7 +11,104 @@ export default function BranchHistory() {
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('Today');
+  
+  const getVietnamTime = () => {
+    const vnTimeStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    return new Date(vnTimeStr);
+  };
+  const today = getVietnamTime();
+  const getTodayStr = (d = getVietnamTime()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState('All');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const datePickerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
+        setShowDatePicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const generateCalendarDays = () => {
+    const days = [];
+    const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
+    const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const prevTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
+    
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const dayNum = prevTotalDays - i;
+      let m = calendarMonth - 1;
+      let y = calendarYear;
+      if (m < 0) { m = 11; y--; }
+      days.push({ day: dayNum, month: m, year: y, isCurrentMonth: false });
+    }
+    
+    for (let i = 1; i <= totalDays; i++) {
+      days.push({ day: i, month: calendarMonth, year: calendarYear, isCurrentMonth: true });
+    }
+    
+    const totalCells = 42; 
+    const nextDaysCount = totalCells - days.length;
+    for (let i = 1; i <= nextDaysCount; i++) {
+      let m = calendarMonth + 1;
+      let y = calendarYear;
+      if (m > 11) { m = 0; y++; }
+      days.push({ day: i, month: m, year: y, isCurrentMonth: false });
+    }
+    return days;
+  };
+
+  const handleSelectDay = (dayObj) => {
+    const y = dayObj.year;
+    const m = String(dayObj.month + 1).padStart(2, '0');
+    const d = String(dayObj.day).padStart(2, '0');
+    setSelectedDate(`${y}-${m}-${d}`);
+    setShowDatePicker(false);
+  };
+
+  const handleSelectToday = () => {
+    const t = getVietnamTime();
+    setCalendarMonth(t.getMonth());
+    setCalendarYear(t.getFullYear());
+    setSelectedDate(getTodayStr(t));
+    setShowDatePicker(false);
+  };
+
+  const handleSelectAll = () => {
+    setSelectedDate('All');
+    setShowDatePicker(false);
+  };
+
+  const prevMonth = (e) => {
+    e.stopPropagation();
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear(y => y - 1);
+    } else {
+      setCalendarMonth(m => m - 1);
+    }
+  };
+
+  const nextMonth = (e) => {
+    e.stopPropagation();
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear(y => y + 1);
+    } else {
+      setCalendarMonth(m => m + 1);
+    }
+  };
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -112,17 +209,11 @@ export default function BranchHistory() {
   // Search filter
   const filteredHistory = completedBookings.filter(b => {
     // Filter by date
-    if (dateFilter === 'Today') {
-      const today = new Date();
-      const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    if (selectedDate !== 'All') {
+      const [y, m, d] = selectedDate.split('-');
+      const targetStr = `${d}/${m}/${y}`;
       const normalizedDate = b.date?.replace(/-/g, '/');
-      if (normalizedDate !== todayStr) return false;
-    } else if (dateFilter === 'Yesterday') {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = `${yesterday.getDate().toString().padStart(2, '0')}/${(yesterday.getMonth() + 1).toString().padStart(2, '0')}/${yesterday.getFullYear()}`;
-      const normalizedDate = b.date?.replace(/-/g, '/');
-      if (normalizedDate !== yesterdayStr) return false;
+      if (normalizedDate !== targetStr) return false;
     }
 
     const term = searchTerm.toLowerCase();
@@ -178,33 +269,99 @@ export default function BranchHistory() {
         </div>
 
         {/* Filters and Search */}
-        <div className="glass-card rounded-3xl p-6 mb-8 border border-outline-variant/30 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full md:max-w-md">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-            <input 
-              type="text"
-              placeholder="Tìm kiếm biển số, khách hàng..."
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            {['Today', 'Yesterday', 'All'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setDateFilter(tab)}
-                className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${
-                  dateFilter === tab 
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'bg-white text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-low'
-                }`}
+        <div className="glass-card rounded-3xl p-6 mb-8 border border-outline-variant/30 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative">
+          <div className="flex gap-4 w-full items-center">
+            {/* Date Picker Toggle */}
+            <div className="relative" ref={datePickerRef}>
+              <button 
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="flex items-center justify-between min-w-[170px] px-4 py-3 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl hover:bg-surface-container-low transition-all font-bold text-sm text-[#00236f]"
               >
-                {tab === 'Today' ? 'Hôm nay' : 
-                 tab === 'Yesterday' ? 'Hôm qua' : 'Tất cả lịch sử'}
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                  {selectedDate === 'All' ? 'Tất cả' : selectedDate === getTodayStr(today) ? 'Hôm nay' : selectedDate.split('-').reverse().join('/')}
+                </div>
+                <span className="material-symbols-outlined text-[18px] ml-2">expand_more</span>
               </button>
-            ))}
+
+              {/* Date Picker Dropdown */}
+              {showDatePicker && (
+                <div className="absolute top-full left-0 mt-2 p-4 bg-surface rounded-3xl shadow-xl border border-outline-variant/20 min-w-[280px] z-50">
+                  <div className="flex justify-between items-center mb-4">
+                    <button type="button" onClick={prevMonth} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
+                      <span className="material-symbols-outlined text-[20px] font-bold">chevron_left</span>
+                    </button>
+                    <div className="font-black text-sm">Tháng {calendarMonth + 1}, {calendarYear}</div>
+                    <button type="button" onClick={nextMonth} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
+                      <span className="material-symbols-outlined text-[20px] font-bold">chevron_right</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-outline/60 mb-2">
+                    {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d) => (
+                      <div key={d}>{d}</div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold">
+                    {generateCalendarDays().map((dayObj, idx) => {
+                      const y = dayObj.year;
+                      const m = String(dayObj.month + 1).padStart(2, '0');
+                      const d = String(dayObj.day).padStart(2, '0');
+                      const dateStr = `${y}-${m}-${d}`;
+                      const isSelected = selectedDate === dateStr;
+                      
+                      let dayClasses = "h-8 w-8 flex items-center justify-center rounded-xl mx-auto transition-all cursor-pointer ";
+                      if (isSelected) {
+                        dayClasses += "bg-[#00236f] text-white shadow";
+                      } else if (!dayObj.isCurrentMonth) {
+                        dayClasses += "text-outline/40 hover:bg-surface-container-low";
+                      } else {
+                        dayClasses += "text-on-surface hover:bg-[#00236f]/10";
+                      }
+                      
+                      return (
+                        <div 
+                          key={idx}
+                          onClick={() => handleSelectDay(dayObj)}
+                          className={dayClasses}
+                        >
+                          {dayObj.day}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-between border-t border-outline-variant/20 pt-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      className="text-xs font-black text-on-surface-variant hover:text-[#00236f] transition-colors"
+                    >
+                      Tất cả lịch sử
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectToday}
+                      className="text-xs font-black text-[#00236f] hover:underline"
+                    >
+                      Hôm nay
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="relative w-full md:max-w-md">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+              <input 
+                type="text"
+                placeholder="Tìm kiếm biển số, khách hàng..."
+                className="w-full pl-12 pr-4 py-3 bg-surface-container-low/75 border border-outline-variant/50 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
