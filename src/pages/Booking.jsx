@@ -2150,9 +2150,9 @@ export default function Booking() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {myVouchers.map((voucher) => (
+                  {myVouchers.map((voucher, index) => (
                     <div 
-                      key={voucher.id || Math.random().toString()} 
+                      key={voucher.id || voucher.voucherId || `voucher-${index}`} 
                       onClick={() => {
                         const code = voucher.voucherId || voucher.id;
                         setPromoCode(code);
