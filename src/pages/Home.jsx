@@ -162,22 +162,14 @@ export default function Home() {
         const baseUrl = API_BASE;
         const response = await fetch(`${baseUrl}/api/banners?platform=Web`);
         const data = await response.json();
-        if (data.success && data.data && data.data.length > 0) {
+        if (data.success && data.data) {
           setBanners(data.data);
         } else {
-          setBanners([
-            { id: 1, imageUrl: '/promo_1.png' },
-            { id: 2, imageUrl: '/promo_2.png' },
-            { id: 3, imageUrl: '/promo_3.png' }
-          ]);
+          setBanners([]);
         }
       } catch (error) {
         console.error('Lỗi khi tải banners:', error);
-        setBanners([
-          { id: 1, imageUrl: '/promo_1.png' },
-          { id: 2, imageUrl: '/promo_2.png' },
-          { id: 3, imageUrl: '/promo_3.png' }
-        ]);
+        setBanners([]);
       }
     };
     fetchBanners();
@@ -337,6 +329,7 @@ export default function Home() {
       </section>
 
       {/* KHU VỰC QUẢNG CÁO KHUYẾN MÃI */}
+      {banners.filter(b => !b.isHidden).length > 0 && (
       <section className="pt-16 pb-8 overflow-hidden w-full bg-[#f8fafc]/40 border-b border-outline-variant/20">
         <div className="max-w-container-max mx-auto px-margin-desktop mb-4 flex justify-between items-center">
           <div className="flex items-center gap-2 text-[#00236f]">
@@ -419,6 +412,7 @@ export default function Home() {
           )}
         </div>
       </section>
+      )}
 
       {/* SECTION VỀ CHÚNG TÔI */}
       <section className="py-20 px-margin-desktop max-w-container-max mx-auto" id="about">
