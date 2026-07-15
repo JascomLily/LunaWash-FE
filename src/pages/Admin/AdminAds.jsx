@@ -106,6 +106,10 @@ export default function AdminAds() {
   };
 
   const handleAddBanner = () => {
+    if (currentBanners.length >= 5) {
+      toast.warning(`Chỉ được tạo tối đa 5 banner cho nền tảng ${activeTab}.`);
+      return;
+    }
     setCurrentBanners([
       ...currentBanners,
       { id: Date.now(), url: '', voucherId: '', isHidden: false, platformType: activeTab }

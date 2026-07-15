@@ -343,28 +343,80 @@ export default function Home() {
             <span className="material-symbols-outlined text-lg animate-pulse font-bold">campaign</span>
             <span className="text-xs font-black uppercase tracking-wider">Ưu đãi độc quyền & Tin tức mới</span>
           </div>
+          {banners.filter(b => !b.isHidden).length > 3 && (
+            <span className="text-[10px] text-outline font-bold italic">Rê chuột vào để tạm dừng</span>
+          )}
         </div>
         
         {/* Banners Wrapper */}
-        <div className="relative w-full py-2 max-w-container-max mx-auto px-margin-desktop">
-          <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
-            {banners.filter(b => !b.isHidden).map((b) => (
-              <div 
-                key={b.id} 
-                onClick={() => {
-                  if (b.voucherId) {
-                    setSelectedVoucher(b);
-                    setShowVoucherModal(true);
-                  } else {
-                    navigate('/booking');
-                  }
-                }} 
-                className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0 snap-center"
-              >
-                <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+        <div className="relative w-full py-2 max-w-container-max mx-auto px-margin-desktop overflow-hidden">
+          {banners.filter(b => !b.isHidden).length > 3 ? (
+            <>
+              {/* Faders for smooth edges */}
+              <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background via-background/40 to-transparent z-10 pointer-events-none"></div>
+              <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background via-background/40 to-transparent z-10 pointer-events-none"></div>
+
+              <div className="animate-marquee flex gap-6 w-max">
+                {/* Set 1 */}
+                <div className="flex gap-6">
+                  {banners.filter(b => !b.isHidden).map((b) => (
+                    <div 
+                      key={b.id} 
+                      onClick={() => {
+                        if (b.voucherId) {
+                          setSelectedVoucher(b);
+                          setShowVoucherModal(true);
+                        } else {
+                          navigate('/booking');
+                        }
+                      }} 
+                      className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
+                    >
+                      <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                    </div>
+                  ))}
+                </div>
+                {/* Set 2 (Duplicated for infinite scroll effect) */}
+                <div className="flex gap-6">
+                  {banners.filter(b => !b.isHidden).map((b) => (
+                    <div 
+                      key={`dup-${b.id}`} 
+                      onClick={() => {
+                        if (b.voucherId) {
+                          setSelectedVoucher(b);
+                          setShowVoucherModal(true);
+                        } else {
+                          navigate('/booking');
+                        }
+                      }} 
+                      className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0"
+                    >
+                      <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
+              {banners.filter(b => !b.isHidden).map((b) => (
+                <div 
+                  key={b.id} 
+                  onClick={() => {
+                    if (b.voucherId) {
+                      setSelectedVoucher(b);
+                      setShowVoucherModal(true);
+                    } else {
+                      navigate('/booking');
+                    }
+                  }} 
+                  className="w-[380px] sm:w-[420px] h-[160px] rounded-[24px] overflow-hidden shadow-sm border border-outline-variant/30 hover:scale-102 hover:shadow-md transition-all duration-300 relative cursor-pointer group shrink-0 snap-center"
+                >
+                  <img src={b.imageUrl || b.url} alt={`Promo ${b.id}`} className="w-full h-full object-cover group-hover:scale-103 transition-all duration-500" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
