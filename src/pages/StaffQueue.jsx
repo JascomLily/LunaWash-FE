@@ -612,13 +612,14 @@ export default function StaffQueue() {
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Giờ Hẹn</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant whitespace-nowrap">Trạng Thái</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-center whitespace-nowrap">Dịch Vụ Kèm Theo</th>
+                  <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right whitespace-nowrap">Thu Tiền</th>
                   <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant text-right whitespace-nowrap">Thao Tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
                 {filteredBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-on-surface-variant/60 font-medium">
+                    <td colSpan="8" className="px-6 py-12 text-center text-on-surface-variant/60 font-medium">
                       Không có lịch đặt xe nào trong hàng đợi.
                     </td>
                   </tr>
@@ -654,6 +655,17 @@ export default function StaffQueue() {
                         ) : (
                           <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-lg font-medium text-xs">
                             Không
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                        {b.paymentMethod === 'vnpay' ? (
+                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-xs">
+                            Đã thanh toán
+                          </span>
+                        ) : (
+                          <span className="font-extrabold text-rose-600 text-sm bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+                            {b.price ? (typeof b.price === 'number' ? b.price.toLocaleString('vi-VN') + 'đ' : b.price) : '0đ'}
                           </span>
                         )}
                       </td>
