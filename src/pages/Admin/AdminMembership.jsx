@@ -50,6 +50,7 @@ const AdminMembership = () => {
           },
           body: JSON.stringify({
             minPoints: parseInt(tier.minPoints) || 0,
+            minMaintainPoints: parseInt(tier.minMaintainPoints) || 0,
             pointsMultiplier: parseFloat(tier.pointsMultiplier) || 1,
             priorityLevel: parseInt(tier.priorityLevel) || 1,
             discountPercent: parseFloat(tier.discountPercent) || 0,
@@ -144,6 +145,17 @@ const AdminMembership = () => {
                     className={`w-full px-4 py-2.5 bg-transparent border border-outline-variant/50 rounded-xl text-on-surface font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-center ${isBase ? 'opacity-50' : ''}`} 
                   />
                 </div>
+                {!isBase && (
+                  <div className="w-full mb-3">
+                    <label className="block text-xs font-semibold text-on-surface-variant mb-1">Điểm giữ hạng</label>
+                    <input 
+                      type="number" 
+                      value={tier.minMaintainPoints || 0}
+                      onChange={(e) => handleInputChange(tier.id, 'minMaintainPoints', e.target.value)}
+                      className="w-full px-4 py-2.5 bg-transparent border border-outline-variant/50 rounded-xl text-on-surface font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-center" 
+                    />
+                  </div>
+                )}
                 {isBase ? (
                   <p className="text-[11px] text-on-surface-variant mt-auto text-center italic">Mốc khởi đầu mặc định.</p>
                 ) : (
