@@ -11,8 +11,39 @@ export default function Navbar() {
   
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
+  const notifRef = useRef(null);
+
+  const fetchNotifications = async (token) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Notifications`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    if (!user || !user.token) return;
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/Notifications/${id}/read`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(user.tier);
 
@@ -44,7 +75,11 @@ export default function Navbar() {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          if (parsedUser && parsedUser.token) {
+            fetchNotifications(parsedUser.token);
+          }
         } catch (e) {
           console.error('Lỗi phân tích cú pháp user từ localStorage:', e);
         }
@@ -62,6 +97,9 @@ export default function Navbar() {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotificationsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -243,13 +281,67 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-2 md:gap-4">
               {/* Nút Chuông Thông Báo */}
-              <button 
-                onClick={() => alert("Bạn không có thông báo mới nào.")}
-                className="text-on-surface-variant/80 hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low select-none flex items-center justify-center"
-                title="Thông báo"
-              >
-                <span className="material-symbols-outlined text-2xl">notifications</span>
-              </button>
+              <div className="relative" ref={notifRef}>
+                <button 
+                  onClick={() => {
+                    setNotificationsOpen(!notificationsOpen);
+                    if (!notificationsOpen && user?.token) fetchNotifications(user.token);
+                  }}
+                  className="relative text-on-surface-variant/80 hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low select-none flex items-center justify-center"
+                  title="Thông báo"
+                >
+                  <span className="material-symbols-outlined text-2xl">notifications</span>
+                  {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full border border-white"></span>
+                  )}
+                </button>
+
+                {/* Dropdown Thông báo */}
+                {notificationsOpen && (
+                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-outline-variant/30 z-50 animate-fadeIn overflow-hidden flex flex-col max-h-[400px]">
+                    <div className="p-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-lowest sticky top-0 z-10">
+                      <h4 className="font-bold text-primary text-base">Thông báo</h4>
+                      <span className="text-xs font-medium text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
+                        {notifications.filter(n => !n.isRead).length} mới
+                      </span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center text-on-surface-variant/70 text-sm">
+                          Bạn không có thông báo nào.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          {notifications.map(notif => (
+                            <div 
+                              key={notif.id} 
+                              onClick={() => {
+                                if (!notif.isRead) handleMarkAsRead(notif.id);
+                              }}
+                              className={`p-4 border-b border-outline-variant/10 cursor-pointer transition-colors hover:bg-surface-container-low ${!notif.isRead ? 'bg-primary/5' : ''}`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${!notif.isRead ? 'bg-primary' : 'bg-transparent'}`}></div>
+                                <div className="flex-1 min-w-0">
+                                  <h5 className={`text-sm truncate ${!notif.isRead ? 'font-bold text-on-surface' : 'font-medium text-on-surface-variant'}`}>
+                                    {notif.title}
+                                  </h5>
+                                  <p className={`text-xs mt-0.5 line-clamp-2 ${!notif.isRead ? 'text-on-surface-variant' : 'text-on-surface-variant/70'}`}>
+                                    {notif.message}
+                                  </p>
+                                  <p className="text-[10px] text-on-surface-variant/50 mt-1.5 font-medium uppercase tracking-wider">
+                                    {new Date(notif.createdAt).toLocaleDateString('vi-VN')} {new Date(notif.createdAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Nút Avatar bo góc sang trọng */}
               <div className="relative hidden md:block" ref={dropdownRef}>
