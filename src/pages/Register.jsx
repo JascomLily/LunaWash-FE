@@ -155,6 +155,12 @@ export default function Register() {
         avatarUrl: null
       };
 
+      if (loggedInUser.tier === 'Admin' && window.innerWidth < 1024) {
+        toast.error('Tài khoản ADMIN chỉ được phép đăng nhập trên máy tính (Desktop) tại cơ quan!', { duration: 5000 });
+        setLoading(false);
+        return;
+      }
+
       if (data.requiresProfileUpdate) {
         setTempUser(loggedInUser);
         setUpdateFullName(data.fullName);

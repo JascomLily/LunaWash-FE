@@ -113,6 +113,12 @@ export default function Login() {
         avatarUrl: null
       };
 
+      if (loggedInUser.tier === 'Admin' && window.innerWidth < 1024) {
+        toast.error('Tài khoản ADMIN chỉ được phép đăng nhập trên máy tính (Desktop) tại cơ quan!', { duration: 5000 });
+        setLoading(false);
+        return;
+      }
+
       // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
       localStorage.setItem('user', JSON.stringify(loggedInUser));
 
@@ -182,6 +188,12 @@ export default function Login() {
         maxBookingDays: data.maxBookingDays || 3,
         avatarUrl: null
       };
+
+      if (loggedInUser.tier === 'Admin' && window.innerWidth < 1024) {
+        toast.error('Tài khoản ADMIN chỉ được phép đăng nhập trên máy tính (Desktop) tại cơ quan!', { duration: 5000 });
+        setLoading(false);
+        return;
+      }
 
       if (data.requiresProfileUpdate) {
         setTempUser(loggedInUser);

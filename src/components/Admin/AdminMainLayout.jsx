@@ -27,6 +27,14 @@ const AdminMainLayout = () => {
     token: null
   };
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -38,6 +46,19 @@ const AdminMainLayout = () => {
   }, []);
 
   const isActive = (path) => location.pathname === path || (path !== '/admin' && location.pathname.includes(path));
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <span className="material-symbols-outlined text-[64px] text-error mb-4">desktop_access_disabled</span>
+        <h1 className="text-2xl font-bold text-error mb-2">Truy cập bị từ chối</h1>
+        <p className="text-on-surface-variant font-medium">
+          Trang quản trị (Admin) chỉ được phép sử dụng trên máy tính bàn (Desktop) tại cơ quan.<br/>
+          Vui lòng mở rộng cửa sổ trình duyệt hoặc đăng nhập bằng máy tính.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md flex flex-col">
