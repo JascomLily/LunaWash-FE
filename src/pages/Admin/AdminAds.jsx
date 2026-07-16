@@ -247,7 +247,7 @@ function BannerCard({ banner, index, vouchers, isUploading, setIsUploading, hand
               <p className="font-bold mb-1 text-primary">Thông số khuyến nghị:</p>
               <ul className="list-disc pl-4 space-y-1 text-on-surface-variant">
                 <li>Định dạng: <span className="font-bold">JPG, PNG, WEBP</span></li>
-                <li>Kích thước tối ưu: Tỷ lệ ngang <span className="font-bold">{activeTab === 'Web' ? '~2.5:1' : '~1.7:1'}</span></li>
+                <li>Kích thước tối ưu: Tỷ lệ ngang <span className="font-bold">{banner.platformType === 'Web' ? '~2.5:1' : '~1.7:1'}</span></li>
               </ul>
               <div className="absolute left-1.5 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-surface-container-highest"></div>
             </div>
