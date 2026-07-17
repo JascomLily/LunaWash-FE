@@ -125,6 +125,18 @@ export default function Footer() {
                 <span className="material-symbols-outlined text-lg">share</span>
               </a>
             </div>
+
+            <h4 className="font-bold text-white uppercase text-xs tracking-widest mt-2">
+              Tải ứng dụng
+            </h4>
+            <a 
+              href="/apk/lunawash-android.apk" 
+              download="LunaWash_Android.apk"
+              className="flex items-center justify-center gap-2 bg-[#00236f] hover:bg-primary text-white py-2.5 px-4 rounded-xl transition-all font-bold text-sm w-max hover:-translate-y-1 shadow-lg hover:shadow-primary/30"
+            >
+              <span className="material-symbols-outlined text-xl">android</span>
+              Tải cho Android (APK)
+            </a>
           </div>
 
         </div>

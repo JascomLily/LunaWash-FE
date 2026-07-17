@@ -275,9 +275,18 @@ export default function Home() {
             <h1 className="font-display-lg text-4xl mb-3 text-[#00236f] leading-tight font-extrabold">
               Trạm rửa xe <br />thông minh
             </h1>
-            <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+            <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">
               Tìm trạm rửa xe tự động gần nhất và trải nghiệm công nghệ vệ sinh ô tô đỉnh cao.
             </p>
+
+            <a 
+              href="/apk/lunawash-android.apk" 
+              download="LunaWash_Android.apk"
+              className="flex items-center justify-center gap-2 bg-[#00236f] hover:bg-primary text-white py-3 px-6 rounded-xl transition-all font-bold text-sm w-full mb-6 hover:-translate-y-1 shadow-lg hover:shadow-primary/30"
+            >
+              <span className="material-symbols-outlined text-xl">android</span>
+              Tải Ứng Dụng Cho Android (APK)
+            </a>
             
             {/* Khối danh sách trạm */}
             <div className="space-y-3" id="locations">
