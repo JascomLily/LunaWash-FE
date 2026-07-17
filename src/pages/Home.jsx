@@ -336,19 +336,19 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          
-          {/* Nút mở hộp thông tin (hiện khi box đã thu gọn) */}
-          <div 
-            className={`absolute z-10 top-1/2 -translate-y-1/2 left-0 transition-transform duration-500 ease-in-out ${isHeroBoxOpen ? '-translate-x-[150%] pointer-events-none' : 'translate-x-0 pointer-events-auto'}`}
+        </div>
+
+        {/* Nút mở hộp thông tin (hiện khi box đã thu gọn) */}
+        <div 
+          className={`absolute z-10 top-1/2 -translate-y-1/2 left-0 transition-transform duration-500 ease-in-out ${isHeroBoxOpen ? '-translate-x-[150%] pointer-events-none' : 'translate-x-0 pointer-events-auto'}`}
+        >
+          <button 
+            onClick={() => setIsHeroBoxOpen(true)}
+            className="bg-white/95 backdrop-blur-xl py-3 px-2 shadow-2xl border border-outline-variant/30 border-l-0 rounded-r-2xl text-[#00236f] hover:bg-[#00236f] hover:text-white transition-colors flex items-center"
+            title="Hiện danh sách trạm"
           >
-            <button 
-              onClick={() => setIsHeroBoxOpen(true)}
-              className="bg-white/95 backdrop-blur-xl py-3 px-2 shadow-2xl border border-outline-variant/30 border-l-0 rounded-r-2xl text-[#00236f] hover:bg-[#00236f] hover:text-white transition-colors flex items-center"
-              title="Hiện danh sách trạm"
-            >
-              <span className="material-symbols-outlined text-[28px]">chevron_right</span>
-            </button>
-          </div>
+            <span className="material-symbols-outlined text-[28px]">chevron_right</span>
+          </button>
         </div>
       </section>
 
