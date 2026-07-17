@@ -54,6 +54,7 @@ export default function Home() {
   const [selectedBranchId, setSelectedBranchId] = useState('BR-LD');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFindingLocation, setIsFindingLocation] = useState(false);
+  const [isHeroBoxOpen, setIsHeroBoxOpen] = useState(true);
 
   const [mainPackages, setMainPackages] = useState([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
@@ -271,8 +272,18 @@ export default function Home() {
 
         {/* Nội dung hộp kính bên trái */}
         <div className="relative z-10 max-w-container-max mx-auto h-full px-margin-desktop flex items-center pointer-events-none">
-          <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl max-w-md w-full shadow-2xl animate-fade-in-up border border-outline-variant/30 pointer-events-auto">
-            <h1 className="font-display-lg text-4xl mb-3 text-[#00236f] leading-tight font-extrabold">
+          <div className={`bg-white/90 backdrop-blur-xl p-8 rounded-3xl max-w-md w-full shadow-2xl border border-outline-variant/30 pointer-events-auto relative transition-transform duration-500 ease-in-out ${isHeroBoxOpen ? 'translate-x-0' : '-translate-x-[150%]'}`}>
+            
+            {/* Nút thu gọn */}
+            <button 
+              onClick={() => setIsHeroBoxOpen(false)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-[#00236f] bg-slate-100 hover:bg-blue-50 w-8 h-8 flex items-center justify-center rounded-full transition-colors z-20 shadow-sm"
+              title="Ẩn hộp thông tin"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+
+            <h1 className="font-display-lg text-4xl mb-3 text-[#00236f] leading-tight font-extrabold pr-8">
               Trạm rửa xe <br />thông minh
             </h1>
             <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
@@ -324,6 +335,19 @@ export default function Home() {
                 ))}
               </ul>
             </div>
+          </div>
+          
+          {/* Nút mở hộp thông tin (hiện khi box đã thu gọn) */}
+          <div 
+            className={`absolute z-10 top-1/2 -translate-y-1/2 left-0 transition-transform duration-500 ease-in-out ${isHeroBoxOpen ? '-translate-x-[150%] pointer-events-none' : 'translate-x-0 pointer-events-auto'}`}
+          >
+            <button 
+              onClick={() => setIsHeroBoxOpen(true)}
+              className="bg-white/95 backdrop-blur-xl py-3 px-2 shadow-2xl border border-outline-variant/30 border-l-0 rounded-r-2xl text-[#00236f] hover:bg-[#00236f] hover:text-white transition-colors flex items-center"
+              title="Hiện danh sách trạm"
+            >
+              <span className="material-symbols-outlined text-[28px]">chevron_right</span>
+            </button>
           </div>
         </div>
       </section>
