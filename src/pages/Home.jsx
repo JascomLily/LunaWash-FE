@@ -271,7 +271,7 @@ export default function Home() {
 
         {/* Nội dung hộp kính bên trái */}
         <div className="relative z-10 max-w-container-max mx-auto h-full px-margin-desktop flex items-center pointer-events-none">
-          <div className="glass-card p-8 rounded-3xl max-w-md w-full shadow-2xl animate-fade-in-up border border-outline-variant/30 pointer-events-auto">
+          <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl max-w-md w-full shadow-2xl animate-fade-in-up border border-outline-variant/30 pointer-events-auto">
             <h1 className="font-display-lg text-4xl mb-3 text-[#00236f] leading-tight font-extrabold">
               Trạm rửa xe <br />thông minh
             </h1>
