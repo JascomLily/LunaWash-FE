@@ -1361,9 +1361,13 @@ export default function Booking() {
 
         {/* 3. CHỌN GÓI DỊCH VỤ */}
         <section id="step-3" className={`transition-all duration-500 rounded-3xl p-6 space-y-4 scroll-m-24 ${activeStep === 'step-3' ? 'ring-4 ring-[#4cd7f6] ring-offset-4 ring-offset-background scale-[1.02] shadow-[0_0_30px_rgba(76,215,246,0.15)] z-20 bg-white' : 'border border-outline-variant/40 shadow-sm opacity-60 hover:opacity-100 bg-surface-container-lowest'}`}>
-          <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
+          <h2 className="w-full text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-base">local_car_wash</span>
-            CHỌN GÓI DỊCH VỤ <span className="text-primary normal-case font-semibold ml-2 tracking-normal bg-primary/10 px-2 py-0.5 rounded-md">(Rửa tự động bằng máy)</span>
+            CHỌN GÓI DỊCH VỤ
+            <span className="ml-auto text-primary normal-case font-semibold tracking-normal bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+              <span className="material-symbols-outlined text-base">smart_toy</span>
+              Rửa tự động bằng máy
+            </span>
           </h2>
           {serviceFetchError ? (
             <div className="p-8 text-center text-error border border-error/20 rounded-2xl bg-error/5">
@@ -1538,9 +1542,13 @@ export default function Booking() {
           className="border border-outline-variant/40 shadow-sm rounded-3xl p-6 space-y-6 bg-surface-container-lowest"
         >
           <div className="mb-6 border-b border-outline-variant/20 pb-4">
-            <h2 className="text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
+            <h2 className="w-full text-sm font-extrabold text-outline uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-base">support_agent</span>
-              DỊCH VỤ KÈM THEO <span className="text-secondary normal-case font-semibold ml-2 tracking-normal bg-secondary/10 px-2 py-0.5 rounded-md">(Thực hiện thủ công bởi nhân viên)</span>
+              DỊCH VỤ KÈM THEO
+              <span className="ml-auto text-secondary normal-case font-semibold tracking-normal bg-secondary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                <span className="material-symbols-outlined text-base">handyman</span>
+                Thực hiện thủ công bởi nhân viên
+              </span>
             </h2>
             <p className="text-xs text-on-surface-variant mt-1">Chọn thêm các dịch vụ vệ sinh và chăm sóc chuyên sâu do đội ngũ nhân viên chuyên nghiệp thực hiện. <span className="italic text-primary/80 font-medium">(giá tiền có thể thay đổi theo loại xe)</span></p>
           </div>
