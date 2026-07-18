@@ -1365,7 +1365,7 @@ export default function Booking() {
             <span className="material-symbols-outlined text-base">local_car_wash</span>
             CHỌN GÓI DỊCH VỤ
             <span className="ml-auto text-primary normal-case font-semibold tracking-normal bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-              <span className="material-symbols-outlined text-base">smart_toy</span>
+              <span className="material-symbols-outlined text-base">precision_manufacturing</span>
               Rửa tự động bằng máy
             </span>
           </h2>
@@ -1546,7 +1546,7 @@ export default function Booking() {
               <span className="material-symbols-outlined text-base">support_agent</span>
               DỊCH VỤ KÈM THEO
               <span className="ml-auto text-secondary normal-case font-semibold tracking-normal bg-secondary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-                <span className="material-symbols-outlined text-base">handyman</span>
+                <span className="material-symbols-outlined text-base">person</span>
                 Thực hiện thủ công bởi nhân viên
               </span>
             </h2>
