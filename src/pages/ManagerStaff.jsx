@@ -152,9 +152,10 @@ export default function ManagerStaff() {
             employeeId: emp.id,
             fullName: emp.fullName,
             role: emp.role,
-            status: record?.status ? getStatusText(record.status) : 'Vắng mặt',
+            status: record?.status ? getStatusText(record.status) : '',
             checkInTime: checkInTime,
-            note: record?.note || ''
+            note: record?.note || '',
+            isConfirmed: !!record?.status
           };
         }).filter(Boolean);
 
@@ -338,24 +339,20 @@ const handleAddEmployee = async (e) => {
     }
   };
 
-  const handleRealtimeCheckIn = async (empId) => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-        body: JSON.stringify({ employeeId: empId, branchId: user.branchId || 'BRN-LD-01' })
-      });
-      if (res.ok) {
-        toast.success("Điểm danh thành công!");
-        const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, status: 'Có mặt' } : a));
-      } else {
-        toast.error("Check-in thất bại (đã check-in rồi hoặc lỗi server)");
-      }
-    } catch (error) {
-      toast.error("Lỗi: " + error.message);
+  const handleConfirmRow = (empId, status) => {
+    if (!status) {
+      toast.error("Vui lòng chọn trạng thái trước khi xác nhận");
+      return;
     }
-  };  return (
+    
+    const isPresentOrLate = status === 'Có mặt' || status === 'Vào muộn';
+    const time = isPresentOrLate ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    
+    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, isConfirmed: true } : a));
+    toast.success(`Đã ghi nhận ${status} cho nhân viên`);
+  };
+
+  return (
     <main className="min-h-screen bg-background pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
       <div className="max-w-container-max mx-auto">
         
@@ -738,8 +735,10 @@ const handleAddEmployee = async (e) => {
                           <select
                             value={a.status}
                             onChange={(e) => handleUpdateStatus(a.employeeId, e.target.value)}
-                            className="bg-white border border-outline-variant/50 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none transition-all"
+                            disabled={a.isConfirmed}
+                            className={`bg-white border border-outline-variant/50 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none transition-all ${a.isConfirmed ? 'opacity-70 cursor-not-allowed bg-slate-50' : ''}`}
                           >
+                            <option value="" disabled>Chưa chọn</option>
                             <option value="Có mặt">Có mặt</option>
                             <option value="Vào muộn">Vào muộn</option>
                             <option value="Vắng mặt">Vắng mặt</option>
@@ -747,15 +746,19 @@ const handleAddEmployee = async (e) => {
                           </select>
                         </td>
                         <td className="px-6 py-4 font-mono font-bold text-on-surface-variant">
-                          {a.checkInTime === '--:--' ? (
+                          {!a.isConfirmed ? (
                             <button 
-                              onClick={() => handleRealtimeCheckIn(a.employeeId)}
-                              className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                              onClick={() => handleConfirmRow(a.employeeId, a.status)}
+                              disabled={!a.status}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm whitespace-nowrap active:scale-95
+                                ${a.status 
+                                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white' 
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'}`}
                             >
-                              Điểm danh
+                              Xác nhận
                             </button>
                           ) : (
-                            a.checkInTime
+                            <span className="text-[#00236f]">{a.checkInTime}</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
