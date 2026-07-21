@@ -27,7 +27,6 @@ export default function ManagerStaff() {
   };
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
-  const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [scheduleTemplates, setScheduleTemplates] = useState([]);
   const [weeklyLeaves, setWeeklyLeaves] = useState([]);
@@ -126,7 +125,7 @@ export default function ManagerStaff() {
           recordedAtt = await res.json();
         }
 
-        const targetTemplates = scheduleTemplates.filter(t => t.shift === selectedShiftFilter);
+        const targetTemplates = scheduleTemplates.filter(t => t.shift === selectedShift);
 
         const newAttendance = targetTemplates.map(t => {
           const emp = employees.find(e => e.id === t.employeeId);
@@ -181,7 +180,7 @@ export default function ManagerStaff() {
       };
 
     loadAttendanceData();
-  }, [selectedDate, selectedShiftFilter, scheduleTemplates, employees, user]);
+  }, [selectedDate, selectedShift, scheduleTemplates, employees, user]);
 
   if (!user) return null;
 
@@ -254,7 +253,7 @@ export default function ManagerStaff() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({
           branchId: branchId,
-          shift: selectedShiftFilter,
+          shift: selectedShift,
           attendances: attendanceData.map(a => ({ employeeId: a.id, status: statusMap[a.status] || 'Absent', note: a.note || '' }))
         })
       });
@@ -369,7 +368,7 @@ const handleAddEmployee = async (e) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({
           branchId: branchId,
-          shift: selectedShiftFilter,
+          shift: selectedShift,
           attendances: [{ employeeId: empId, status: statusMap[status] || 'Absent', note: empData?.note || '' }]
         })
       });
