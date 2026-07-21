@@ -33,10 +33,6 @@ export default function ManagerStaff() {
   
   const DAYS_OFF = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật', 'Chưa xếp'];
   const SHIFTS = ['Ca sáng', 'Ca chiều', 'Ca bảo trì', 'Chưa xếp'];
-  const [incidentLog, setIncidentLog] = useState([
-    { id: 'INC-001', title: 'Máy nén khí trạm 1 rò rỉ áp suất nhẹ', date: '05/06/2026', status: 'Đã khắc phục' },
-    { id: 'INC-002', title: 'Thiếu hóa chất tạo bọt bóng Premium', date: '06/06/2026', status: 'Đang xử lý' }
-  ]);
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyLogs, setHistoryLogs] = useState([]);
@@ -267,20 +263,6 @@ export default function ManagerStaff() {
     }
   };
 
-  const handleAddIncident = () => {
-    const title = prompt('Nhập nội dung sự cố vận hành:');
-    if (!title) return;
-    const newIncident = {
-      id: `INC-${Date.now().toString().slice(-3)}`,
-      title,
-      date: new Date().toLocaleDateString('vi-VN'),
-      status: 'Đang xử lý'
-    };
-    const updated = [newIncident, ...incidentLog];
-    setIncidentLog(updated);
-    alert('Đã thêm báo cáo sự cố thành công!');
-  };
-
   const attTotal = attendanceData.length;
   const attPresent = attendanceData.filter(a => a.status === 'Có mặt').length;
   const attLate = attendanceData.filter(a => a.status === 'Vào muộn').length;
@@ -491,13 +473,6 @@ const handleAddEmployee = async (e) => {
                   <span className="material-symbols-outlined text-base">description</span>
                   Báo cáo vận hành
                 </button>
-                <button
-                  onClick={handleAddIncident}
-                  className="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-base text-rose-600">report_problem</span>
-                  Nhật ký sự cố
-                </button>
               </div>
             </div>
 
@@ -553,31 +528,6 @@ const handleAddEmployee = async (e) => {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              </div>
-
-              {/* Incidents logs */}
-              <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
-                <h3 className="font-bold text-primary text-base mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-rose-600 font-bold">incident</span>
-                  Nhật ký sự cố gần đây
-                </h3>
-                <div className="flex flex-col gap-4">
-                  {incidentLog.map((inc) => (
-                    <div key={inc.id} className="p-4 bg-surface-container-low/50 rounded-2xl border border-outline-variant/20 flex flex-col gap-2 relative">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-mono font-bold text-outline">{inc.id} • {inc.date}</span>
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                          inc.status === 'Đã khắc phục' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700 animate-pulse'
-                        }`}>
-                          {inc.status}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-on-surface leading-tight">
-                        {inc.title}
-                      </p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
