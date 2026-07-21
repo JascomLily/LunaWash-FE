@@ -734,8 +734,8 @@ export default function StaffQueue() {
                                   <span className="material-symbols-outlined text-sm">play_arrow</span>
                                   Bắt đầu rửa
                                 </button>
-                              )
-                            ) : b.status === 'Washing' ? (
+                              );
+                            })() : b.status === 'Washing' ? (
                               <button
                                 onClick={() => updateBookingStatus(b.id, 'Completed')}
                                 className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto"
