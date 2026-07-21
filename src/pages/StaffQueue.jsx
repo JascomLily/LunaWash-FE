@@ -264,7 +264,8 @@ export default function StaffQueue() {
                 if (parts.length >= 4) {
                   const endTimeStr = parts[2]; // "21:45"
                   const dateStr = parts[3]; // "16-06-2026"
-                  const [day, month, year] = dateStr.split('-');
+                  const separator = dateStr.includes('/') ? '/' : '-';
+                  const [day, month, year] = dateStr.split(separator);
                   const [hours, mins] = endTimeStr.split(':');
                   const endTime = new Date(year, month - 1, day, hours, mins);
                   
