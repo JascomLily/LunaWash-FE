@@ -807,7 +807,8 @@ const handleAddEmployee = async (e) => {
                 </table>
               </div>
             </div>
-
+          </div>
+        )}
 
       </div>
       {/* Assign Shift Modal Removed */}
