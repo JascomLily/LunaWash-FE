@@ -774,159 +774,40 @@ const handleAddEmployee = async (e) => {
               </div>
             </div>
 
-            {/* Bottom Row: Custom SVG Chart & Weekly Performance Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-              {/* Custom interactive SVG bar chart for attendance rate */}
-              <div className="lg:col-span-2 glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
-                <h3 className="font-bold text-primary text-base mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#00236f] font-bold">bar_chart</span>
-                  Tỷ lệ đi làm tuần này (01/06 - 07/06)
-                </h3>
-                
-                {/* Custom SVG chart wrapper */}
-                <div className="relative w-full h-64 flex items-center justify-center bg-white/30 rounded-2xl border border-outline-variant/10 p-4">
-                  <svg className="w-full h-full" viewBox="0 0 600 220">
-                    {/* Gradients */}
-                    <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00236f" stopOpacity="0.9" />
-                        <stop offset="100%" stopColor="#00687a" stopOpacity="0.4" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Y-Axis lines */}
-                    <line x1="50" y1="20" x2="550" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="65" x2="550" y2="65" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="110" x2="550" y2="110" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="155" x2="550" y2="155" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="180" x2="550" y2="180" stroke="#e2e8f0" strokeWidth="1.5" />
-
-                    {/* Y-Axis labels */}
-                    <text x="35" y="24" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">100%</text>
-                    <text x="35" y="69" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">75%</text>
-                    <text x="35" y="114" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">50%</text>
-                    <text x="35" y="159" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">25%</text>
-                    <text x="35" y="184" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">0%</text>
-
-                    {/* Bars data */}
-                    {/* Monday: 92%, Tuesday: 100%, Wednesday: 83%, Thursday: 92%, Friday: 75%, Saturday: 100%, Sunday: 92% */}
-                    {/* Width of each bar is 32. Spacing is 40. Start x at 80. */}
-                    {[
-                      { label: 'T2', val: 92 },
-                      { label: 'T3', val: 100 },
-                      { label: 'T4', val: 83 },
-                      { label: 'T5', val: 92 },
-                      { label: 'T6', val: 75 },
-                      { label: 'T7', val: 100 },
-                      { label: 'CN', val: 92 }
-                    ].map((bar, i) => {
-                      const barHeight = (bar.val / 100) * 160;
-                      const x = 75 + i * 66;
-                      const y = 180 - barHeight;
-
-                      return (
-                        <g key={bar.label} className="cursor-pointer group">
-                          {/* Main bar */}
-                          <rect
-                            x={x}
-                            y={y}
-                            width="32"
-                            height={barHeight}
-                            rx="6"
-                            fill="url(#barGradient)"
-                            className="transition-all duration-300 hover:fill-[#00236f] hover:opacity-100"
-                          />
-                          {/* Value bubble on hover */}
-                          <rect
-                            x={x - 4}
-                            y={y - 25}
-                            width="40"
-                            height="18"
-                            rx="4"
-                            fill="#1e293b"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          />
-                          <text
-                            x={x + 16}
-                            y={y - 13}
-                            fill="#ffffff"
-                            fontSize="9"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            {bar.val}%
-                          </text>
-                          {/* Day label */}
-                          <text
-                            x={x + 16}
-                            y="200"
-                            fill="#334155"
-                            fontSize="11"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                          >
-                            {bar.label}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
-              </div>
-
-              {/* Attendance Quick Stats Panel */}
-              <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-primary text-base mb-4">Thống kê chuyên cần tuần</h3>
-                  <div className="flex flex-col gap-4">
-                    {/* Đúng giờ */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Đúng giờ</span>
-                        <span className="text-emerald-700">84%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 h-full rounded-full" style={{ width: '84%' }}></div>
-                      </div>
-                    </div>
-
-                    {/* Nghỉ phép */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Nghỉ phép có lý do</span>
-                        <span className="text-blue-700">12%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 h-full rounded-full" style={{ width: '12%' }}></div>
-                      </div>
-                    </div>
-
-                    {/* Vi phạm */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Vi phạm (Muộn/Không phép)</span>
-                        <span className="text-rose-700">4%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-rose-500 h-full rounded-full" style={{ width: '4%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => alert("Đang tải tệp báo cáo chi tiết chuyên cần tuần...")}
-                  className="w-full mt-6 py-3 bg-[#f8fafc] hover:bg-surface-container-high text-primary border border-outline-variant/50 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-sm">assignment</span>
-                  Xem báo cáo chi tiết
-                </button>
+            {/* Bottom Row: Weekly Leave Summary */}
+            <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
+              <h3 className="font-bold text-primary text-base mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#00236f] font-bold">event_busy</span>
+                Tổng quan nhân viên nghỉ phép tuần này
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-outline-variant/20">
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Nhân viên</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Vai Trò</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Ngày nghỉ</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Lý do (Ghi chú)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    <tr className="hover:bg-surface-container-low/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-on-surface">Kỹ thuật viên 1</td>
+                      <td className="px-6 py-4 text-on-surface-variant">Kỹ thuật</td>
+                      <td className="px-6 py-4 font-medium text-amber-700">Thứ Tư (17/06)</td>
+                      <td className="px-6 py-4 text-outline">Nghỉ ốm (Có phép)</td>
+                    </tr>
+                    <tr className="hover:bg-surface-container-low/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-on-surface">Nhân viên CSX 14</td>
+                      <td className="px-6 py-4 text-on-surface-variant">Chăm sóc xe</td>
+                      <td className="px-6 py-4 font-medium text-amber-700">Thứ Sáu (19/06)</td>
+                      <td className="px-6 py-4 text-outline">Việc gia đình (Có phép)</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-          </div>
-        )}
 
       </div>
       {/* Assign Shift Modal Removed */}
