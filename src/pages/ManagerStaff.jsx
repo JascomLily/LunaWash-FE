@@ -136,9 +136,21 @@ export default function ManagerStaff() {
     });
   };
 
-  const handleSaveTemplates = async () => {
+  const getUserIdFromToken = (token) => {
+    if (!token) return '';
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.nameid || payload.sub || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '';
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const handleSaveTemplates = async () => {
+    const branchId = user?.branchId || 'BRN-LD-01';
+    const managerId = getUserIdFromToken(user?.token);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${managerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ templates: scheduleTemplates })
