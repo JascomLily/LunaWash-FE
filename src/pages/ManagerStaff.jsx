@@ -352,7 +352,7 @@ const handleAddEmployee = async (e) => {
     }
   };
 
-  const handleConfirmRow = (empId, status) => {
+  const handleConfirmRow = async (empId, status) => {
     if (!status) {
       toast.error("Vui lòng chọn trạng thái trước khi xác nhận");
       return;
@@ -360,9 +360,29 @@ const handleAddEmployee = async (e) => {
     
     const isPresentOrLate = status === 'Có mặt' || status === 'Vào muộn';
     const time = isPresentOrLate ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    const empData = attendanceData.find(a => a.id === empId);
     
-    setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, isConfirmed: true } : a));
-    toast.success(`Đã ghi nhận ${status} cho nhân viên`);
+    try {
+      const statusMap = { 'Có mặt': 'Present', 'Vào muộn': 'Late', 'Vắng mặt': 'Absent', 'Có phép': 'OnLeave' };
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/attendance`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+        body: JSON.stringify({
+          branchId: branchId,
+          shift: selectedShiftFilter,
+          attendances: [{ employeeId: empId, status: statusMap[status] || 'Absent', note: empData?.note || '' }]
+        })
+      });
+
+      if (response.ok) {
+        setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, isConfirmed: true } : a));
+        toast.success(`Đã lưu ${status} cho nhân viên`);
+      } else {
+        toast.error("Có lỗi xảy ra khi lưu trên server!");
+      }
+    } catch (error) {
+      toast.error("Lỗi mạng: " + error.message);
+    }
   };
 
   return (
