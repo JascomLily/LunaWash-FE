@@ -112,6 +112,63 @@ export default function ManagerStaff() {
     fetchTemplates();
   }, [user?.branchId]);
 
+  useEffect(() => {
+    const loadAttendanceData = async () => {
+      if (!user?.branchId || employees.length === 0) return;
+      setIsAttendanceLoading(true);
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId}/attendance?date=${selectedDate}`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        let recordedAtt = [];
+        if (res.ok) {
+          recordedAtt = await res.json();
+        }
+
+        const targetTemplates = scheduleTemplates.filter(t => t.shift === selectedShiftFilter);
+
+        const newAttendance = targetTemplates.map(t => {
+          const emp = employees.find(e => e.id === t.employeeId);
+          if (!emp) return null;
+          
+          const record = recordedAtt.find(r => r.userId === t.employeeId);
+          
+          const getStatusText = (status) => {
+            if (status === 'Present') return 'Có mặt';
+            if (status === 'Late') return 'Vào muộn';
+            if (status === 'Absent') return 'Vắng mặt';
+            if (status === 'OnLeave') return 'Có phép';
+            return 'Vắng mặt';
+          };
+          
+          let checkInTime = '--:--';
+          if (record?.checkInTime) {
+              const d = new Date(record.checkInTime);
+              checkInTime = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          }
+
+          return {
+            id: emp.id,
+            employeeId: emp.id,
+            fullName: emp.fullName,
+            role: emp.role,
+            status: record?.status ? getStatusText(record.status) : 'Vắng mặt',
+            checkInTime: checkInTime,
+            note: record?.note || ''
+          };
+        }).filter(Boolean);
+
+        setAttendanceData(newAttendance);
+      } catch (err) {
+        toast.error("Lỗi khi tải điểm danh: " + err.message);
+      } finally {
+        setIsAttendanceLoading(false);
+      }
+    };
+
+    loadAttendanceData();
+  }, [selectedDate, selectedShiftFilter, scheduleTemplates, employees, user]);
+
   if (!user) return null;
 
   const branchId = user.branchId || 'BRN-LD-01';
