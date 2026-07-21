@@ -81,6 +81,44 @@ export default function UserProfile() {
   const [isAddingCar, setIsAddingCar] = useState(false);
 
   const [vouchers, setVouchers] = useState([]);
+  
+  // Schedule states
+  const [mySchedule, setMySchedule] = useState({ shift: 'Ca sáng', dayOff: 'Thứ Hai' });
+  const [scheduleWeek, setScheduleWeek] = useState([]);
+  const [currentWeekLabel, setCurrentWeekLabel] = useState('');
+
+  useEffect(() => {
+    const getWeekDays = () => {
+      const today = new Date();
+      const day = today.getDay(); 
+      const mondayDiff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayDiff);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      const formatShort = (d) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+      setCurrentWeekLabel(`${formatShort(monday)} - ${formatShort(sunday)}`);
+      
+      const week = [];
+      const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      const dayOffNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const dateStr = formatShort(d);
+        week.push({
+          day: dayNames[d.getDay()],
+          dayOffName: dayOffNames[d.getDay()],
+          date: dateStr,
+          isWeekend: d.getDay() === 0
+        });
+      }
+      setScheduleWeek(week);
+    };
+    getWeekDays();
+  }, []);
 
   const [carName, setCarName] = useState('');
   const [carLicense, setCarLicense] = useState('');
@@ -152,33 +190,59 @@ export default function UserProfile() {
             throw new Error('Lỗi lấy danh sách xe.');
           })
           .then(data => {
-            setCars(data); // Expects array of { id, name, license, color, ... }
-          })
-          .catch(err => console.warn('Lỗi lấy xe:', err));
+            setCars(data);
+            // 3. Fetch bookings (/api/bookings/history)
+            fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
+              headers: { 'Authorization': `Bearer ${parsed.token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+              if (Array.isArray(data)) {
+                // Map data similar to BookingHistory.jsx
+                const mapped = data.slice(0, 3).map(b => ({
+                  id: b.id,
+                  packageName: b.packageName,
+                  vehicle: b.vehicleInfo,
+                  extras: b.extras,
+                  branch: b.branchInfo,
+                  slot: b.slotName,
+                  time: b.timeRange,
+                  totalPrice: b.totalPrice,
+                  status: b.status
+                }));
+                setBookings(mapped);
+              }
+            })
+            .catch(err => console.warn('Lỗi lấy lịch sử đặt lịch:', err));
 
-          // 3. Fetch bookings (/api/bookings/history)
-          fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
-            headers: { 'Authorization': `Bearer ${parsed.token}` }
-          })
-          .then(res => res.ok ? res.json() : [])
-          .then(data => {
-            if (Array.isArray(data)) {
-              // Map data similar to BookingHistory.jsx
-              const mapped = data.slice(0, 3).map(b => ({
-                id: b.id,
-                packageName: b.packageName,
-                vehicle: b.vehicleInfo,
-                extras: b.extras,
-                branch: b.branchInfo,
-                slot: b.slotName,
-                time: b.timeRange,
-                totalPrice: b.totalPrice,
-                status: b.status
-              }));
-              setBookings(mapped);
+            // 4. Fetch schedule for staff
+            if (parsed.tier === 'Staff' || parsed.tier === 'BranchManager' || parsed.tier === 'TechnicalStaff') {
+              if (parsed.branchId) {
+                const getUserIdFromToken = (token) => {
+                  if (!token) return '';
+                  try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    return payload.nameid || payload.sub || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '';
+                  } catch (e) { return ''; }
+                };
+                const userId = getUserIdFromToken(parsed.token);
+                fetch(import.meta.env.VITE_API_URL + `/api/StaffManagement/branch/${parsed.branchId}/templates`, {
+                  headers: { 'Authorization': `Bearer ${parsed.token}` }
+                })
+                .then(res => res.ok ? res.json() : [])
+                .then(data => {
+                  if (Array.isArray(data)) {
+                    const myTemplate = data.find(t => t.id === userId || t.employeeId === userId);
+                    if (myTemplate) {
+                      setMySchedule({ shift: myTemplate.shift || 'Ca sáng', dayOff: myTemplate.dayOff || 'Thứ Hai' });
+                    }
+                  }
+                })
+                .catch(err => console.error('Lỗi lấy lịch làm việc:', err));
+              }
             }
           })
-          .catch(err => console.warn('Lỗi lấy lịch sử:', err));
+          .catch(err => console.warn('Lỗi lấy xe:', err));
         }
       } catch (e) {
         console.error(e);
@@ -722,31 +786,28 @@ export default function UserProfile() {
                 <h3 className="font-bold text-xl text-primary">Lịch làm việc & Ca trực</h3>
                 <div className="flex items-center gap-2 text-on-surface-variant text-sm font-medium">
                   <span className="material-symbols-outlined text-lg">calendar_month</span>
-                  Tuần này (15/05 - 21/05)
+                  Tuần này ({currentWeekLabel})
                 </div>
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                {[
-                  { day: 'T2', date: '15/05', shift: 'Sáng', time: '08:00 - 12:00', status: 'Đã phân công', type: 'work' },
-                  { day: 'T3', date: '16/05', shift: 'Chiều', time: '13:00 - 17:00', status: 'Đã phân công', type: 'work' },
-                  { day: 'T4', date: '17/05', type: 'off' },
-                  { day: 'T5', date: '18/05', shift: 'Sáng', time: '08:00 - 12:00', status: 'Đã phân công', type: 'work' },
-                  { day: 'T6', date: '19/05', shift: 'Tối', time: '18:00 - 22:00', status: 'Đã phân công', type: 'work' },
-                  { day: 'T7', date: '20/05', shift: 'Sáng', time: '08:00 - 12:00', status: 'Đã phân công', type: 'work' },
-                  { day: 'CN', date: '21/05', type: 'off', isWeekend: true },
-                ].map((item, idx) => (
+                {scheduleWeek.map((item, idx) => {
+                  const isOff = item.dayOffName === mySchedule.dayOff;
+                  const shiftName = mySchedule.shift === 'Ca sáng' ? 'Sáng' : mySchedule.shift === 'Ca chiều' ? 'Chiều' : mySchedule.shift === 'Ca bảo trì' ? 'Bảo trì' : 'Chưa rõ';
+                  const shiftTime = mySchedule.shift === 'Ca sáng' ? '04:00 - 14:30' : mySchedule.shift === 'Ca chiều' ? '14:30 - 00:15' : mySchedule.shift === 'Ca bảo trì' ? '00:15 - 04:00' : '--:--';
+                  
+                  return (
                   <div key={idx} className="flex flex-col gap-2">
                     <div className="bg-surface-container-low py-2 rounded-xl text-center">
                       <p className={`text-xs font-bold ${item.isWeekend ? 'text-error' : 'text-outline'}`}>{item.day}</p>
                       <p className={`text-sm font-black ${item.isWeekend ? 'text-error' : 'text-on-surface'}`}>{item.date}</p>
                     </div>
-                    {item.type === 'work' ? (
-                      <div className="border-l-4 border-cyan-600 bg-surface-container-lowest border-t border-r border-b border-outline-variant/30 rounded-r-xl p-3 shadow-sm flex flex-col h-full">
-                        <p className="font-bold text-xs text-primary">{item.shift}</p>
-                        <p className="font-bold text-on-surface text-xs mb-2">{item.time}</p>
+                    {!isOff ? (
+                      <div className={`border-l-4 ${mySchedule.shift === 'Ca sáng' ? 'border-cyan-600' : mySchedule.shift === 'Ca chiều' ? 'border-amber-500' : 'border-indigo-500'} bg-surface-container-lowest border-t border-r border-b border-outline-variant/30 rounded-r-xl p-3 shadow-sm flex flex-col h-full`}>
+                        <p className={`font-bold text-xs ${mySchedule.shift === 'Ca sáng' ? 'text-cyan-700' : mySchedule.shift === 'Ca chiều' ? 'text-amber-700' : 'text-indigo-700'}`}>{shiftName}</p>
+                        <p className="font-bold text-on-surface text-xs mb-2">{shiftTime}</p>
                         <span className="mt-auto inline-flex items-center justify-center bg-cyan-50 text-cyan-700 px-2 py-1 rounded text-[10px] font-bold">
-                          {item.status}
+                          Đã phân công
                         </span>
                       </div>
                     ) : (
@@ -755,7 +816,7 @@ export default function UserProfile() {
                       </div>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
             </article>
 
