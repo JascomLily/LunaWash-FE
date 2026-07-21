@@ -477,9 +477,9 @@ const handleAddEmployee = async (e) => {
             </div>
 
             {/* Main Content Area Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div className="grid grid-cols-1 gap-gutter">
               {/* Employee table */}
-              <div className="lg:col-span-2 glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
+              <div className="glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
                 <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
                   <h3 className="font-bold text-primary text-base">Danh sách nhân viên trạm</h3>
                   <button onClick={() => setShowAddModal(true)} className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs transition-all shadow-sm flex items-center gap-1">
