@@ -27,16 +27,12 @@ export default function ManagerStaff() {
   };
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
-  const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [scheduleTemplates, setScheduleTemplates] = useState([]);
+  const [weeklyLeaves, setWeeklyLeaves] = useState([]);
   
   const DAYS_OFF = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật', 'Chưa xếp'];
   const SHIFTS = ['Ca sáng', 'Ca chiều', 'Ca bảo trì', 'Chưa xếp'];
-  const [incidentLog, setIncidentLog] = useState([
-    { id: 'INC-001', title: 'Máy nén khí trạm 1 rò rỉ áp suất nhẹ', date: '05/06/2026', status: 'Đã khắc phục' },
-    { id: 'INC-002', title: 'Thiếu hóa chất tạo bọt bóng Premium', date: '06/06/2026', status: 'Đang xử lý' }
-  ]);
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyLogs, setHistoryLogs] = useState([]);
@@ -60,7 +56,9 @@ export default function ManagerStaff() {
 
   const fetchEmployees = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${parsedUser.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${parsedUser.branchId || 'BRN-LD-01'}`, {
+          headers: { 'Authorization': `Bearer ${parsedUser.token}` }
+        });
         if (res.ok) {
           const data = await res.json();
           const mappedData = data.map(emp => ({
@@ -92,7 +90,9 @@ export default function ManagerStaff() {
     const fetchTemplates = async () => {
       if (!user?.branchId) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/templates`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${user.branchId}/templates`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
         if (response.ok) {
           const data = await response.json();
           setScheduleTemplates(data.map(t => ({
@@ -107,6 +107,76 @@ export default function ManagerStaff() {
     };
     fetchTemplates();
   }, [user?.branchId]);
+
+  useEffect(() => {
+    const loadAttendanceData = async () => {
+      if (!user?.branchId || employees.length === 0) return;
+      setIsAttendanceLoading(true);
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId}/attendance?date=${selectedDate}`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        let recordedAtt = [];
+        if (res.ok) {
+          recordedAtt = await res.json();
+        }
+
+        const targetTemplates = scheduleTemplates.filter(t => t.shift === selectedShift);
+
+        const newAttendance = targetTemplates.map(t => {
+          const emp = employees.find(e => e.id === t.employeeId);
+          if (!emp) return null;
+          
+          const record = recordedAtt.find(r => r.userId === t.employeeId);
+          
+          const getStatusText = (status) => {
+            if (status === 'Present') return 'Có mặt';
+            if (status === 'Late') return 'Vào muộn';
+            if (status === 'Absent') return 'Vắng mặt';
+            if (status === 'OnLeave') return 'Có phép';
+            return 'Vắng mặt';
+          };
+          
+          let checkInTime = '--:--';
+          if (record?.checkInTime) {
+              const d = new Date(record.checkInTime);
+              checkInTime = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          }
+
+          return {
+            id: emp.id,
+            employeeId: emp.id,
+            fullName: emp.fullName,
+            role: emp.role,
+            status: record?.status ? getStatusText(record.status) : '',
+            checkInTime: checkInTime,
+            note: record?.note || '',
+            isConfirmed: !!record?.status
+          };
+        }).filter(Boolean);
+
+        setAttendanceData(newAttendance);
+        } catch (error) {
+          toast.error("Lỗi khi lấy dữ liệu điểm danh: " + error.message);
+        }
+        
+        try {
+          const resLeaves = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId}/weekly-leaves?date=${selectedDate}`, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+          });
+          if (resLeaves.ok) {
+            const leavesData = await resLeaves.json();
+            setWeeklyLeaves(leavesData);
+          }
+        } catch (error) {
+          console.error("Lỗi lấy dữ liệu nghỉ phép tuần:", error);
+        } finally {
+          setIsAttendanceLoading(false);
+        }
+      };
+
+    loadAttendanceData();
+  }, [selectedDate, selectedShift, scheduleTemplates, employees, user]);
 
   if (!user) return null;
 
@@ -132,11 +202,23 @@ export default function ManagerStaff() {
     });
   };
 
-  const handleSaveTemplates = async () => {
+  const getUserIdFromToken = (token) => {
+    if (!token) return '';
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${user.id}`, {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.nameid || payload.sub || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '';
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const handleSaveTemplates = async () => {
+    const branchId = user?.branchId || 'BRN-LD-01';
+    const managerId = getUserIdFromToken(user?.token);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/templates?branchId=${branchId}&managerId=${managerId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ templates: scheduleTemplates })
       });
       if (response.ok) {
@@ -152,20 +234,23 @@ export default function ManagerStaff() {
 
   const fetchHistory = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${branchId}/history`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/branch/${branchId}/history`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
       if (response.ok) setHistoryLogs(await response.json());
     } catch (error) { toast.error("Lỗi khi tải lịch sử sửa đổi: " + error.message); }
   };
 
   const handleSaveAttendance = async () => {
     try {
+      const statusMap = { 'Có mặt': 'Present', 'Vào muộn': 'Late', 'Vắng mặt': 'Absent', 'Có phép': 'OnLeave' };
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/attendance`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({
           branchId: branchId,
-          shift: selectedShiftFilter,
-          attendances: attendanceData.map(a => ({ employeeId: a.id, status: a.status, note: a.note }))
+          shift: selectedShift,
+          attendances: attendanceData.map(a => ({ employeeId: a.id, status: statusMap[a.status] || 'Absent', note: a.note || '' }))
         })
       });
       if (response.ok) {
@@ -176,20 +261,6 @@ export default function ManagerStaff() {
     } catch (error) { 
       toast.error("Lỗi khi lưu điểm danh: " + error.message);
     }
-  };
-
-  const handleAddIncident = () => {
-    const title = prompt('Nhập nội dung sự cố vận hành:');
-    if (!title) return;
-    const newIncident = {
-      id: `INC-${Date.now().toString().slice(-3)}`,
-      title,
-      date: new Date().toLocaleDateString('vi-VN'),
-      status: 'Đang xử lý'
-    };
-    const updated = [newIncident, ...incidentLog];
-    setIncidentLog(updated);
-    alert('Đã thêm báo cáo sự cố thành công!');
   };
 
   const attTotal = attendanceData.length;
@@ -211,7 +282,7 @@ const handleAddEmployee = async (e) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ ...newEmployee, salary: Number(newEmployee.salary), leaveDays: Number(newEmployee.leaveDays), branchId: user.branchId || 'BRN-LD-01' })
       });
       if (response.ok) {
@@ -219,7 +290,9 @@ const handleAddEmployee = async (e) => {
         setShowAddModal(false);
         setNewEmployee({ fullName: '', email: '', phoneNumber: '', roleId: 'ROL-02', salary: '', leaveDays: '' });
         
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId || 'BRN-LD-01'}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId || 'BRN-LD-01'}`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
         if (res.ok) {
             const data = await res.json();
             setEmployees(data.map(emp => ({
@@ -246,7 +319,8 @@ const handleAddEmployee = async (e) => {
     if(!confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${user.token}` }
       });
       if (response.ok) {
         toast.success("Xóa nhân viên thành công!");
@@ -259,24 +333,40 @@ const handleAddEmployee = async (e) => {
     }
   };
 
-  const handleRealtimeCheckIn = async (empId) => {
+  const handleConfirmRow = async (empId, status) => {
+    if (!status) {
+      toast.error("Vui lòng chọn trạng thái trước khi xác nhận");
+      return;
+    }
+    
+    const isPresentOrLate = status === 'Có mặt' || status === 'Vào muộn';
+    const time = isPresentOrLate ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    const empData = attendanceData.find(a => a.id === empId);
+    
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId: empId, branchId: user.branchId || 'BRN-LD-01' })
+      const statusMap = { 'Có mặt': 'Present', 'Vào muộn': 'Late', 'Vắng mặt': 'Absent', 'Có phép': 'OnLeave' };
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/StaffManagement/attendance`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+        body: JSON.stringify({
+          branchId: branchId,
+          shift: selectedShift,
+          attendances: [{ employeeId: empId, status: statusMap[status] || 'Absent', note: empData?.note || '' }]
+        })
       });
-      if (res.ok) {
-        toast.success("Điểm danh thành công!");
-        const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, status: 'Có mặt' } : a));
+
+      if (response.ok) {
+        setAttendanceData(prev => prev.map(a => a.id === empId ? { ...a, checkInTime: time, isConfirmed: true } : a));
+        toast.success(`Đã lưu ${status} cho nhân viên`);
       } else {
-        toast.error("Check-in thất bại (đã check-in rồi hoặc lỗi server)");
+        toast.error("Có lỗi xảy ra khi lưu trên server!");
       }
     } catch (error) {
-      toast.error("Lỗi: " + error.message);
+      toast.error("Lỗi mạng: " + error.message);
     }
-  };  return (
+  };
+
+  return (
     <main className="min-h-screen bg-background pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
       <div className="max-w-container-max mx-auto">
         
@@ -383,20 +473,13 @@ const handleAddEmployee = async (e) => {
                   <span className="material-symbols-outlined text-base">description</span>
                   Báo cáo vận hành
                 </button>
-                <button
-                  onClick={handleAddIncident}
-                  className="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-base text-rose-600">report_problem</span>
-                  Nhật ký sự cố
-                </button>
               </div>
             </div>
 
             {/* Main Content Area Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div className="grid grid-cols-1 gap-gutter">
               {/* Employee table */}
-              <div className="lg:col-span-2 glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
+              <div className="glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
                 <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-[#f8fafc]">
                   <h3 className="font-bold text-primary text-base">Danh sách nhân viên trạm</h3>
                   <button onClick={() => setShowAddModal(true)} className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container text-xs transition-all shadow-sm flex items-center gap-1">
@@ -445,31 +528,6 @@ const handleAddEmployee = async (e) => {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              </div>
-
-              {/* Incidents logs */}
-              <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
-                <h3 className="font-bold text-primary text-base mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-rose-600 font-bold">incident</span>
-                  Nhật ký sự cố gần đây
-                </h3>
-                <div className="flex flex-col gap-4">
-                  {incidentLog.map((inc) => (
-                    <div key={inc.id} className="p-4 bg-surface-container-low/50 rounded-2xl border border-outline-variant/20 flex flex-col gap-2 relative">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-mono font-bold text-outline">{inc.id} • {inc.date}</span>
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                          inc.status === 'Đã khắc phục' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700 animate-pulse'
-                        }`}>
-                          {inc.status}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-on-surface leading-tight">
-                        {inc.title}
-                      </p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -659,8 +717,10 @@ const handleAddEmployee = async (e) => {
                           <select
                             value={a.status}
                             onChange={(e) => handleUpdateStatus(a.employeeId, e.target.value)}
-                            className="bg-white border border-outline-variant/50 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none transition-all"
+                            disabled={a.isConfirmed}
+                            className={`bg-white border border-outline-variant/50 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none transition-all ${a.isConfirmed ? 'opacity-70 cursor-not-allowed bg-slate-50' : ''}`}
                           >
+                            <option value="" disabled>Chưa chọn</option>
                             <option value="Có mặt">Có mặt</option>
                             <option value="Vào muộn">Vào muộn</option>
                             <option value="Vắng mặt">Vắng mặt</option>
@@ -668,15 +728,19 @@ const handleAddEmployee = async (e) => {
                           </select>
                         </td>
                         <td className="px-6 py-4 font-mono font-bold text-on-surface-variant">
-                          {a.checkInTime === '--:--' ? (
+                          {!a.isConfirmed ? (
                             <button 
-                              onClick={() => handleRealtimeCheckIn(a.employeeId)}
-                              className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                              onClick={() => handleConfirmRow(a.employeeId, a.status)}
+                              disabled={!a.status}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm whitespace-nowrap active:scale-95
+                                ${a.status 
+                                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white' 
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'}`}
                             >
-                              Điểm danh
+                              Xác nhận
                             </button>
                           ) : (
-                            a.checkInTime
+                            <span className="text-[#00236f]">{a.checkInTime}</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -695,157 +759,45 @@ const handleAddEmployee = async (e) => {
               </div>
             </div>
 
-            {/* Bottom Row: Custom SVG Chart & Weekly Performance Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-              {/* Custom interactive SVG bar chart for attendance rate */}
-              <div className="lg:col-span-2 glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
-                <h3 className="font-bold text-primary text-base mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#00236f] font-bold">bar_chart</span>
-                  Tỷ lệ đi làm tuần này (01/06 - 07/06)
-                </h3>
-                
-                {/* Custom SVG chart wrapper */}
-                <div className="relative w-full h-64 flex items-center justify-center bg-white/30 rounded-2xl border border-outline-variant/10 p-4">
-                  <svg className="w-full h-full" viewBox="0 0 600 220">
-                    {/* Gradients */}
-                    <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00236f" stopOpacity="0.9" />
-                        <stop offset="100%" stopColor="#00687a" stopOpacity="0.4" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Y-Axis lines */}
-                    <line x1="50" y1="20" x2="550" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="65" x2="550" y2="65" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="110" x2="550" y2="110" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="155" x2="550" y2="155" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="50" y1="180" x2="550" y2="180" stroke="#e2e8f0" strokeWidth="1.5" />
-
-                    {/* Y-Axis labels */}
-                    <text x="35" y="24" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">100%</text>
-                    <text x="35" y="69" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">75%</text>
-                    <text x="35" y="114" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">50%</text>
-                    <text x="35" y="159" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">25%</text>
-                    <text x="35" y="184" fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">0%</text>
-
-                    {/* Bars data */}
-                    {/* Monday: 92%, Tuesday: 100%, Wednesday: 83%, Thursday: 92%, Friday: 75%, Saturday: 100%, Sunday: 92% */}
-                    {/* Width of each bar is 32. Spacing is 40. Start x at 80. */}
-                    {[
-                      { label: 'T2', val: 92 },
-                      { label: 'T3', val: 100 },
-                      { label: 'T4', val: 83 },
-                      { label: 'T5', val: 92 },
-                      { label: 'T6', val: 75 },
-                      { label: 'T7', val: 100 },
-                      { label: 'CN', val: 92 }
-                    ].map((bar, i) => {
-                      const barHeight = (bar.val / 100) * 160;
-                      const x = 75 + i * 66;
-                      const y = 180 - barHeight;
-
-                      return (
-                        <g key={bar.label} className="cursor-pointer group">
-                          {/* Main bar */}
-                          <rect
-                            x={x}
-                            y={y}
-                            width="32"
-                            height={barHeight}
-                            rx="6"
-                            fill="url(#barGradient)"
-                            className="transition-all duration-300 hover:fill-[#00236f] hover:opacity-100"
-                          />
-                          {/* Value bubble on hover */}
-                          <rect
-                            x={x - 4}
-                            y={y - 25}
-                            width="40"
-                            height="18"
-                            rx="4"
-                            fill="#1e293b"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          />
-                          <text
-                            x={x + 16}
-                            y={y - 13}
-                            fill="#ffffff"
-                            fontSize="9"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            {bar.val}%
-                          </text>
-                          {/* Day label */}
-                          <text
-                            x={x + 16}
-                            y="200"
-                            fill="#334155"
-                            fontSize="11"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                          >
-                            {bar.label}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
-              </div>
-
-              {/* Attendance Quick Stats Panel */}
-              <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-primary text-base mb-4">Thống kê chuyên cần tuần</h3>
-                  <div className="flex flex-col gap-4">
-                    {/* Đúng giờ */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Đúng giờ</span>
-                        <span className="text-emerald-700">84%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 h-full rounded-full" style={{ width: '84%' }}></div>
-                      </div>
-                    </div>
-
-                    {/* Nghỉ phép */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Nghỉ phép có lý do</span>
-                        <span className="text-blue-700">12%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 h-full rounded-full" style={{ width: '12%' }}></div>
-                      </div>
-                    </div>
-
-                    {/* Vi phạm */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs font-bold mb-1.5">
-                        <span className="text-on-surface-variant">Vi phạm (Muộn/Không phép)</span>
-                        <span className="text-rose-700">4%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-rose-500 h-full rounded-full" style={{ width: '4%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => alert("Đang tải tệp báo cáo chi tiết chuyên cần tuần...")}
-                  className="w-full mt-6 py-3 bg-[#f8fafc] hover:bg-surface-container-high text-primary border border-outline-variant/50 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-sm">assignment</span>
-                  Xem báo cáo chi tiết
-                </button>
+            {/* Bottom Row: Weekly Leave Summary */}
+            <div className="glass-card rounded-[32px] p-6 border border-outline-variant/30 shadow-md">
+              <h3 className="font-bold text-primary text-base mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#00236f] font-bold">event_busy</span>
+                Tổng quan nhân viên nghỉ phép tuần này
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-outline-variant/20">
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Nhân viên</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Vai Trò</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Ngày nghỉ</th>
+                      <th className="px-6 py-4 font-black uppercase text-xs tracking-wider text-on-surface-variant">Lý do (Ghi chú)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {weeklyLeaves.length > 0 ? (
+                      weeklyLeaves.map((leave, idx) => (
+                        <tr key={idx} className="hover:bg-surface-container-low/30 transition-colors">
+                          <td className="px-6 py-4 font-bold text-on-surface">{leave.fullName}</td>
+                          <td className="px-6 py-4 text-on-surface-variant">{leave.roleName}</td>
+                          <td className="px-6 py-4 font-medium text-amber-700">
+                            {new Date(leave.attendanceDate).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                          </td>
+                          <td className="px-6 py-4 text-outline">{leave.note || (leave.status === 'Absent' ? 'Vắng mặt không phép' : 'Nghỉ có phép')}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-8 text-center text-on-surface-variant italic">
+                          Không có nhân viên nghỉ phép trong tuần này
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-
           </div>
         )}
 
