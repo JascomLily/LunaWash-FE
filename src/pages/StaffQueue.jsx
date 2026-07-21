@@ -293,6 +293,7 @@ export default function StaffQueue() {
             paymentMethod: dto.paymentMethod,
             isStartRequested: dto.isStartRequested,
             customerConfirmedReady: dto.customerConfirmedReady,
+            updatedAt: dto.updatedAt,
             rawDto: dto
           };
         });
@@ -703,8 +704,13 @@ export default function StaffQueue() {
                       <td className="px-6 py-4 text-right relative whitespace-nowrap">
                         {user.tier === 'Staff' ? (
                           <div className="flex gap-2 justify-end items-center">
-                            {b.status === 'Pending' ? (
-                              !b.isStartRequested ? (
+                            {b.status === 'Pending' ? (() => {
+                              const requestTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                              const now = new Date().getTime();
+                              const isExpired = (now - requestTime) > 3 * 60 * 1000;
+                              const showRequestButton = !b.isStartRequested || (!b.customerConfirmedReady && isExpired);
+
+                              return showRequestButton ? (
                                 <button
                                   onClick={() => handleRequestStart(b.id)}
                                   className="px-4 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
