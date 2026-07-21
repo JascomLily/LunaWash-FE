@@ -86,6 +86,7 @@ export default function UserProfile() {
   const [mySchedule, setMySchedule] = useState({ shift: 'Ca sáng', dayOff: 'Thứ Hai' });
   const [scheduleWeek, setScheduleWeek] = useState([]);
   const [currentWeekLabel, setCurrentWeekLabel] = useState('');
+  const [weekAttendance, setWeekAttendance] = useState({});
 
   useEffect(() => {
     const getWeekDays = () => {
@@ -239,6 +240,53 @@ export default function UserProfile() {
                   }
                 })
                 .catch(err => console.error('Lỗi lấy lịch làm việc:', err));
+                
+                // 5. Fetch attendance for the week
+                const today = new Date();
+                const day = today.getDay(); 
+                const mondayDiff = day === 0 ? -6 : 1 - day;
+                const monday = new Date(today);
+                monday.setDate(today.getDate() + mondayDiff);
+                
+                const fetchPromises = [];
+                for (let i = 0; i < 7; i++) {
+                  const d = new Date(monday);
+                  d.setDate(monday.getDate() + i);
+                  
+                  // Format API date manually avoiding timezone offset issues
+                  const yyyy = d.getFullYear();
+                  const mm = String(d.getMonth() + 1).padStart(2, '0');
+                  const dd = String(d.getDate()).padStart(2, '0');
+                  const dateStrAPI = `${yyyy}-${mm}-${dd}`;
+                  const dateStrUI = `${dd}/${mm}`;
+                  
+                  fetchPromises.push(
+                    fetch(import.meta.env.VITE_API_URL + `/api/Employees/branch/${parsed.branchId}/attendance?date=${dateStrAPI}`, {
+                      headers: { 'Authorization': `Bearer ${parsed.token}` }
+                    })
+                    .then(res => res.ok ? res.json() : [])
+                    .then(attData => {
+                      if (Array.isArray(attData)) {
+                        const myAtt = attData.find(a => a.userId === userId || a.id === userId);
+                        if (myAtt) {
+                          return { date: dateStrUI, status: myAtt.status };
+                        }
+                      }
+                      return null;
+                    })
+                    .catch(() => null)
+                  );
+                }
+                
+                Promise.all(fetchPromises).then(results => {
+                  const attMap = {};
+                  results.forEach(res => {
+                    if (res) {
+                      attMap[res.date] = res.status;
+                    }
+                  });
+                  setWeekAttendance(attMap);
+                });
               }
             }
           })
@@ -796,6 +844,43 @@ export default function UserProfile() {
                   const shiftName = mySchedule.shift === 'Ca sáng' ? 'Sáng' : mySchedule.shift === 'Ca chiều' ? 'Chiều' : mySchedule.shift === 'Ca bảo trì' ? 'Bảo trì' : 'Chưa rõ';
                   const shiftTime = mySchedule.shift === 'Ca sáng' ? '04:00 - 14:30' : mySchedule.shift === 'Ca chiều' ? '14:30 - 00:15' : mySchedule.shift === 'Ca bảo trì' ? '00:15 - 04:00' : '--:--';
                   
+                  const attStatus = weekAttendance[item.date];
+                  let statusText = 'Đã phân công';
+                  let statusBg = 'bg-cyan-50';
+                  let statusTextCol = 'text-cyan-700';
+                  
+                  if (attStatus) {
+                    if (attStatus === 'Đi muộn') {
+                      statusText = 'Vào muộn';
+                      statusBg = 'bg-orange-100';
+                      statusTextCol = 'text-orange-700';
+                    } else if (attStatus === 'Vắng mặt') {
+                      statusText = 'Vắng mặt';
+                      statusBg = 'bg-rose-100';
+                      statusTextCol = 'text-rose-700';
+                    } else if (attStatus === 'Đúng giờ') {
+                      statusText = 'Có mặt';
+                      statusBg = 'bg-emerald-100';
+                      statusTextCol = 'text-emerald-700';
+                    } else if (attStatus === 'Nghỉ phép') {
+                      statusText = 'Có phép';
+                      statusBg = 'bg-purple-100';
+                      statusTextCol = 'text-purple-700';
+                    } else {
+                      statusText = attStatus;
+                    }
+                  } else {
+                    const [d, m] = item.date.split('/');
+                    const itemDate = new Date(new Date().getFullYear(), parseInt(m)-1, parseInt(d));
+                    const todayDate = new Date();
+                    todayDate.setHours(0,0,0,0);
+                    if (itemDate < todayDate && !isOff) {
+                       statusText = 'Chưa ĐD';
+                       statusBg = 'bg-surface-variant/30';
+                       statusTextCol = 'text-on-surface-variant';
+                    }
+                  }
+                  
                   return (
                   <div key={idx} className="flex flex-col gap-2">
                     <div className="bg-surface-container-low py-2 rounded-xl text-center">
@@ -806,8 +891,8 @@ export default function UserProfile() {
                       <div className={`border-l-4 ${mySchedule.shift === 'Ca sáng' ? 'border-cyan-600' : mySchedule.shift === 'Ca chiều' ? 'border-amber-500' : 'border-indigo-500'} bg-surface-container-lowest border-t border-r border-b border-outline-variant/30 rounded-r-xl p-3 shadow-sm flex flex-col h-full`}>
                         <p className={`font-bold text-xs ${mySchedule.shift === 'Ca sáng' ? 'text-cyan-700' : mySchedule.shift === 'Ca chiều' ? 'text-amber-700' : 'text-indigo-700'}`}>{shiftName}</p>
                         <p className="font-bold text-on-surface text-xs mb-2">{shiftTime}</p>
-                        <span className="mt-auto inline-flex items-center justify-center bg-cyan-50 text-cyan-700 px-2 py-1 rounded text-[10px] font-bold">
-                          Đã phân công
+                        <span className={`mt-auto inline-flex items-center justify-center ${statusBg} ${statusTextCol} px-2 py-1 rounded text-[10px] font-bold`}>
+                          {statusText}
                         </span>
                       </div>
                     ) : (
