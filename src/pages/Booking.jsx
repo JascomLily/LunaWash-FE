@@ -117,6 +117,10 @@ const TIME_SLOTS = generateTimeSlots();
  * Trang Đặt Lịch Rửa Xe Thông Minh (Booking) - LunaWash.
  * Thiết kế khớp hoàn hảo với Ảnh 4.
  */
+/**
+ * Main component for users to select branch, service, and time to book a car wash.
+ * It guides the user through different steps to complete a booking.
+ */
 export default function Booking() {
   const navigate = useNavigate();
   const location = useLocation();

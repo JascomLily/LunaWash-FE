@@ -128,6 +128,10 @@ const BRANCH_DETAILS = {
   }
 };
 
+/**
+ * This component is used by the staff to manage the car wash queue.
+ * It shows the list of customers waiting, in-progress, and finished.
+ */
 export default function StaffQueue() {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
