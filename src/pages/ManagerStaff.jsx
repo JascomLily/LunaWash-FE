@@ -30,6 +30,7 @@ export default function ManagerStaff() {
   const [selectedShiftFilter, setSelectedShiftFilter] = useState('Ca sáng');
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [scheduleTemplates, setScheduleTemplates] = useState([]);
+  const [weeklyLeaves, setWeeklyLeaves] = useState([]);
   
   const DAYS_OFF = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật', 'Chưa xếp'];
   const SHIFTS = ['Ca sáng', 'Ca chiều', 'Ca bảo trì', 'Chưa xếp'];
@@ -160,12 +161,24 @@ export default function ManagerStaff() {
         }).filter(Boolean);
 
         setAttendanceData(newAttendance);
-      } catch (err) {
-        toast.error("Lỗi khi tải điểm danh: " + err.message);
-      } finally {
-        setIsAttendanceLoading(false);
-      }
-    };
+        } catch (error) {
+          toast.error("Lỗi khi lấy dữ liệu điểm danh: " + error.message);
+        }
+        
+        try {
+          const resLeaves = await fetch(`${import.meta.env.VITE_API_URL}/api/Employees/branch/${user.branchId}/weekly-leaves?date=${selectedDate}`, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+          });
+          if (resLeaves.ok) {
+            const leavesData = await resLeaves.json();
+            setWeeklyLeaves(leavesData);
+          }
+        } catch (error) {
+          console.error("Lỗi lấy dữ liệu nghỉ phép tuần:", error);
+        } finally {
+          setIsAttendanceLoading(false);
+        }
+      };
 
     loadAttendanceData();
   }, [selectedDate, selectedShiftFilter, scheduleTemplates, employees, user]);
@@ -794,18 +807,24 @@ const handleAddEmployee = async (e) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/10">
-                    <tr className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-6 py-4 font-bold text-on-surface">Kỹ thuật viên 1</td>
-                      <td className="px-6 py-4 text-on-surface-variant">Kỹ thuật</td>
-                      <td className="px-6 py-4 font-medium text-amber-700">Thứ Tư (17/06)</td>
-                      <td className="px-6 py-4 text-outline">Nghỉ ốm (Có phép)</td>
-                    </tr>
-                    <tr className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-6 py-4 font-bold text-on-surface">Nhân viên CSX 14</td>
-                      <td className="px-6 py-4 text-on-surface-variant">Chăm sóc xe</td>
-                      <td className="px-6 py-4 font-medium text-amber-700">Thứ Sáu (19/06)</td>
-                      <td className="px-6 py-4 text-outline">Việc gia đình (Có phép)</td>
-                    </tr>
+                    {weeklyLeaves.length > 0 ? (
+                      weeklyLeaves.map((leave, idx) => (
+                        <tr key={idx} className="hover:bg-surface-container-low/30 transition-colors">
+                          <td className="px-6 py-4 font-bold text-on-surface">{leave.fullName}</td>
+                          <td className="px-6 py-4 text-on-surface-variant">{leave.roleName}</td>
+                          <td className="px-6 py-4 font-medium text-amber-700">
+                            {new Date(leave.attendanceDate).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                          </td>
+                          <td className="px-6 py-4 text-outline">{leave.note || (leave.status === 'Absent' ? 'Vắng mặt không phép' : 'Nghỉ có phép')}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-8 text-center text-on-surface-variant italic">
+                          Không có nhân viên nghỉ phép trong tuần này
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
