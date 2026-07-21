@@ -115,7 +115,9 @@ export default function BookingHistory() {
             date: dateVal,
             vehicle: active.vehicleInfo,
             paymentMethod: active.paymentMethod,
-            status: active.status
+            status: active.status,
+            isStartRequested: active.isStartRequested,
+            customerConfirmedReady: active.customerConfirmedReady
           });
         } else {
           setActiveBooking(null);
@@ -145,7 +147,53 @@ export default function BookingHistory() {
 
   useEffect(() => {
     fetchBookings();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchBookings();
+      }
+    };
+
+    window.addEventListener('focus', fetchBookings);
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // ECO-MODE Polling: Chỉ gọi API nếu màn hình đang bật/đang mở tab (Tiết kiệm Render & Azure)
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchBookings();
+      }
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('focus', fetchBookings);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(intervalId);
+    };
   }, []);
+
+
+  const handleConfirmReady = async () => {
+    if (!activeBooking) return;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}/confirm-ready`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${parsed.token}` }
+      });
+      
+      if (res.ok) {
+        toast.success('Đã xác nhận sẵn sàng!');
+        fetchBookings();
+      } else {
+        toast.error('Không thể xác nhận.');
+      }
+    } catch(err) {
+      toast.error('Lỗi kết nối máy chủ.');
+    }
+  };
 
   const handleCancelBooking = async () => {
     if (!activeBooking) return;
@@ -308,6 +356,23 @@ export default function BookingHistory() {
                     </div>
                   </div>
                 </div>
+
+                {activeBooking.isStartRequested && !activeBooking.customerConfirmedReady && (
+                  <div className="border-t border-outline-variant/20 pt-5 mt-6">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <p className="text-amber-800 text-sm font-bold mb-3">
+                        👋 Nhân viên đã sẵn sàng! Vui lòng xác nhận xe của bạn đã vào đúng trạm.
+                      </p>
+                      <button 
+                        onClick={handleConfirmReady}
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined">check_circle</span>
+                        Xác nhận đã vào trạm
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Nút hủy lịch */}
                 <div className="border-t border-outline-variant/20 pt-5 mt-6">

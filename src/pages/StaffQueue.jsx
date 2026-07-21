@@ -287,11 +287,12 @@ export default function StaffQueue() {
             branchId: parsedUser.branchId || 'BRN-LD-01',
             timeRange: dto.timeRange?.replace('\n', ' '),
             status: status,
-            hasExtraServices: !!dto.extras && dto.extras.trim().length > 0 && dto.extras !== '[]',
             price: dto.totalPrice,
             customerName: 'Khách hàng',
             notes: dto.extras,
             paymentMethod: dto.paymentMethod,
+            isStartRequested: dto.isStartRequested,
+            customerConfirmedReady: dto.customerConfirmedReady,
             rawDto: dto
           };
         });
@@ -316,6 +317,15 @@ export default function StaffQueue() {
     }
     setUser(parsedUser);
     fetchBookings(parsedUser, selectedDate);
+
+    // Thêm Polling 10 giây/lần nhưng BẬT ECO-MODE (chỉ gọi API khi màn hình không bị tắt hoặc app không bị thu nhỏ)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchBookings(parsedUser, selectedDate);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [navigate, selectedDate]);
 
   // Close dropdown on click outside
@@ -384,6 +394,23 @@ export default function StaffQueue() {
       toast.error('Lỗi kết nối đến server');
     }
     setActiveMenuId(null);
+  };
+
+  const handleRequestStart = async (id) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${id}/request-start`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (res.ok) {
+        toast.success('Đã gửi yêu cầu xác nhận cho khách!');
+        fetchBookings(user, selectedDate);
+      } else {
+        toast.error('Có lỗi xảy ra khi gửi yêu cầu');
+      }
+    } catch(err) {
+      toast.error('Lỗi kết nối đến server');
+    }
   };
 
   const handleConfirmAddInterior = async () => {
@@ -677,13 +704,31 @@ export default function StaffQueue() {
                         {user.tier === 'Staff' ? (
                           <div className="flex gap-2 justify-end items-center">
                             {b.status === 'Pending' ? (
-                              <button
-                                onClick={() => updateBookingStatus(b.id, 'Washing')}
-                                className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
-                              >
-                                <span className="material-symbols-outlined text-sm">play_arrow</span>
-                                Bắt đầu
-                              </button>
+                              !b.isStartRequested ? (
+                                <button
+                                  onClick={() => handleRequestStart(b.id)}
+                                  className="px-4 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
+                                >
+                                  <span className="material-symbols-outlined text-sm">notifications_active</span>
+                                  Yêu cầu xác nhận
+                                </button>
+                              ) : !b.customerConfirmedReady ? (
+                                <button
+                                  disabled
+                                  className="px-4 py-2 bg-slate-100 text-slate-500 font-bold rounded-xl border border-slate-200 shadow-sm text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap cursor-not-allowed"
+                                >
+                                  <span className="material-symbols-outlined text-sm animate-spin">hourglass_empty</span>
+                                  Đang đợi khách...
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => updateBookingStatus(b.id, 'Washing')}
+                                  className="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-sm active:scale-95 transition-all text-xs flex items-center gap-1.5 ml-auto shrink-0 whitespace-nowrap"
+                                >
+                                  <span className="material-symbols-outlined text-sm">play_arrow</span>
+                                  Bắt đầu rửa
+                                </button>
+                              )
                             ) : b.status === 'Washing' ? (
                               <button
                                 onClick={() => updateBookingStatus(b.id, 'Completed')}
