@@ -294,8 +294,6 @@ export default function UserProfile() {
       } catch (e) {
         console.error(e);
       }
-
-      }
     }
   }, []);
 
