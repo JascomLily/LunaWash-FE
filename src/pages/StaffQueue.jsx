@@ -711,7 +711,7 @@ export default function StaffQueue() {
                         {user.tier === 'Staff' ? (
                           <div className="flex gap-2 justify-end items-center">
                             {b.status === 'Pending' ? (() => {
-                              const requestTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                              const requestTime = b.updatedAt ? new Date(b.updatedAt + (b.updatedAt.endsWith('Z') ? '' : 'Z')).getTime() : 0;
                               const now = new Date().getTime();
                               const isExpired = (now - requestTime) > 3 * 60 * 1000;
                               const showRequestButton = !b.isStartRequested || (!b.customerConfirmedReady && isExpired);
