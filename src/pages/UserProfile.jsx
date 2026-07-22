@@ -768,8 +768,8 @@ export default function UserProfile() {
           </>
         )}
 
-        {/* DÀNH CHO NHÂN VIÊN / QUẢN LÝ */}
-        {!isCustomer && (
+        {/* DÀNH CHO NHÂN VIÊN */}
+        {(userTier === 'staff' || userTier === 'technicalstaff') && (
           <>
             {/* LỊCH LÀM VIỆC & CA TRỰC */}
             <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
