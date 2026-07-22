@@ -278,6 +278,7 @@ export default function StaffQueue() {
           }
           else if (status === 'Đang rửa' || status === 'Checked-In') status = 'Washing';
           else if (status === 'Hoàn thành') status = 'Completed';
+          else if (status === 'Hủy vì quá hạn chờ') status = 'CancelledLate';
           else if (status === 'Đã hủy' || status === 'Đã hoãn') status = 'Cancelled';
 
           return {
@@ -370,7 +371,9 @@ export default function StaffQueue() {
     const matchesSearch = (b.licensePlate || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (b.packageName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (b.vehicleType || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
+    const matchesStatus = statusFilter === 'All' || 
+                          b.status === statusFilter || 
+                          (statusFilter === 'Cancelled' && b.status === 'CancelledLate');
     return matchesSearch && matchesStatus;
   });
 
@@ -445,6 +448,8 @@ export default function StaffQueue() {
         return <span className="px-3 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn thành</span>;
       case 'Cancelled':
         return <span className="px-3 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">Đã hủy</span>;
+      case 'CancelledLate':
+        return <span className="px-3 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">Hủy vì quá hạn chờ</span>;
       default:
         return <span className="px-3 py-1 text-xs font-bold rounded-full bg-slate-50 text-slate-700 border border-slate-200">{status}</span>;
     }
