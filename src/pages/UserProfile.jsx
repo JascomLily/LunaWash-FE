@@ -80,8 +80,7 @@ export default function UserProfile() {
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [isAddingCar, setIsAddingCar] = useState(false);
 
-  const [vouchers, setVouchers] = useState([]);
-  
+    
   // Schedule states
   const [mySchedule, setMySchedule] = useState({ shift: 'Ca sáng', dayOff: 'Thứ Hai' });
   const [scheduleWeek, setScheduleWeek] = useState([]);
@@ -294,27 +293,6 @@ export default function UserProfile() {
         }
       } catch (e) {
         console.error(e);
-      }
-
-      // Lấy danh sách Voucher của tôi
-      const userObj = JSON.parse(localStorage.getItem('user') || '{}');
-      const userToken = userObj.token;
-      if (userToken) {
-        try {
-          fetch(import.meta.env.VITE_API_URL + '/api/Vouchers/my-vouchers', {
-            headers: { 'Authorization': `Bearer ${userToken}` }
-          })
-            .then(res => {
-              if (res.ok) return res.json();
-              throw new Error('Lỗi lấy khuyến mãi');
-            })
-            .then(data => {
-              if (data.success && data.data) {
-                setVouchers(data.data.filter(v => v.voucher.isActive && !v.isUsed));
-              }
-            })
-            .catch(e => console.error('Lỗi lấy khuyến mãi:', e));
-        } catch (e) {}
       }
     }
   }, []);
@@ -530,42 +508,7 @@ export default function UserProfile() {
           </nav>
           </section>
 
-          {/* VOUCHER BOX */}
-          <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col">
-            <h3 className="font-bold text-lg text-primary mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-500">local_activity</span>
-              Mã giảm giá của bạn
-            </h3>
-            
-            <div className="space-y-3">
-              {vouchers.length === 0 ? (
-                <div className="text-center text-sm text-on-surface-variant italic py-4">
-                  Chưa có mã giảm giá nào.
-                </div>
-              ) : (
-                vouchers.slice(0, 3).map((v) => (
-                  <div key={v.id} className="flex items-center justify-between p-3 border border-outline-variant/40 rounded-xl bg-blue-50">
-                    <div>
-                      <p className="text-sm font-bold text-primary">{v.voucher.voucherName}</p>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5">{v.voucher.description} - Giảm {v.voucher.discountValue}đ</p>
-                    </div>
-                    <button 
-                      onClick={() => alert(`Mã ${v.voucher.voucherName} sẽ tự động được áp dụng ở bước Thanh toán.`)}
-                      className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-container transition-all"
-                    >
-                      Dùng
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            
-            {vouchers.length > 3 && (
-              <button className="text-xs text-primary font-bold hover:underline mt-4 text-center w-full">
-                Xem tất cả ưu đãi &rarr;
-              </button>
-            )}
-          </section>
+          
         </div>
 
         {/* CỘT PHẢI - NỘI DUNG CHÍNH */}
@@ -825,8 +768,8 @@ export default function UserProfile() {
           </>
         )}
 
-        {/* DÀNH CHO NHÂN VIÊN / QUẢN LÝ */}
-        {!isCustomer && (
+        {/* DÀNH CHO NHÂN VIÊN */}
+        {(userTier === 'staff' || userTier === 'technicalstaff') && (
           <>
             {/* LỊCH LÀM VIỆC & CA TRỰC */}
             <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
@@ -905,59 +848,7 @@ export default function UserProfile() {
               </div>
             </article>
 
-            {/* GỬI ĐƠN CHO QUẢN LÝ/ADMIN */}
-            <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                <h3 className="font-bold text-xl text-primary">Gửi đơn cho quản lý/Admin</h3>
-                <button 
-                  onClick={() => alert('Chức năng tạo đơn mới đang được phát triển.')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-container transition-all shadow-md active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-base font-bold">add</span>
-                  Tạo đơn mới
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                {/* Item 1 */}
-                <div className="border border-outline-variant/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100 flex-shrink-0">
-                      <span className="material-symbols-outlined">event_note</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-on-surface text-base">Đơn xin nghỉ phép</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">Gửi ngày 14/05/2023 • Nghỉ ngày 17/05/2023</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 self-end sm:self-auto">
-                    <span className="px-3 py-1 bg-orange-50 text-orange-700 font-bold text-[11px] rounded-full border border-orange-200 whitespace-nowrap">
-                      Đang chờ duyệt
-                    </span>
-                    <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors hidden sm:block">chevron_right</span>
-                  </div>
-                </div>
-
-                {/* Item 2 */}
-                <div className="border border-outline-variant/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shadow-sm border border-rose-100 flex-shrink-0">
-                      <span className="material-symbols-outlined">warning</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-on-surface text-base">Đơn báo cáo sự cố</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">Gửi ngày 10/05/2023 • Hỏng máy rửa áp lực cao</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 self-end sm:self-auto">
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-[11px] rounded-full border border-emerald-200 whitespace-nowrap">
-                      Đã duyệt
-                    </span>
-                    <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors hidden sm:block">chevron_right</span>
-                  </div>
-                </div>
-              </div>
-            </article>
+            
           </>
         )}
 

@@ -473,9 +473,19 @@ export default function BookingHistory() {
                       <td className="py-5 px-6 text-base font-black text-[#0d2e61]">{item.totalPrice}</td>
                       {/* Trạng thái */}
                       <td className="py-5 px-6">
-                        <span className="inline-flex items-center px-3 py-1 bg-emerald-100/70 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-sm select-none">
-                          • {item.status}
-                        </span>
+                        {item.status === 'Hoàn thành' ? (
+                          <span className="inline-flex items-center px-3 py-1 bg-emerald-100/70 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • Đã xong
+                          </span>
+                        ) : item.status === 'Đã hủy' || item.status === 'Hủy vì quá hạn chờ' ? (
+                          <span className="inline-flex items-center px-3 py-1 bg-rose-100/70 text-rose-800 border border-rose-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • {item.status}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 bg-sky-100/70 text-sky-800 border border-sky-200 rounded-full text-xs font-bold shadow-sm select-none">
+                            • {item.status}
+                          </span>
+                        )}
                       </td>
                       {/* Đánh giá */}
                       <td className="py-5 px-6 text-center">
