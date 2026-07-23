@@ -144,7 +144,7 @@ export default function Register() {
       else if (data.role === 'TechnicalStaff') tier = 'TechnicalStaff';
       else if (data.role === 'Customer') tier = data.tier || 'Member';
 
-      const loggedInUser = {
+      const loggedInUser = { role: data.role,
         fullName: data.fullName,
         email: data.email,
         tier: tier,
