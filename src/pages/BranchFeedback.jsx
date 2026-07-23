@@ -187,6 +187,33 @@ export default function BranchFeedback() {
           )}
         </div>
 
+        {/* Average Rating Calc */}
+        {(() => {
+          const avg = branchReviews.length > 0 
+            ? branchReviews.reduce((acc, r) => acc + r.rating, 0) / branchReviews.length 
+            : 0;
+          return (
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-gutter">
+              <div className="glass-card rounded-[28px] p-6 shadow-sm border border-outline-variant/30 flex items-center justify-between group hover:shadow-md transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl font-bold">star</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase text-outline tracking-wider">Đánh giá trung bình</p>
+                    <h3 className="text-2xl font-black text-on-surface mt-1">{avg.toFixed(1)} / 5.0</h3>
+                  </div>
+                </div>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <span key={s} className={`material-symbols-outlined text-lg ${s <= Math.round(avg) ? 'text-amber-500 fill-current' : 'text-outline-variant'}`}>star</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Feedback Cards List */}
         <div className="flex flex-col gap-6">
           {branchReviews.length === 0 ? (

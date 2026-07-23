@@ -127,8 +127,10 @@ export default function Login() {
       // Chuyển hướng trực tiếp dựa trên vai trò để tránh hiện trang chủ
       if (loggedInUser.tier === 'Admin') {
         window.location.href = '/admin';
-      } else if (loggedInUser.tier === 'Staff' || loggedInUser.tier === 'BranchManager') {
+      } else if (loggedInUser.tier === 'Staff') {
         window.location.href = '/staff/queue';
+      } else if (loggedInUser.tier === 'BranchManager') {
+        window.location.href = '/staff/revenue';
       } else if (loggedInUser.tier === 'TechnicalStaff') {
         window.location.href = '/staff/technical';
       } else {

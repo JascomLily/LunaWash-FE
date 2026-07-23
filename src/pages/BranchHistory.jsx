@@ -165,6 +165,8 @@ export default function BranchHistory() {
               licensePlate: b.vehicleInfo?.split('•')[1]?.trim() || 'N/A',
               customerName: b.customerName,
               packageName: b.packageName,
+              services: b.services,
+              extras: parsedExtras,
               hasInterior: parsedExtras.some(e => e.name.toLowerCase().includes('nội thất')),
               timeRange: b.timeRange?.split('\n')[0] || b.timeRange,
               date: b.timeRange?.split('\n')[1] || '',
@@ -234,7 +236,49 @@ export default function BranchHistory() {
   const formattedRevenue = rawRevenue.toLocaleString('vi-VN') + 'đ';
 
   const handleExportReport = () => {
-    alert(`Đang khởi tạo tệp báo cáo Excel cho: ${branchName}\nThời gian: Tháng hiện tại\nTổng số lượt rửa: ${completedBookings.length} lượt\nDoanh thu tạm tính: ${formattedRevenue}\nBáo cáo đã được xuất thành công!`);
+    if (!completedBookings || completedBookings.length === 0) {
+      alert('Không có dữ liệu để xuất báo cáo.');
+      return;
+    }
+
+    const headers = [
+      'Mã Đơn',
+      'Ngày',
+      'Giờ',
+      'Tên Khách Hàng',
+      'Biển Số',
+      'Loại Xe',
+      'Dịch Vụ Đặt',
+      'Dịch Vụ Kèm Theo',
+      'Tổng Tiền'
+    ];
+
+    const rows = completedBookings.map(b => {
+      const id = `"${(b.id || '').replace(/"/g, '""')}"`;
+      const date = `"${(b.date || '').replace(/"/g, '""')}"`;
+      const time = `"${(b.time || '').replace(/"/g, '""')}"`;
+      const customer = `"${(b.customerName || '').replace(/"/g, '""')}"`;
+      const plate = `"${(b.licensePlate || '').replace(/"/g, '""')}"`;
+      const vehicle = `"${(b.vehicleType || '').replace(/"/g, '""')}"`;
+      const packageN = `"${(b.packageName || '').replace(/"/g, '""')}"`;
+      const addons = `"${(b.extras && b.extras.length > 0 ? b.extras.map(e => e.name).join(', ') : 'Không có').replace(/"/g, '""')}"`;
+      const price = `"${(b.price || '').replace(/"/g, '""')}"`;
+      return [id, date, time, customer, plate, vehicle, packageN, addons, price].join(',');
+    });
+
+    // Thêm dòng tổng doanh thu ở cuối
+    rows.push(['', '', '', '', '', '', '', '"TỔNG DOANH THU:"', `"${formattedRevenue}"`].join(','));
+
+    const csvContent = "\uFEFF" + headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `BaoCao_LichSu_${shortBranch}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -398,10 +442,17 @@ export default function BranchHistory() {
                       </td>
                       <td className="px-6 py-4 font-bold text-on-surface">{b.customerName}</td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-on-surface-variant">{b.packageName}</span>
-                          {b.hasInterior && (
-                            <span className="px-1.5 py-0.5 bg-error-container/30 text-error font-extrabold text-[10px] rounded">Nội thất</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-on-surface-variant">{b.packageName}</span>
+                            {b.hasInterior && (
+                              <span className="px-1.5 py-0.5 bg-error-container/30 text-error font-extrabold text-[10px] rounded">Nội thất</span>
+                            )}
+                          </div>
+                          {b.extras && b.extras.length > 0 && (
+                            <div className="text-xs text-primary font-semibold">
+                              + {b.extras.map(e => e.name).join(', ')}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -423,38 +474,7 @@ export default function BranchHistory() {
         </div>
 
         {/* Manager-only Bottom Metrics Panel */}
-        {user.tier === 'BranchManager' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {/* Card Đánh giá trung bình */}
-            <div className="glass-card rounded-[28px] p-6 shadow-sm border border-outline-variant/30 flex items-center justify-between group hover:shadow-md transition-all duration-300">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-2xl font-bold">star</span>
-                </div>
-                <div>
-                  <p className="text-xs font-black uppercase text-outline tracking-wider">Đánh giá trung bình</p>
-                  <h3 className="text-2xl font-black text-on-surface mt-1">{averageRating.toFixed(1)} / 5.0</h3>
-                </div>
-              </div>
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <span key={s} className="material-symbols-outlined text-amber-500 text-lg fill-current">star</span>
-                ))}
-              </div>
-            </div>
 
-            {/* Card Doanh thu tạm tính */}
-            <div className="glass-card rounded-[28px] p-6 shadow-sm border border-outline-variant/30 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl font-bold">monetization_on</span>
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase text-outline tracking-wider">Doanh thu tạm tính (Đã hoàn thành)</p>
-                <h3 className="text-2xl font-black text-emerald-700 mt-1">{formattedRevenue}</h3>
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </main>
