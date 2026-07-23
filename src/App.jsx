@@ -15,6 +15,7 @@ import Feedback from './pages/Feedback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import StaffQueue from './pages/StaffQueue';
+import ManagerRevenue from './pages/ManagerRevenue';
 import BranchHistory from './pages/BranchHistory';
 import BranchFeedback from './pages/BranchFeedback';
 import ManagerStaff from './pages/ManagerStaff';
@@ -108,6 +109,11 @@ function App() {
             <Route path="/staff/queue" element={
               <ProtectedRoute allowedRoles={['Staff', 'BranchManager']}>
                 <StaffQueue />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/revenue" element={
+              <ProtectedRoute allowedRoles={['BranchManager']}>
+                <ManagerRevenue />
               </ProtectedRoute>
             } />
             <Route path="/staff/history" element={

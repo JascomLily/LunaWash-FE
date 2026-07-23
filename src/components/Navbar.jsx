@@ -211,16 +211,29 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link
-                to="/staff/queue"
-                className={`transition-colors py-2 border-b-2 ${
-                  isActive('/staff/queue') 
-                    ? 'text-primary font-bold border-primary' 
-                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-                }`}
-              >
-                Hàng Đợi Xe
-              </Link>
+              {userRole === 'BranchManager' ? (
+                <Link
+                  to="/staff/revenue"
+                  className={`transition-colors py-2 border-b-2 ${
+                    isActive('/staff/revenue') 
+                      ? 'text-primary font-bold border-primary' 
+                      : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                  }`}
+                >
+                  Doanh Thu
+                </Link>
+              ) : (
+                <Link
+                  to="/staff/queue"
+                  className={`transition-colors py-2 border-b-2 ${
+                    isActive('/staff/queue') 
+                      ? 'text-primary font-bold border-primary' 
+                      : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                  }`}
+                >
+                  Hàng Đợi Xe
+                </Link>
+              )}
               <Link
                 to="/staff/history"
                 className={`transition-colors py-2 border-b-2 ${
@@ -526,7 +539,11 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                {userRole === 'BranchManager' ? (
+                  <Link to="/staff/revenue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/revenue') ? 'text-primary' : 'text-on-surface'}`}>Doanh Thu</Link>
+                ) : (
+                  <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                )}
                 <Link to="/staff/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử Trạm</Link>
                 <Link to="/staff/feedback" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/feedback') ? 'text-primary' : 'text-on-surface'}`}>Phản Hồi</Link>
                 <Link to="/staff/technical" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/technical') ? 'text-primary' : 'text-on-surface'}`}>Trang Kỹ Thuật</Link>
