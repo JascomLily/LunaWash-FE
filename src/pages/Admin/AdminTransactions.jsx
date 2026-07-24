@@ -286,52 +286,7 @@ const AdminTransactions = () => {
           </div>
         </div>
 
-        {/* MoMo (Coming Soon / UI only) */}
-        <div className={`relative overflow-hidden bg-surface-container-lowest rounded-3xl p-6 border transition-all duration-500 hover:shadow-lg ${methods.momo ? 'border-pink-500/50 shadow-pink-500/10' : 'border-outline-variant/30 opacity-70 grayscale-[30%]'}`}>
-          <div className="flex justify-between items-start mb-6 z-10 relative">
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm transition-colors ${methods.momo ? 'bg-gradient-to-br from-pink-500 to-pink-600 text-white border-pink-500' : 'bg-surface-variant text-on-surface-variant border-outline-variant/50'}`}>
-                <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-xl text-on-surface">MoMo</h3>
-                <p className="text-xs text-on-surface-variant mt-1 font-medium bg-surface-container-low px-2 py-1 rounded w-fit">Ví điện tử</p>
-              </div>
-            </div>
-            
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={methods.momo} onChange={() => handleToggle('momo')} />
-              <div className="w-12 h-6 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 shadow-inner"></div>
-            </label>
-          </div>
-          <div className="bg-surface-container-low/50 rounded-2xl p-5 text-sm text-on-surface-variant border border-outline-variant/20 h-[120px] flex items-center shadow-inner relative overflow-hidden">
-             <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png')] bg-no-repeat bg-center bg-[length:50%] opacity-[0.03]"></div>
-             <p className="leading-relaxed relative z-10">Thanh toán siêu tốc qua ví điện tử phổ biến nhất Việt Nam. Hệ thống tự động đối soát giao dịch.</p>
-          </div>
-        </div>
 
-        {/* ZaloPay (Coming Soon / UI only) */}
-        <div className={`relative overflow-hidden bg-surface-container-lowest rounded-3xl p-6 border transition-all duration-500 hover:shadow-lg ${methods.zalopay ? 'border-sky-500/50 shadow-sky-500/10' : 'border-outline-variant/30 opacity-70 grayscale-[30%]'}`}>
-          <div className="flex justify-between items-start mb-6 z-10 relative">
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm transition-colors ${methods.zalopay ? 'bg-gradient-to-br from-sky-400 to-sky-600 text-white border-sky-500' : 'bg-surface-variant text-on-surface-variant border-outline-variant/50'}`}>
-                <span className="material-symbols-outlined text-3xl">chat</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-xl text-on-surface">ZaloPay</h3>
-                <p className="text-xs text-on-surface-variant mt-1 font-medium bg-surface-container-low px-2 py-1 rounded w-fit">Ví điện tử</p>
-              </div>
-            </div>
-            
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={methods.zalopay} onChange={() => handleToggle('zalopay')} />
-              <div className="w-12 h-6 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500 shadow-inner"></div>
-            </label>
-          </div>
-          <div className="bg-surface-container-low/50 rounded-2xl p-5 text-sm text-on-surface-variant border border-outline-variant/20 h-[120px] flex items-center shadow-inner">
-             <p className="leading-relaxed relative z-10">Thanh toán bằng ZaloPay tích hợp tiện lợi. Hỗ trợ nhiều chương trình khuyến mãi nội bộ.</p>
-          </div>
-        </div>
 
       </div>
 

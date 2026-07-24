@@ -181,8 +181,6 @@ const AdminMembership = () => {
               <thead>
                 <tr className="bg-surface-container-low text-on-surface-variant text-[11px] uppercase tracking-wider font-extrabold">
                   <th className="p-4 border-b border-outline-variant/20">Hạng Thành Viên</th>
-                  <th className="p-4 border-b border-outline-variant/20 text-center">Giảm giá (%)</th>
-                  <th className="p-4 border-b border-outline-variant/20 text-center">Hệ số tích điểm (x)</th>
                   <th className="p-4 border-b border-outline-variant/20 text-center">Đặc quyền đặt lịch (Ngày)</th>
                 </tr>
               </thead>
@@ -190,28 +188,7 @@ const AdminMembership = () => {
                 {tiers.map((tier) => (
                   <tr key={`details-${tier.id}`} className="border-b border-outline-variant/20 hover:bg-surface-container-lowest/50">
                     <td className="p-4 text-on-surface font-bold">{tier.tierName}</td>
-                    <td className="p-4">
-                      <div className="flex justify-center">
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          value={tier.discountPercent} 
-                          onChange={(e) => handleInputChange(tier.id, 'discountPercent', e.target.value)}
-                          className="w-20 px-2 py-1.5 border border-outline-variant/50 rounded bg-transparent text-center focus:border-primary focus:ring-1 focus:ring-primary font-mono text-emerald-600" 
-                        />
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex justify-center">
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          value={tier.pointsMultiplier} 
-                          onChange={(e) => handleInputChange(tier.id, 'pointsMultiplier', e.target.value)}
-                          className="w-20 px-2 py-1.5 border border-outline-variant/50 rounded bg-transparent text-center focus:border-primary focus:ring-1 focus:ring-primary font-mono text-primary" 
-                        />
-                      </div>
-                    </td>
+
                     <td className="p-4">
                       <div className="flex justify-center items-center gap-3">
                         <input 
