@@ -230,59 +230,7 @@ const AdminTransactions = () => {
           <div className="bg-surface-container-low/50 rounded-2xl p-5 border border-outline-variant/20 shadow-inner min-h-[120px]">
             <p className="text-sm text-on-surface-variant leading-relaxed mb-4">Chấp nhận thanh toán bằng ứng dụng Mobile Banking của các ngân hàng, thẻ nội địa và thẻ quốc tế.</p>
             
-            {methods.vnpay && (
-              <div className="space-y-4 pt-4 border-t border-outline-variant/30 animate-fade-in">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant mb-1.5">Terminal ID (vnp_TmnCode)</label>
-                  <input 
-                    type={isEditingApi || showKeys ? "text" : "password"} 
-                    value={isEditingApi ? tempKeys.tmnCode : apiKeys.tmnCode}
-                    onChange={(e) => setTempKeys({...tempKeys, tmnCode: e.target.value})}
-                    readOnly={!isEditingApi} 
-                    className={`w-full bg-white border ${isEditingApi ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-outline-variant/40'} rounded-xl px-4 py-2.5 text-sm text-on-surface font-mono transition-all outline-none`} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant mb-1.5">Secret Key (vnp_HashSecret)</label>
-                  <div className="relative">
-                    <input 
-                      type={showKeys ? "text" : "password"} 
-                      value={isEditingApi ? tempKeys.hashSecret : apiKeys.hashSecret}
-                      onChange={(e) => setTempKeys({...tempKeys, hashSecret: e.target.value})}
-                      readOnly={!isEditingApi} 
-                      className={`w-full bg-white border ${isEditingApi ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-outline-variant/40'} rounded-xl px-4 py-2.5 pr-12 text-sm text-on-surface font-mono transition-all outline-none`} 
-                    />
-                    {isEditingApi && (
-                      <button 
-                        onClick={() => setShowKeys(!showKeys)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-blue-600 transition-colors bg-surface-container-low p-1 rounded-md"
-                      >
-                        <span className="material-symbols-outlined text-[18px] block">{showKeys ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex justify-end pt-3">
-                  {!isEditingApi ? (
-                    <button onClick={handleEditClick} className="text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors">
-                      <span className="material-symbols-outlined text-[16px]">edit_note</span>
-                      Cấu hình API
-                    </button>
-                  ) : (
-                    <div className="flex gap-3">
-                      <button onClick={() => setIsEditingApi(false)} className="text-sm font-bold text-on-surface-variant bg-surface-variant/50 hover:bg-surface-variant px-4 py-2 rounded-xl transition-colors">
-                        Hủy
-                      </button>
-                      <button onClick={handleSaveClick} className="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 px-5 py-2 rounded-xl flex items-center gap-2 transition-all">
-                        <span className="material-symbols-outlined text-[16px]">save</span>
-                        Lưu thiết lập
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
 

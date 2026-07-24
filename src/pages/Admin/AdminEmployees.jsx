@@ -175,10 +175,7 @@ const AdminEmployees = () => {
           </div>
         </div>
 
-        <button className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-secondary text-on-secondary rounded-xl hover:bg-secondary/90 transition-all font-bold shadow-md h-[42px]">
-          <span className="material-symbols-outlined text-[18px]">person_add</span>
-          Thêm nhân sự mới
-        </button>
+
       </div>
 
       {/* Table */}
