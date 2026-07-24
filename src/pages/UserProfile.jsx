@@ -37,6 +37,7 @@ export default function UserProfile() {
   const [cars, setCars] = useState([]);
 
   const [bookings, setBookings] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
 
   const [showTierRulesModal, setShowTierRulesModal] = useState(false);
   const [membershipTiers, setMembershipTiers] = useState([]);
@@ -214,6 +215,18 @@ export default function UserProfile() {
               }
             })
             .catch(err => console.warn('Lỗi lấy lịch sử đặt lịch:', err));
+
+            // Fetch vouchers (/api/Vouchers/my-vouchers)
+            fetch(import.meta.env.VITE_API_URL + '/api/Vouchers/my-vouchers', {
+              headers: { 'Authorization': `Bearer ${parsed.token}` }
+            })
+            .then(res => res.ok ? res.json() : { data: [] })
+            .then(resData => {
+              if (resData.success && Array.isArray(resData.data)) {
+                setVouchers(resData.data);
+              }
+            })
+            .catch(err => console.warn('Lỗi lấy voucher:', err));
 
             // 4. Fetch schedule for staff
             if (parsed.tier === 'Staff' || parsed.tier === 'BranchManager' || parsed.tier === 'TechnicalStaff') {
@@ -669,6 +682,55 @@ export default function UserProfile() {
               {cars.length === 0 && (
                 <div className="col-span-2 py-8 text-center text-on-surface-variant">
                   Chưa có xe nào trong danh mục. Vui lòng thêm xe mới.
+                </div>
+              )}
+            </div>
+          </article>
+
+          {/* PHẦN QUẢN LÝ VOUCHER */}
+          <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-xl text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined">confirmation_number</span>
+                Kho Voucher Của Tôi
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vouchers.map((v) => {
+                const voucher = v.voucher || v;
+                return (
+                <div 
+                  key={voucher.id || v.id} 
+                  className="relative overflow-hidden bg-surface-container-low border border-outline-variant/30 rounded-2xl p-0 flex flex-col hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-center p-4 gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center select-none shadow-sm flex-shrink-0">
+                      <span className="material-symbols-outlined text-2xl font-bold">local_offer</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-on-surface text-base line-clamp-1">{voucher.code}</p>
+                      <p className="text-sm text-on-surface-variant font-medium">
+                        Giảm {voucher.discountPercentage}% (Tối đa {new Intl.NumberFormat('vi-VN').format(voucher.maxDiscountAmount || 0)}đ)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-surface-container-highest px-4 py-2 border-t border-outline-variant/20 flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-outline">
+                      HSD: {voucher.endDate ? new Date(voucher.endDate).toLocaleDateString('vi-VN') : 'Không thời hạn'}
+                    </span>
+                    {v.isUsed ? (
+                      <span className="text-[11px] font-bold text-outline bg-surface-variant/30 px-2 py-0.5 rounded">Đã sử dụng</span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Sẵn sàng</span>
+                    )}
+                  </div>
+                </div>
+              )})}
+
+              {vouchers.length === 0 && (
+                <div className="col-span-2 py-8 text-center text-on-surface-variant">
+                  Bạn chưa lưu voucher nào.
                 </div>
               )}
             </div>
