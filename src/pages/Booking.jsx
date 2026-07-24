@@ -461,8 +461,8 @@ export default function Booking() {
       .then(res => res.json())
       .then(data => {
         setAvailableMethods({
-          cash: data.cash ?? true,
-          vnpay: data.vnpay ?? true
+          cash: data.isCashActive ?? true,
+          vnpay: data.isVnpayActive ?? false
         });
       })
       .catch(err => console.error(err));
