@@ -121,14 +121,6 @@ const AdminMainLayout = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Bell Icon */}
-            <button 
-              className="relative text-on-surface-variant/80 hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low select-none flex items-center justify-center"
-              title="Thông báo"
-            >
-              <span className="material-symbols-outlined text-2xl">notifications</span>
-              <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-error ring-2 ring-white"></span>
-            </button>
 
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>

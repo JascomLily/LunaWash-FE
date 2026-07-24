@@ -217,22 +217,6 @@ const AdminDashboard = () => {
             </div>
           </div>
           
-          {/* Map mock */}
-          <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col h-[250px] relative">
-            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none"></div>
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 pointer-events-none"></div>
-            
-            <div className="absolute top-4 left-4 z-10">
-              <h2 className="font-bold text-white text-sm">Hệ thống mạng lưới</h2>
-              <p className="text-[10px] text-white/50">{data.revenueByBranch.length} chi nhánh</p>
-            </div>
-            
-            {/* Markers */}
-            <div className="absolute top-[40%] left-[30%] w-6 h-6 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.8)] flex items-center justify-center border-2 border-white/20 animate-pulse"></div>
-            <div className="absolute top-[60%] left-[50%] w-8 h-8 bg-emerald-500 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.8)] flex items-center justify-center border-2 border-white/20"></div>
-            <div className="absolute top-[70%] left-[65%] w-6 h-6 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.8)] flex items-center justify-center border-2 border-white/20"></div>
-          </div>
-
         </div>
       </div>
       

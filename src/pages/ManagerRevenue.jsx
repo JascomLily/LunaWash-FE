@@ -11,8 +11,9 @@ import {
 } from 'recharts';
 
 const BRANCH_DETAILS = {
-  'branch1': { name: 'LunaWash Quận 1', address: '123 Lê Lợi, Bến Thành', phone: '1900 5678' },
-  'branch2': { name: 'LunaWash Thủ Đức', address: '45 Võ Văn Ngân, Thủ Đức', phone: '1900 1234' }
+  'BRN-Q1-01': { name: 'LunaWash Quận 1', address: '123 Lê Lợi, Bến Thành', phone: '1900 5678' },
+  'BRN-TD-01': { name: 'LunaWash Thủ Đức', address: '45 Võ Văn Ngân, Thủ Đức', phone: '1900 1234' },
+  'BRN-LD-01': { name: 'LunaWash Lâm Đồng', address: '12 Lâm Đồng', phone: '1900 4321' }
 };
 
 export default function ManagerRevenue() {
@@ -51,7 +52,12 @@ export default function ManagerRevenue() {
   const fetchRevenueData = async (branchId, selectedPeriod, refDate) => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5010/api/Dashboard/branch/${branchId}/revenue?period=${selectedPeriod}&referenceDate=${refDate}`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5010/api/Dashboard/branch/${branchId}/revenue?period=${selectedPeriod}&referenceDate=${refDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const result = await res.json();
         setData(result);
