@@ -15,6 +15,7 @@ import Feedback from './pages/Feedback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import StaffQueue from './pages/StaffQueue';
+import ManagerRevenue from './pages/ManagerRevenue';
 import BranchHistory from './pages/BranchHistory';
 import BranchFeedback from './pages/BranchFeedback';
 import ManagerStaff from './pages/ManagerStaff';
@@ -42,7 +43,8 @@ function ProtectedRoute({ children, allowedRoles }) {
   }
   try {
     const user = JSON.parse(storedUser);
-    if (!allowedRoles.includes(user.tier)) {
+    const userRole = user.role || user.tier; // Support both properties
+    if (!allowedRoles.includes(userRole)) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fade-in">
           <span className="material-symbols-outlined text-6xl text-error mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -107,6 +109,11 @@ function App() {
             <Route path="/staff/queue" element={
               <ProtectedRoute allowedRoles={['Staff', 'BranchManager']}>
                 <StaffQueue />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/revenue" element={
+              <ProtectedRoute allowedRoles={['BranchManager']}>
+                <ManagerRevenue />
               </ProtectedRoute>
             } />
             <Route path="/staff/history" element={

@@ -45,7 +45,8 @@ export default function Navbar() {
     }
   };
 
-  const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(user.tier);
+  const userRole = user ? (user.role || user.tier) : null;
+  const isCustomer = !user || !['Admin', 'Staff', 'BranchManager', 'TechnicalStaff'].includes(userRole);
 
   // Lấy thông tin hạng thành viên (đồng bộ với UserProfile)
   const getTierInfo = () => {
@@ -142,7 +143,7 @@ export default function Navbar() {
       <div className="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20 shrink-0">
         {/* Logo */}
         {/* Logo */}
-        <Link to={(!isCustomer && user) ? (user.tier === 'Admin' ? "/admin" : (user.tier === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue")) : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
+        <Link to={(!isCustomer && user) ? (userRole === 'Admin' ? "/admin" : (userRole === 'TechnicalStaff' ? "/staff/technical" : "/staff/queue")) : "/"} className="font-display-lg text-display-lg font-bold text-primary flex items-center">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g"
             alt="LunaWash Logo"
@@ -195,7 +196,7 @@ export default function Navbar() {
                 Hỗ Trợ
               </Link>
             </>
-          ) : user.tier === 'Admin' ? (
+          ) : userRole === 'Admin' ? (
             <>
               <Link
                 to="/admin"
@@ -210,16 +211,29 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link
-                to="/staff/queue"
-                className={`transition-colors py-2 border-b-2 ${
-                  isActive('/staff/queue') 
-                    ? 'text-primary font-bold border-primary' 
-                    : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
-                }`}
-              >
-                Hàng Đợi Xe
-              </Link>
+              {userRole === 'BranchManager' ? (
+                <Link
+                  to="/staff/revenue"
+                  className={`transition-colors py-2 border-b-2 ${
+                    isActive('/staff/revenue') 
+                      ? 'text-primary font-bold border-primary' 
+                      : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                  }`}
+                >
+                  Doanh Thu
+                </Link>
+              ) : (
+                <Link
+                  to="/staff/queue"
+                  className={`transition-colors py-2 border-b-2 ${
+                    isActive('/staff/queue') 
+                      ? 'text-primary font-bold border-primary' 
+                      : 'text-on-surface-variant border-transparent hover:text-primary hover:border-primary/50'
+                  }`}
+                >
+                  Hàng Đợi Xe
+                </Link>
+              )}
               <Link
                 to="/staff/history"
                 className={`transition-colors py-2 border-b-2 ${
@@ -250,7 +264,7 @@ export default function Navbar() {
               >
                 Trang Kỹ Thuật
               </Link>
-              {user.tier === 'BranchManager' && (
+              {userRole === 'BranchManager' && (
                 <Link
                   to="/staff/employees"
                   className={`transition-colors py-2 border-b-2 ${
@@ -317,6 +331,16 @@ export default function Navbar() {
                               key={notif.id} 
                               onClick={() => {
                                 if (!notif.isRead) handleMarkAsRead(notif.id);
+                                if (notif.title === 'Công việc mới' || notif.message.includes('Có công việc bảo trì mới')) {
+                                  setNotificationsOpen(false);
+                                  navigate('/staff/technical', { state: { openGeneralTasks: true } });
+                                } else if (notif.title === 'Báo cáo sự cố mới' || notif.message.includes('Sự cố mới')) {
+                                  setNotificationsOpen(false);
+                                  navigate('/staff/technical', { state: { openManagerReports: true } });
+                                } else if (notif.title === 'Nghiệm thu sự cố' || notif.message.includes('đang chờ bạn nghiệm thu')) {
+                                  setNotificationsOpen(false);
+                                  navigate('/staff/technical', { state: { openManagerIncidents: true } });
+                                }
                               }}
                               className={`p-4 border-b border-outline-variant/10 cursor-pointer transition-colors hover:bg-surface-container-low ${!notif.isRead ? 'bg-primary/5' : ''}`}
                             >
@@ -330,7 +354,7 @@ export default function Navbar() {
                                     {notif.message}
                                   </p>
                                   <p className="text-[10px] text-on-surface-variant/50 mt-1.5 font-medium uppercase tracking-wider">
-                                    {new Date(notif.createdAt).toLocaleDateString('vi-VN')} {new Date(notif.createdAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                                    {new Date(notif.createdAt.endsWith('Z') ? notif.createdAt : notif.createdAt + 'Z').toLocaleDateString('vi-VN')} {new Date(notif.createdAt.endsWith('Z') ? notif.createdAt : notif.createdAt + 'Z').toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
                                   </p>
                                 </div>
                               </div>
@@ -383,10 +407,10 @@ export default function Navbar() {
                       </span>
                     ) : (
                       <span className="text-[9px] font-extrabold uppercase tracking-wide text-primary">
-                        {user.tier === 'Staff' ? 'Nhân viên' : 
-                         user.tier === 'BranchManager' ? 'Quản lý' : 
-                         user.tier === 'Admin' ? 'Admin' : 
-                         user.tier === 'TechnicalStaff' ? 'Kỹ Thuật' : ''}
+                        {userRole === 'Staff' ? 'Nhân viên' : 
+                         userRole === 'BranchManager' ? 'Quản lý' : 
+                         userRole === 'Admin' ? 'Admin' : 
+                         userRole === 'TechnicalStaff' ? 'Kỹ Thuật' : ''}
                       </span>
                     )}
                   </div>
@@ -509,17 +533,21 @@ export default function Navbar() {
                 <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử</Link>
                 <Link to="/support" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/support') ? 'text-primary' : 'text-on-surface'}`}>Hỗ Trợ</Link>
               </>
-            ) : user?.tier === 'Admin' ? (
+            ) : userRole === 'Admin' ? (
               <>
                 <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/admin') ? 'text-primary' : 'text-on-surface'}`}>Vào Trang Quản Trị</Link>
               </>
             ) : (
               <>
-                <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                {userRole === 'BranchManager' ? (
+                  <Link to="/staff/revenue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/revenue') ? 'text-primary' : 'text-on-surface'}`}>Doanh Thu</Link>
+                ) : (
+                  <Link to="/staff/queue" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/queue') ? 'text-primary' : 'text-on-surface'}`}>Hàng Đợi Xe</Link>
+                )}
                 <Link to="/staff/history" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/history') ? 'text-primary' : 'text-on-surface'}`}>Lịch Sử Trạm</Link>
                 <Link to="/staff/feedback" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/feedback') ? 'text-primary' : 'text-on-surface'}`}>Phản Hồi</Link>
                 <Link to="/staff/technical" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/technical') ? 'text-primary' : 'text-on-surface'}`}>Trang Kỹ Thuật</Link>
-                {user?.tier === 'BranchManager' && (
+                {userRole === 'BranchManager' && (
                   <Link to="/staff/employees" onClick={() => setMobileMenuOpen(false)} className={`py-4 text-lg font-bold border-b border-outline-variant/20 ${isActive('/staff/employees') ? 'text-primary' : 'text-on-surface'}`}>Nhân Sự & Ca Trực</Link>
                 )}
               </>
