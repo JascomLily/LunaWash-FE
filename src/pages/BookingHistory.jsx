@@ -24,6 +24,8 @@ export default function BookingHistory() {
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsBooking, setDetailsBooking] = useState(null);
+  
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleOpenReview = (booking) => {
     setReviewBooking(booking);
@@ -195,29 +197,33 @@ export default function BookingHistory() {
     }
   };
 
-  const handleCancelBooking = async () => {
+  const handleCancelBooking = () => {
     if (!activeBooking) return;
-    if (window.confirm('Bạn có chắc chắn muốn hủy lịch đặt xe này không? (Hủy trước 30 phút hoàn toàn miễn phí)')) {
-      try {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) return;
-        const parsed = JSON.parse(storedUser);
-        
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${parsed.token}` }
-        });
-        
-        if (res.ok) {
-          toast.success('Đã hủy lịch đặt thành công.');
-          fetchBookings();
-        } else {
-          const errData = await res.json();
-          toast.error(errData.message || 'Không thể hủy lịch đặt.');
-        }
-      } catch(err) {
-        toast.error('Lỗi kết nối đến máy chủ.');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!activeBooking) return;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsed = JSON.parse(storedUser);
+      
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${parsed.token}` }
+      });
+      
+      if (res.ok) {
+        toast.success('Đã hủy lịch đặt thành công.');
+        fetchBookings();
+        setShowCancelModal(false);
+      } else {
+        const errData = await res.json();
+        toast.error(errData.message || 'Không thể hủy lịch đặt.');
       }
+    } catch(err) {
+      toast.error('Lỗi kết nối máy chủ.');
     }
   };
 
@@ -702,6 +708,35 @@ export default function BookingHistory() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-surface-container-lowest rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-scaleIn border border-outline-variant/20">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-error/5">
+                <span className="material-symbols-outlined text-3xl">warning</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Hủy lịch đặt xe</h3>
+              <p className="text-sm text-on-surface-variant">Bạn có chắc chắn muốn hủy lịch đặt này không? Việc hủy trước 30 phút là hoàn toàn miễn phí.</p>
+            </div>
+            <div className="flex border-t border-outline-variant/20 bg-surface-container-low/30">
+              <button 
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-4 font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-colors border-r border-outline-variant/20"
+              >
+                Trở lại
+              </button>
+              <button 
+                onClick={confirmCancelBooking}
+                className="flex-1 py-4 font-bold text-error hover:bg-error/10 transition-colors"
+              >
+                Đồng ý hủy
+              </button>
+            </div>
           </div>
         </div>
       )}
