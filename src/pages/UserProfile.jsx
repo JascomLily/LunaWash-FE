@@ -504,25 +504,11 @@ export default function UserProfile() {
               {tierInfo.label}
             </p>
           )}
+          </section>
 
-          {/* Menu Sidebar */}
-          <nav className="w-full flex flex-col gap-2">
-            <button className="w-full flex items-center gap-3 px-5 py-4 bg-primary text-white rounded-2xl shadow-md transition-all font-bold text-left">
-              <span className="material-symbols-outlined text-xl">account_circle</span>
-              Tổng quan hồ sơ
-            </button>
-            <button 
-              onClick={() => alert('Cài đặt tài khoản sẽ được tích hợp cùng hệ thống máy chủ.')}
-              className="w-full flex items-center gap-3 px-5 py-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-2xl transition-all font-medium text-left"
-            >
-              <span className="material-symbols-outlined text-xl">settings</span>
-              Cài đặt tài khoản
-            </button>
-          </nav>
-          
           {/* KHO VOUCHER (CỘT TRÁI) */}
           {isCustomer && (
-            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col gap-4 mt-2">
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col gap-4">
               <h3 className="font-bold text-lg text-primary flex items-center gap-2">
                 <span className="material-symbols-outlined text-xl">confirmation_number</span>
                 Kho Voucher
@@ -568,10 +554,8 @@ export default function UserProfile() {
               </div>
             </div>
           )}
-          </section>
 
-          
-        </div>
+          </div>
 
         {/* CỘT PHẢI - NỘI DUNG CHÍNH */}
         <section className="col-span-1 lg:col-span-3 flex flex-col gap-6">
