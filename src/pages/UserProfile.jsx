@@ -519,6 +519,55 @@ export default function UserProfile() {
               Cài đặt tài khoản
             </button>
           </nav>
+          
+          {/* KHO VOUCHER (CỘT TRÁI) */}
+          {isCustomer && (
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-6 shadow-xl flex flex-col gap-4 mt-2">
+              <h3 className="font-bold text-lg text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">confirmation_number</span>
+                Kho Voucher
+              </h3>
+              
+              <div className="flex flex-col gap-3">
+                {vouchers.map((v) => {
+                  const voucher = v.voucher || v;
+                  return (
+                    <div 
+                      key={voucher.id || v.id} 
+                      className="relative overflow-hidden bg-surface-container-low border border-outline-variant/30 rounded-xl flex flex-col hover:shadow-md transition-all group"
+                    >
+                      <div className="flex items-center p-3 gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center select-none shadow-sm flex-shrink-0">
+                          <span className="material-symbols-outlined text-lg font-bold">local_offer</span>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="font-bold text-on-surface text-sm truncate" title={voucher.voucherName}>
+                            {voucher.voucherName || 'Voucher'}
+                          </p>
+                          <p className="text-[11px] text-on-surface-variant font-medium mt-0.5">
+                            Giảm {voucher.discountValue > 100 ? `${new Intl.NumberFormat('vi-VN').format(voucher.discountValue)}đ` : `${voucher.discountValue}%`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-surface-container-highest px-3 py-1.5 border-t border-outline-variant/20 flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-outline">
+                          HSD: {voucher.expiryDate ? new Date(voucher.expiryDate).toLocaleDateString('vi-VN') : 'Vô thời hạn'}
+                        </span>
+                        {v.isUsed ? (
+                          <span className="text-[10px] font-bold text-outline bg-surface-variant/30 px-1.5 py-0.5 rounded">Đã dùng</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Sẵn sàng</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {vouchers.length === 0 && (
+                  <p className="text-[13px] text-center text-on-surface-variant py-2">Bạn chưa lưu voucher nào.</p>
+                )}
+              </div>
+            </div>
+          )}
           </section>
 
           
@@ -651,7 +700,7 @@ export default function UserProfile() {
 
             {/* Danh sách xe */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cars.map((car) => (
+                            {cars.map((car) => (
                 <div 
                   key={car.id} 
                   className="bg-background border border-outline-variant/30 hover:border-primary/30 rounded-2xl p-5 flex items-center justify-between hover:shadow-md transition-all group"
@@ -682,55 +731,6 @@ export default function UserProfile() {
               {cars.length === 0 && (
                 <div className="col-span-2 py-8 text-center text-on-surface-variant">
                   Chưa có xe nào trong danh mục. Vui lòng thêm xe mới.
-                </div>
-              )}
-            </div>
-          </article>
-
-          {/* PHẦN QUẢN LÝ VOUCHER */}
-          <article className="bg-surface-container-lowest border border-outline-variant/30 rounded-[32px] p-8 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-xl text-primary flex items-center gap-2">
-                <span className="material-symbols-outlined">confirmation_number</span>
-                Kho Voucher Của Tôi
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {vouchers.map((v) => {
-                const voucher = v.voucher || v;
-                return (
-                <div 
-                  key={voucher.id || v.id} 
-                  className="relative overflow-hidden bg-surface-container-low border border-outline-variant/30 rounded-2xl p-0 flex flex-col hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-center p-4 gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center select-none shadow-sm flex-shrink-0">
-                      <span className="material-symbols-outlined text-2xl font-bold">local_offer</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-on-surface text-base line-clamp-1">{voucher.code}</p>
-                      <p className="text-sm text-on-surface-variant font-medium">
-                        Giảm {voucher.discountPercentage}% (Tối đa {new Intl.NumberFormat('vi-VN').format(voucher.maxDiscountAmount || 0)}đ)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-surface-container-highest px-4 py-2 border-t border-outline-variant/20 flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-outline">
-                      HSD: {voucher.endDate ? new Date(voucher.endDate).toLocaleDateString('vi-VN') : 'Không thời hạn'}
-                    </span>
-                    {v.isUsed ? (
-                      <span className="text-[11px] font-bold text-outline bg-surface-variant/30 px-2 py-0.5 rounded">Đã sử dụng</span>
-                    ) : (
-                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Sẵn sàng</span>
-                    )}
-                  </div>
-                </div>
-              )})}
-
-              {vouchers.length === 0 && (
-                <div className="col-span-2 py-8 text-center text-on-surface-variant">
-                  Bạn chưa lưu voucher nào.
                 </div>
               )}
             </div>
