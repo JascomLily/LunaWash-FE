@@ -107,16 +107,7 @@ const AdminMainLayout = () => {
               >
                 Cài đặt hệ thống
               </NavLink>
-              <NavLink
-                to="/admin/feedback"
-                className={`transition-colors py-2 border-b-2 text-sm ${
-                  isActive('/admin/feedback') 
-                    ? 'text-primary font-bold border-primary' 
-                    : 'text-on-surface-variant font-semibold border-transparent hover:text-primary hover:border-primary/50'
-                }`}
-              >
-                Thông báo & Phản hồi
-              </NavLink>
+
             </nav>
           </div>
 

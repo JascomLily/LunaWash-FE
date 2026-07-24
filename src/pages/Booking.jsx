@@ -454,6 +454,19 @@ export default function Booking() {
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('tien-mat');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [availableMethods, setAvailableMethods] = useState({ cash: true, vnpay: true });
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments')
+      .then(res => res.json())
+      .then(data => {
+        setAvailableMethods({
+          cash: data.cash ?? true,
+          vnpay: data.vnpay ?? true
+        });
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   const [showNoVehicleAlert, setShowNoVehicleAlert] = useState(false);
   const [highlightVehicleSection, setHighlightVehicleSection] = useState(false);
@@ -2084,26 +2097,28 @@ export default function Booking() {
             {/* Options */}
             <div className="space-y-3">
               {/* Option 1: VNPay */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setPaymentMethod('vnpay');
-                  handleExecuteCheckout('vnpay');
-                }}
-                className="w-full group p-3.5 border border-slate-100 hover:border-[#4cd7f6] hover:bg-[#4cd7f6]/5 rounded-2xl flex items-center justify-between transition-all duration-300 active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-[#4cd7f6]/20 transition-colors">
-                    <span className="material-symbols-outlined text-xl block">qr_code_scanner</span>
+              {availableMethods.vnpay && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setPaymentMethod('vnpay');
+                    handleExecuteCheckout('vnpay');
+                  }}
+                  className="w-full group p-3.5 border border-slate-100 hover:border-[#4cd7f6] hover:bg-[#4cd7f6]/5 rounded-2xl flex items-center justify-between transition-all duration-300 active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-[#4cd7f6]/20 transition-colors">
+                      <span className="material-symbols-outlined text-xl block">qr_code_scanner</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-extrabold text-sm text-[#00236f]">Thanh toán VN Pay</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">Ví điện tử, Thẻ nội địa/Quốc tế</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="font-extrabold text-sm text-[#00236f]">Thanh toán VN Pay</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Ví điện tử, Thẻ nội địa/Quốc tế</p>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-slate-300 group-hover:text-[#4cd7f6] text-lg transition-colors">chevron_right</span>
-              </button>
+                  <span className="material-symbols-outlined text-slate-300 group-hover:text-[#4cd7f6] text-lg transition-colors">chevron_right</span>
+                </button>
+              )}
 
               {/* Option 2: Cash */}
               <button
