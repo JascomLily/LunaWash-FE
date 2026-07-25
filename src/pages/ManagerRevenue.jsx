@@ -53,7 +53,7 @@ export default function ManagerRevenue() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5010/api/Dashboard/branch/${branchId}/revenue?period=${selectedPeriod}&referenceDate=${refDate}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Dashboard/branch/${branchId}/revenue?period=${selectedPeriod}&referenceDate=${refDate}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
