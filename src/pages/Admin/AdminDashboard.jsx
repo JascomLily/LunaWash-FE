@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -11,6 +11,7 @@ const AdminDashboard = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [selectedBranchChart, setSelectedBranchChart] = useState(null);
   const [data, setData] = useState({
     totalRevenue: 0,
     totalBookings: 0,
@@ -48,6 +49,18 @@ const AdminDashboard = () => {
 
   const today = new Date();
   const dateString = `Hôm nay, ${today.getDate()} Tháng ${today.getMonth() + 1}`;
+
+  const processSparkline = (sparklineData) => {
+    if (!sparklineData) return [];
+    return sparklineData.map((item, idx) => {
+       const d = new Date();
+       d.setDate(d.getDate() - (6 - idx));
+       return {
+           ...item,
+           dateStr: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+       };
+    });
+  };
 
   const generatePDFBlob = async () => {
     if (!reportRef.current) return null;
@@ -212,17 +225,34 @@ const AdminDashboard = () => {
                     <p className="font-black text-gray-800 text-lg">{branch.revenue.toLocaleString('vi-VN')}đ</p>
                   </div>
                   
-                  {/* Sparkline Chart */}
-                  <div className="w-full md:w-1/3 h-12 z-10">
+                  {/* Better Sparkline Chart */}
+                  <div 
+                    className="w-full md:w-1/3 h-20 z-10 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors p-1"
+                    onClick={() => setSelectedBranchChart(branch)}
+                    title="Bấm để xem chi tiết biểu đồ"
+                  >
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={branch.sparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                      <AreaChart data={processSparkline(branch.sparklineData)} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                        <defs>
+                          <linearGradient id={`colorValue_${branch.branchId}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={branch.isActive ? "#6366f1" : "#ef4444"} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={branch.isActive ? "#6366f1" : "#ef4444"} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <Tooltip 
+                           formatter={(value) => [`${value.toLocaleString('vi-VN')}đ`, 'Doanh thu']}
+                           labelFormatter={(label) => `Ngày: ${label}`}
+                           contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                        />
+                        <XAxis dataKey="dateStr" hide />
                         <Area 
                           type="monotone" 
                           dataKey="value" 
                           stroke={branch.isActive ? "#6366f1" : "#ef4444"} 
-                          fill={branch.isActive ? "#e0e7ff" : "#fee2e2"} 
+                          fillOpacity={1} 
+                          fill={`url(#colorValue_${branch.branchId})`}
                           strokeWidth={2}
-                          isAnimationActive={true}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: branch.isActive ? "#4f46e5" : "#dc2626" }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -401,6 +431,84 @@ const AdminDashboard = () => {
               >
                 <span className="material-symbols-outlined text-[20px]">send</span>
                 Xuất & Gửi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chart Detail Modal */}
+      {selectedBranchChart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-3xl shadow-2xl relative z-50">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-2xl font-black text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[28px]">monitoring</span>
+                  Chi tiết doanh thu: {selectedBranchChart.branchName}
+                </h3>
+                <p className="text-sm text-on-surface-variant mt-1">Biểu đồ doanh thu 7 ngày gần nhất</p>
+              </div>
+              <button 
+                onClick={() => setSelectedBranchChart(null)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-variant hover:bg-outline-variant/30 text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+            
+            <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4 md:p-6 mb-2 h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={processSparkline(selectedBranchChart.sparklineData)} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="colorDetail" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={selectedBranchChart.isActive ? "#6366f1" : "#ef4444"} stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor={selectedBranchChart.isActive ? "#6366f1" : "#ef4444"} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="dateStr" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fontSize: 12, fill: '#64748b'}} 
+                    dy={10} 
+                  />
+                  <YAxis 
+                    tickFormatter={(val) => val >= 1000000 ? `${(val/1000000).toFixed(1)}M` : `${val/1000}k`} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fontSize: 12, fill: '#64748b'}} 
+                    width={50} 
+                  />
+                  <Tooltip 
+                     formatter={(value) => [`${value.toLocaleString('vi-VN')}đ`, 'Doanh thu']}
+                     labelFormatter={(label) => `Ngày: ${label}`}
+                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke={selectedBranchChart.isActive ? "#6366f1" : "#ef4444"} 
+                    fillOpacity={1} 
+                    fill="url(#colorDetail)"
+                    strokeWidth={3}
+                    activeDot={{ r: 8, strokeWidth: 0, fill: selectedBranchChart.isActive ? "#4f46e5" : "#dc2626" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-outline-variant/20">
+              <div className="text-sm">
+                <span className="text-on-surface-variant mr-2">Tổng doanh thu chi nhánh:</span>
+                <span className="font-bold text-lg text-primary">{selectedBranchChart.revenue.toLocaleString('vi-VN')}đ</span>
+              </div>
+              <button 
+                onClick={() => setSelectedBranchChart(null)}
+                className="px-6 py-2 rounded-xl font-bold text-white bg-primary hover:bg-primary-container hover:text-on-primary-container transition-colors"
+              >
+                Đóng
               </button>
             </div>
           </div>
