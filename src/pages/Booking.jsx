@@ -624,6 +624,7 @@ export default function Booking() {
   const [userTierObj, setUserTierObj] = useState(null);
 
   useEffect(() => {
+    // FE: HÀM NÀY DÙNG ĐỂ GỌI API LẤY CẤU HÌNH HẠNG THÀNH VIÊN VÀ QUYỀN LỢI ĐẶT LỊCH (Mấy ngày)
     const fetchTierSettings = async () => {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) return;
@@ -637,7 +638,9 @@ export default function Booking() {
         if (localDays) setMaxBookingDays(localDays);
 
         // Fetch API để cập nhật chính xác cấu hình mới nhất
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings', {
+        // GỌI API LÊN BACKEND: GET /api/Membership/settings
+          // Để lấy dữ liệu danh sách hạng thành viên (Member, Silver, Gold, Platinum) mới nhất
+          const res = await fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings', {
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
         if (res.ok) {
@@ -2143,6 +2146,9 @@ export default function Booking() {
                     const requiredTier = membershipTiers.find(t => t.id === requiredTierId);
                     
                     if (requiredTier && userTierObj) {
+                      // XỬ LÝ CHÍNH Ở ĐÂY:
+                      // Nếu điểm tối thiểu (minPoints) của hạng người dùng HIỆN TẠI 
+                      // mà BÉ HƠN điểm tối thiểu (minPoints) của HẠNG YÊU CẦU -> CHẶN
                       if (userTierObj.minPoints < requiredTier.minPoints) {
                         toast.error(`Hạng của bạn không hỗ trợ thanh toán tiền mặt (Yêu cầu từ hạng ${requiredTier.tierName} trở lên). Vui lòng chọn VNPay!`, { duration: 5000 });
                         return;

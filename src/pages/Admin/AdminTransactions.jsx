@@ -83,7 +83,9 @@ const AdminTransactions = () => {
         minimumTierIdForCash: newMethods.minimumTierIdForCash
       };
 
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
+      // GỌI API LÊN BACKEND: PUT /api/Settings/payments
+        // Truyền object chứa các cấu hình: bật/tắt VNPay, Tiền mặt và Hạng tối thiểu
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
