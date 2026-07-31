@@ -262,6 +262,13 @@ export default function StaffQueue() {
                   const [hours, mins] = endTimeStr.split(':');
                   const endTime = new Date(year, month - 1, day, hours, mins);
                   
+                  // Fix: Nếu endTime < startTime (ví dụ 00:15 < 22:45), tức là qua ngày hôm sau
+                  const [startHours, startMins] = parts[0].split(':');
+                  const startTime = new Date(year, month - 1, day, startHours, startMins);
+                  if (endTime < startTime) {
+                      endTime.setDate(endTime.getDate() + 1);
+                  }
+                  
                   if (getVietnamTime() > endTime) {
                      status = 'Cancelled';
                   }
