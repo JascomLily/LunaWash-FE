@@ -85,7 +85,7 @@ const WASH_SLOTS = [
   { id: 'SL-03', name: 'Trạm 3', status: 'Sẵn sàng', color: 'text-emerald-600 bg-emerald-50' }
 ];
 
-// Removed static SERVICE_PACKAGES
+// [Bình thường] Đã xóa SERVICE_PACKAGES tĩnh, sử dụng dữ liệu động từ API
 
 const MOCK_SAVED_VEHICLES = [
   { id: 'V-01', license: 'Toyota Vios - 51H-123.45', type: 'xe-o-to', brand: 'Toyota', model: 'Vios 1.5G' },
@@ -96,7 +96,7 @@ const MOCK_SAVED_VEHICLES = [
 const generateTimeSlots = () => {
   const slots = [];
   for (let i = 0; i < 27; i++) {
-    const totalMinutes = 240 + i * 45; // Start at 04:00 (240 mins)
+    const totalMinutes = 240 + i * 45; // [Bình thường] Bắt đầu lúc 04:00 (240 phút)
     const hours = Math.floor(totalMinutes / 60) % 24;
     const minutes = totalMinutes % 60;
     const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
@@ -111,12 +111,8 @@ const generateTimeSlots = () => {
 const TIME_SLOTS = generateTimeSlots();
 
 // Cấu hình dịch vụ vệ sinh nội thất cho từng loại xe
-// Removed static INTERIOR_CLEAN_SPECS
+// [Bình thường] Đã xóa INTERIOR_CLEAN_SPECS tĩnh, sử dụng dữ liệu động từ API
 
-/**
- * Trang Đặt Lịch Rửa Xe Thông Minh (Booking) - LunaWash.
- * Thiết kế khớp hoàn hảo với Ảnh 4.
- */
 /**
  * Main component for users to select branch, service, and time to book a car wash.
  * It guides the user through different steps to complete a booking.
@@ -232,13 +228,13 @@ export default function Booking() {
   const [highlightPromo, setHighlightPromo] = useState(false);
   const toastShownRef = React.useRef(false);
 
-  // Promo Code Verification
+  // [Bình thường] Xác thực mã giảm giá (Promo Code)
   const [discountInfo, setDiscountInfo] = useState(null);
   const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
   const [promoError, setPromoError] = useState(null);
 
   const handleApplyPromo = async (codeToApply) => {
-    // If called from button onClick, codeToApply is an Event object
+    // [Bình thường] Nếu được gọi từ sự kiện onClick của nút, codeToApply sẽ là một Event object
     const code = (typeof codeToApply === 'string' ? codeToApply : promoCode)?.trim();
     if (!code) {
       setDiscountInfo(null);
@@ -320,7 +316,7 @@ export default function Booking() {
       toastShownRef.current = true;
       handleApplyPromo(location.state.promoCode);
       
-      // Clear the promoCode from history state so it doesn't trigger again on reload
+      // [Bình thường] Xóa promoCode khỏi history state để nó không kích hoạt lại khi tải lại trang
       navigate(location.pathname, { replace: true, state: { ...navState, promoCode: undefined } });
     }
   }, [location.state, location.pathname, navigate, navState]);
