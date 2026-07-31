@@ -103,7 +103,7 @@ const DEFAULT_BOOKINGS = [
 const BRANCH_DETAILS = {
   'BRN-Q1-01': { name: 'LunaWash Quận 1', address: '123 Lê Lợi, Bến Thành', phone: '1900 5678' },
   'BRN-TD-01': { name: 'LunaWash Thủ Đức', address: '45 Võ Văn Ngân, Thủ Đức', phone: '1900 1234' },
-  'BRN-LD-01': { name: 'LunaWash Lâm Đồng', address: '12 Lâm Đồng', phone: '1900 4321' },
+  'BRN-LD-01': { name: 'LunaWash Linh Đông', address: 'Thủ Đức, HCM', phone: '1900 4321' },
   'BRN-TTH-01': {
     name: 'LunaWash Tân Thới Hiệp',
     address: 'Quận 12, HCM',
