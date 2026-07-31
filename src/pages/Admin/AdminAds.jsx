@@ -73,6 +73,8 @@ export default function AdminAds() {
       }));
 
       const baseUrl = API_BASE;
+      // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Admin lưu cấu hình Banner quảng cáo
+      // -> Sẽ nhận được ở: BE - BannersController.cs (Hàm SaveBanners)
       const response = await fetch(`${baseUrl}/api/banners/save`, {
         method: 'POST',
         headers: { 

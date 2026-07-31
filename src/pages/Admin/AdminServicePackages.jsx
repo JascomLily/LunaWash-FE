@@ -382,6 +382,8 @@ const AdminServicePackages = () => {
       let url = isNew ? API_BASE_URL : `${API_BASE_URL}/${pkgData.id}`;
       let method = isNew ? 'POST' : 'PUT';
 
+      // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Admin Setup Gói Dịch vụ (Thêm mới hoặc Cập nhật)
+      // -> Sẽ nhận được ở: BE - ServicePackagesController.cs (Hàm CreateService hoặc UpdateService)
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

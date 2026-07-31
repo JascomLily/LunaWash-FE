@@ -462,7 +462,8 @@ export default function Booking() {
       .then(data => {
         setAvailableMethods({
           cash: data.isCashActive ?? true,
-          vnpay: data.isVnpayActive ?? false
+          vnpay: data.isVnpayActive ?? false,
+          minimumTierIdForCash: data.minimumTierIdForCash
         });
       })
       .catch(err => console.error(err));
@@ -619,6 +620,8 @@ export default function Booking() {
   // Tính toán giới hạn ngày đặt lịch dựa trên hạng thành viên
   const [maxBookingDays, setMaxBookingDays] = useState(3);
   const [currentTier, setCurrentTier] = useState('Đồng');
+  const [membershipTiers, setMembershipTiers] = useState([]);
+  const [userTierObj, setUserTierObj] = useState(null);
 
   useEffect(() => {
     const fetchTierSettings = async () => {
@@ -638,20 +641,30 @@ export default function Booking() {
           headers: { 'Authorization': `Bearer ${parsed.token}` }
         });
         if (res.ok) {
-          const tiers = await res.json();
-          // Tìm tier khớp (xử lý ngoại lệ "Member" == "Đồng")
-          const checkTier = userTier.toLowerCase() === 'member' ? 'đồng' : userTier.toLowerCase();
+          const data = await res.json();
+          const tiers = Array.isArray(data) ? data : (data.value || data.data || []);
+          setMembershipTiers(tiers);
+          
+          const checkTier = userTier.toLowerCase();
           const match = tiers.find(t => {
             const tName = t.tierName.toLowerCase();
-            return tName === checkTier || (tName.includes('đồng') && checkTier.includes('member'));
+            if (tName === checkTier) return true;
+            if (tName === 'member' && (checkTier.includes('đồng') || checkTier.includes('member'))) return true;
+            if (tName === 'silver' && (checkTier.includes('bạc') || checkTier.includes('silver'))) return true;
+            if (tName === 'gold' && (checkTier.includes('vàng') || checkTier.includes('gold'))) return true;
+            if (tName === 'platinum' && (checkTier.includes('bạch kim') || checkTier.includes('platinum'))) return true;
+            return false;
           });
           
-          if (match && match.maxBookingDays) {
+          if (match) {
+            setUserTierObj(match);
+            if (match.maxBookingDays) {
             setMaxBookingDays(match.maxBookingDays);
             
             // Cập nhật lại vào localStorage
             parsed.maxBookingDays = match.maxBookingDays;
-            localStorage.setItem('user', JSON.stringify(parsed));
+              localStorage.setItem('user', JSON.stringify(parsed));
+            }
           }
         }
       } catch (err) {
@@ -2121,9 +2134,25 @@ export default function Booking() {
               )}
 
               {/* Option 2: Cash */}
-              <button
-                type="button"
+              {availableMethods.cash && (
+                <button
+                  type="button"
                 onClick={() => {
+                  const requiredTierId = availableMethods.minimumTierIdForCash;
+                  if (requiredTierId && membershipTiers.length > 0) {
+                    const requiredTier = membershipTiers.find(t => t.id === requiredTierId);
+                    
+                    if (requiredTier && userTierObj) {
+                      if (userTierObj.minPoints < requiredTier.minPoints) {
+                        toast.error(`Hạng của bạn không hỗ trợ thanh toán tiền mặt (Yêu cầu từ hạng ${requiredTier.tierName} trở lên). Vui lòng chọn VNPay!`, { duration: 5000 });
+                        return;
+                      }
+                    } else if (requiredTier && !userTierObj) {
+                      toast.error(`Không thể xác thực hạng thành viên của bạn. Vui lòng chọn VNPay!`, { duration: 5000 });
+                      return;
+                    }
+                  }
+
                   setShowPaymentModal(false);
                   setPaymentMethod('tien-mat');
                   handleExecuteCheckout('tien-mat');
@@ -2141,6 +2170,7 @@ export default function Booking() {
                 </div>
                 <span className="material-symbols-outlined text-slate-300 group-hover:text-[#4cd7f6] text-lg transition-colors">chevron_right</span>
               </button>
+              )}
             </div>
             
           </div>

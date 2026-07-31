@@ -87,6 +87,8 @@ const AdminPromotions = () => {
       };
 
       const baseUrl = API_BASE;
+      // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Admin tạo mới Mã giảm giá (Voucher)
+      // -> Sẽ nhận được ở: BE - VouchersController.cs (Hàm CreateVoucher)
       const response = await fetch(`${baseUrl}/api/vouchers`, {
         method: 'POST',
         headers: { 
