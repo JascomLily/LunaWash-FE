@@ -372,6 +372,8 @@ export default function StaffQueue() {
 
   const updateBookingStatus = async (id, newStatus) => {
     try {
+      // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Nhân viên cập nhật trạng thái đơn hàng (Đã nhận xe / Hoàn thành)
+      // -> Sẽ nhận được ở: BE - StaffBookingsController.cs (Hàm CompleteService / UpdateStatus)
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/${id}/status`, {
         method: 'PUT',
         headers: {

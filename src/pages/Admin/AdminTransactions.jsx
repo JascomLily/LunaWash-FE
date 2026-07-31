@@ -7,8 +7,10 @@ const AdminTransactions = () => {
     cash: true,
     vnpay: false,
     momo: false,
-    zalopay: false
+    zalopay: false,
+    minimumTierIdForCash: 'TIER-MEM'
   });
+  const [tiers, setTiers] = useState([]);
 
   // API State
   const [apiKeys, setApiKeys] = useState({ tmnCode: '', hashSecret: '' });
@@ -31,19 +33,29 @@ const AdminTransactions = () => {
       const userStr = localStorage.getItem('user');
       const token = userStr ? JSON.parse(userStr).token : '';
       
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const [res, tiersRes] = await Promise.all([
+        fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
       if (!res.ok) throw new Error('Không thể tải cấu hình thanh toán');
       const data = await res.json();
+      
+      if (tiersRes.ok) {
+        const fetchedTiers = await tiersRes.json();
+        fetchedTiers.sort((a, b) => a.minPoints - b.minPoints);
+        setTiers(fetchedTiers);
+      }
       
       setMethods({
         cash: data.isCashActive,
         vnpay: data.isVnpayActive,
         momo: data.isMomoActive,
-        zalopay: data.isZaloPayActive
+        zalopay: data.isZaloPayActive,
+        minimumTierIdForCash: data.minimumTierIdForCash || 'TIER-MEM'
       });
       setApiKeys({
         tmnCode: data.vnpayTmnCode || '',
@@ -67,7 +79,8 @@ const AdminTransactions = () => {
         isMomoActive: newMethods.momo,
         isZaloPayActive: newMethods.zalopay,
         vnpayTmnCode: newKeys.tmnCode,
-        vnpayHashSecret: newKeys.hashSecret
+        vnpayHashSecret: newKeys.hashSecret,
+        minimumTierIdForCash: newMethods.minimumTierIdForCash
       };
 
       const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
@@ -106,6 +119,22 @@ const AdminTransactions = () => {
       } else {
         toast.success(`Đã tắt thanh toán bằng ${key.toUpperCase()}`);
       }
+    } else {
+      // Revert if failed
+      setMethods(methods);
+    }
+  };
+
+  const handleTierChange = async (e) => {
+    const newTierId = e.target.value;
+    const newMethods = { ...methods, minimumTierIdForCash: newTierId };
+    
+    // Optimistic UI Update
+    setMethods(newMethods);
+    
+    const success = await updateSettingsAPI(newMethods, apiKeys);
+    if (success) {
+      toast.success('Đã cập nhật hạng tối thiểu cho Tiền mặt!');
     } else {
       // Revert if failed
       setMethods(methods);
@@ -201,8 +230,22 @@ const AdminTransactions = () => {
             </label>
           </div>
           
-          <div className="bg-surface-container-low/50 rounded-2xl p-5 text-sm text-on-surface-variant border border-outline-variant/20 h-[120px] flex items-center shadow-inner">
+          <div className="bg-surface-container-low/50 rounded-2xl p-5 text-sm text-on-surface-variant border border-outline-variant/20 flex flex-col shadow-inner min-h-[120px] justify-center gap-3">
             <p className="leading-relaxed">Cho phép khách hàng thanh toán bằng tiền mặt trực tiếp cho nhân viên hoặc thu ngân sau khi sử dụng xong dịch vụ tại trung tâm.</p>
+            {methods.cash && tiers.length > 0 && (
+              <div className="flex items-center justify-between border-t border-outline-variant/20 pt-3 mt-1 animate-fade-in">
+                <span className="font-semibold text-on-surface">Hạng tối thiểu:</span>
+                <select 
+                  className="bg-surface border border-outline-variant/30 rounded-lg px-3 py-1.5 text-sm font-bold text-primary outline-none focus:border-primary/50"
+                  value={methods.minimumTierIdForCash}
+                  onChange={handleTierChange}
+                >
+                  {tiers.map(t => (
+                    <option key={t.id} value={t.id}>{t.tierName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
