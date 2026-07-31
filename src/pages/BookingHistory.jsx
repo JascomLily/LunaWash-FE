@@ -7,6 +7,9 @@ import toast from 'react-hot-toast';
  * Trang Lịch Sử Rửa Xe / Quản lý lịch rửa xe (BookingHistory) - LunaWash.
  * Thiết kế khớp hoàn hảo với Ảnh 3.
  */
+//<<Comment Function>>
+// Hàm này là: Component trang quản lý lịch sử rửa xe của người dùng, xem danh sách lịch đặt, đánh giá và hủy lịch.
+//<</.....>>
 export default function BookingHistory() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,7 +18,7 @@ export default function BookingHistory() {
   const [historyList, setHistoryList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // States for Modals
+  // [Bình thường] Khởi tạo các state cho Modal
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewBooking, setReviewBooking] = useState(null);
   const [serviceRating, setServiceRating] = useState(5);
@@ -27,6 +30,9 @@ export default function BookingHistory() {
   
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+//<<Comment Function>>
+// Hàm này là: Mở modal đánh giá dịch vụ và khởi tạo các state đánh giá
+//<</.....>>
   const handleOpenReview = (booking) => {
     setReviewBooking(booking);
     setServiceRating(5);
@@ -35,6 +41,9 @@ export default function BookingHistory() {
     setShowReviewModal(true);
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện gửi đánh giá của người dùng
+//<</.....>>
   const handleSubmitReview = async () => {
     try {
       const storedUser = localStorage.getItem('user');
@@ -48,6 +57,7 @@ export default function BookingHistory() {
         comment: reviewComment
       };
 
+      // [API: Gọi API lên Backend (POST /api/reviews), truyền bookingId, serviceRating, staffRating, comment, dùng để gửi đánh giá dịch vụ]
       const res = await fetch(import.meta.env.VITE_API_URL + '/api/reviews', {
         method: 'POST',
         headers: {
@@ -60,7 +70,7 @@ export default function BookingHistory() {
       if (res.ok) {
         toast.success('Cảm ơn bạn đã đánh giá dịch vụ!');
       } else {
-        // Tạm báo thành công vì BE đang làm
+        // [Bình thường] Tạm báo thành công vì Backend đang làm
         toast.success('Cảm ơn bạn đã đánh giá dịch vụ! (Pending BE)');
       }
     } catch(err) {
@@ -70,25 +80,32 @@ export default function BookingHistory() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Mở modal hiển thị chi tiết lịch đặt
+//<</.....>>
   const handleOpenDetails = (booking) => {
     setDetailsBooking(booking);
     setShowDetailsModal(true);
   };
 
+//<<Comment Function>>
+// Hàm này là: Lấy danh sách các lịch đặt của người dùng từ Backend
+//<</.....>>
   const fetchBookings = async () => {
     try {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
+      // [API: Gọi API lên Backend (GET /api/bookings/history), dùng để lấy lịch sử đặt lịch của người dùng]
       const res = await fetch(import.meta.env.VITE_API_URL + '/api/bookings/history', {
         headers: { 'Authorization': `Bearer ${parsed.token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        // Lọc bỏ những booking rác của VNPAY (chưa thanh toán xong mà đã thoát)
+        // [Bình thường] Lọc bỏ những booking rác của VNPAY (chưa thanh toán xong mà đã thoát)
         const validData = data.filter(b => !(b.paymentMethod === 'vnpay_pending' && (b.status === 'Sắp đến' || b.status === 'Pending')));
         
-        // Find the first "Sắp đến" or "Đang rửa" booking
+        // [Bình thường] Tìm lịch đặt đầu tiên có trạng thái "Sắp đến" hoặc "Đang rửa"
         const active = validData.find(b => b.status === 'Sắp đến' || b.status === 'Đang rửa');
         if (active) {
           let timeVal = '';
@@ -125,7 +142,7 @@ export default function BookingHistory() {
           setActiveBooking(null);
         }
 
-        // Map the rest to historyList
+        // [Bình thường] Ánh xạ các lịch đặt còn lại vào danh sách lịch sử (historyList)
         const history = validData.filter(b => !active || b.id !== active.id).map(b => ({
           id: b.id,
           packageName: b.packageName,
@@ -159,7 +176,7 @@ export default function BookingHistory() {
     window.addEventListener('focus', fetchBookings);
     window.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // ECO-MODE Polling: Chỉ gọi API nếu màn hình đang bật/đang mở tab (Tiết kiệm Render & Azure)
+    // [Bình thường] ECO-MODE Polling: Chỉ gọi API nếu màn hình đang bật/đang mở tab (Tiết kiệm Render & Azure)
     const intervalId = setInterval(() => {
       if (document.visibilityState === 'visible') {
         fetchBookings();
@@ -174,6 +191,9 @@ export default function BookingHistory() {
   }, []);
 
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện người dùng xác nhận đã sẵn sàng vào trạm
+//<</.....>>
   const handleConfirmReady = async () => {
     if (!activeBooking) return;
     try {
@@ -181,6 +201,7 @@ export default function BookingHistory() {
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
       
+      // [API: Gọi API lên Backend (PUT /api/bookings/{id}/confirm-ready), dùng để xác nhận khách hàng đã sẵn sàng]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}/confirm-ready`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${parsed.token}` }
@@ -197,11 +218,17 @@ export default function BookingHistory() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Mở modal xác nhận hủy lịch đặt
+//<</.....>>
   const handleCancelBooking = () => {
     if (!activeBooking) return;
     setShowCancelModal(true);
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý yêu cầu xác nhận hủy lịch đặt
+//<</.....>>
   const confirmCancelBooking = async () => {
     if (!activeBooking) return;
     try {
@@ -209,6 +236,7 @@ export default function BookingHistory() {
       if (!storedUser) return;
       const parsed = JSON.parse(storedUser);
       
+      // [API: Gọi API lên Backend (DELETE /api/bookings/{id}), dùng để hủy lịch đặt]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${activeBooking.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${parsed.token}` }
@@ -227,10 +255,16 @@ export default function BookingHistory() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Chuyển hướng người dùng đến trang tạo lịch đặt mới
+//<</.....>>
   const handleCreateNewBooking = () => {
     navigate('/booking');
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý yêu cầu xóa đánh giá của người dùng
+//<</.....>>
   const handleDeleteReview = async (bookingId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không?')) {
       try {
@@ -238,6 +272,7 @@ export default function BookingHistory() {
         if (!storedUser) return;
         const parsed = JSON.parse(storedUser);
         
+        // [API: Gọi API lên Backend (DELETE /api/reviews/{id}), dùng để xóa đánh giá]
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/${bookingId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${parsed.token}` }
@@ -255,6 +290,9 @@ export default function BookingHistory() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Chuyển hướng người dùng đến trang đánh giá cho lịch đặt chưa được đánh giá
+//<</.....>>
   const handleReviewClick = () => {
     const unratedBooking = historyList.find(b => b.status === 'Hoàn thành' && !b.rating);
     if (!unratedBooking) {
@@ -287,7 +325,7 @@ export default function BookingHistory() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter items-stretch">
             
-            {/* Thẻ lịch đặt xe đang hoạt động */}
+            {/* [Bình thường] Thẻ lịch đặt xe đang hoạt động */}
             {activeBooking ? (
               <div className="lg:col-span-2 border-2 border-primary bg-surface-container-lowest rounded-3xl p-6 flex flex-col justify-between shadow-lg relative overflow-hidden group">
                 <span className={`absolute top-0 right-0 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl select-none ${activeBooking.status === 'Đang rửa' ? 'bg-amber-500 animate-pulse' : 'bg-sky-500'}`}>
@@ -295,7 +333,7 @@ export default function BookingHistory() {
                 </span>
 
                 <div className="space-y-6">
-                  {/* Tên gói & Giá tiền */}
+                  {/* [Bình thường] Tên gói & Giá tiền */}
                   <div className="flex justify-between items-start border-b border-outline-variant/20 pb-4">
                     <div>
                       <h3 className="font-extrabold text-xl text-primary uppercase">{activeBooking.packageName}</h3>
@@ -312,7 +350,7 @@ export default function BookingHistory() {
                     </div>
                   </div>
 
-                  {/* Chi tiết vị trí / Thời gian */}
+                  {/* [Bình thường] Chi tiết vị trí / Thời gian */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                     <div className="flex items-start gap-2.5">
                       <span className="material-symbols-outlined text-primary font-bold">location_on</span>
@@ -380,7 +418,7 @@ export default function BookingHistory() {
                   </div>
                 )}
 
-                {/* Nút hủy lịch */}
+                {/* [Bình thường] Nút hủy lịch */}
                 <div className="border-t border-outline-variant/20 pt-5 mt-6">
                   <button                        onClick={handleCancelBooking}
                         disabled={activeBooking.status === 'Đang rửa'}
@@ -408,7 +446,7 @@ export default function BookingHistory() {
               </div>
             )}
 
-            {/* Khung đặt lịch mới */}
+            {/* [Bình thường] Khung đặt lịch mới */}
             <div 
               onClick={handleCreateNewBooking}
               className="border border-dashed border-outline-variant hover:border-primary bg-surface-container-lowest hover:bg-primary/5 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 shadow-sm group min-h-[250px]"
@@ -539,7 +577,7 @@ export default function BookingHistory() {
 
         {/* 3. BANNER KHẢO SÁT SỰ HÀI LÒNG */}
         <section className="relative rounded-[32px] overflow-hidden bg-gradient-to-r from-[#00236f] to-indigo-900 shadow-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 group">
-          {/* Lớp lưới nền */}
+          {/* [Bình thường] Lớp lưới nền */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] z-0"></div>
           
           <div className="relative z-10 max-w-xl space-y-2">
@@ -561,7 +599,7 @@ export default function BookingHistory() {
 
       </div>
 
-      {/* MODAL ĐÁNH GIÁ */}
+      {/* [Bình thường] MODAL ĐÁNH GIÁ */}
       {showReviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-surface-container-lowest w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden p-6 relative">
@@ -612,7 +650,7 @@ export default function BookingHistory() {
         </div>
       )}
 
-      {/* MODAL CHI TIẾT LỊCH ĐẶT */}
+      {/* [Bình thường] MODAL CHI TIẾT LỊCH ĐẶT */}
       {showDetailsModal && detailsBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-surface-container-lowest w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -712,7 +750,7 @@ export default function BookingHistory() {
         </div>
       )}
 
-      {/* Cancel Modal */}
+      {/* [Bình thường] Modal hủy lịch đặt */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-surface-container-lowest rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-scaleIn border border-outline-variant/20">

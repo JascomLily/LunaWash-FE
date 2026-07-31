@@ -792,13 +792,172 @@ export default function Booking() {
     }
   }, [selectedDate, selectedWashSlot, occupiedSlots, numSlots]);
 
+//<<Comment Function>>
+// Hàm này là: Tạo danh sách các ngày để hiển thị trên lịch (calendar), bao gồm các ngày của tháng hiện tại, các ngày bị thiếu của tháng trước và tháng sau để lấp đầy grid (42 ô)
+//<</.....>>
+  const generateCalendarDays = () => {
+          const res = await fetch(import.meta.env.VITE_API_URL + '/api/Membership/settings', {
+          headers: { 'Authorization': `Bearer ${parsed.token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const tiers = Array.isArray(data) ? data : (data.value || data.data || []);
+          setMembershipTiers(tiers);
+          
+          const checkTier = userTier.toLowerCase();
+          const match = tiers.find(t => {
+            const tName = t.tierName.toLowerCase();
+            if (tName === checkTier) return true;
+            if (tName === 'member' && (checkTier.includes('đồng') || checkTier.includes('member'))) return true;
+            if (tName === 'silver' && (checkTier.includes('bạc') || checkTier.includes('silver'))) return true;
+            if (tName === 'gold' && (checkTier.includes('vàng') || checkTier.includes('gold'))) return true;
+            if (tName === 'platinum' && (checkTier.includes('bạch kim') || checkTier.includes('platinum'))) return true;
+            return false;
+          });
+          
+          if (match) {
+            setUserTierObj(match);
+            if (match.maxBookingDays) {
+            setMaxBookingDays(match.maxBookingDays);
+            
+            // Cập nhật lại vào localStorage
+            parsed.maxBookingDays = match.maxBookingDays;
+              localStorage.setItem('user', JSON.stringify(parsed));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching tier settings:', err);
+      }
+    };
+    fetchTierSettings();
+  }, []);
+
+  const todayStart = getVietnamTime();
+  todayStart.setHours(0, 0, 0, 0);
+  const maxAllowedDate = getVietnamTime();
+  maxAllowedDate.setDate(maxAllowedDate.getDate() + maxBookingDays);
+  maxAllowedDate.setHours(23, 59, 59, 999);
+
+  // Lấy năm và tháng từ selectedDate để hiển thị lịch ban đầu
+  const [calendarYear, setCalendarYear] = useState(() => {
+    const parts = selectedDate.split('-');
+    return parts[0] ? parseInt(parts[0], 10) : getVietnamTime().getFullYear();
+  });
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const parts = selectedDate.split('-');
+    return parts[1] ? parseInt(parts[1], 10) - 1 : getVietnamTime().getMonth();
+  });
+
+  const [occupiedSlotsSet, setOccupiedSlotsSet] = useState(new Map());
+
+  useEffect(() => {
+    if (!selectedBranch || !selectedWashSlot) {
+      setOccupiedSlotsSet(new Map());
+      return;
+    }
+    const fetchOccupied = async () => {
+      try {
+        const slotNumber = selectedWashSlot.split('-')[1];
+        if (!slotNumber) return;
+        const washSlotId = `${selectedBranch}-WS-${slotNumber}`;
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/occupied-slots?date=${selectedDate}&washSlotId=${washSlotId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const blocked = new Map();
+        
+        // 1. Chặn các slot giờ đã qua trong ngày hôm nay
+        const now = getVietnamTime();
+        const localISOTime = getTodayStr(now);
+        const isToday = selectedDate === localISOTime;
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        TIME_SLOTS.forEach((slot, index) => {
+          if (isToday) {
+            const [slotHour, slotMin] = slot.time.split(':').map(Number);
+            if (slotHour < currentHour || (slotHour === currentHour && slotMin <= currentMinute)) {
+              blocked.set(index, 'past');
+            }
+          }
+        });
+
+        // 2. Chặn các slot đã có người đặt từ Database
+        data.forEach(booking => {
+            const startD = new Date(booking.startTime);
+            const startTotal = startD.getHours() * 60 + startD.getMinutes();
+            
+            const endD = new Date(booking.endTime);
+            const endTotal = endD.getHours() * 60 + endD.getMinutes();
+            
+            TIME_SLOTS.forEach((slot, i) => {
+               const [slotH, slotM] = slot.time.split(':').map(Number);
+               const slotTotal = slotH * 60 + slotM;
+               
+               if (slotTotal >= startTotal && slotTotal < endTotal) {
+                   blocked.set(i, 'booked');
+               }
+            });
+        });
+        
+        setOccupiedSlotsSet(blocked);
+      } catch(e) { console.error(e); }
+    };
+    fetchOccupied();
+  }, [selectedDate, selectedWashSlot, selectedBranch]);
+
+  const occupiedSlots = React.useMemo(() => occupiedSlotsSet, [occupiedSlotsSet]);
+
+  // Tự động chuyển slot giờ được chọn sang slot còn trống đầu tiên nếu bị trùng vào slot đã đặt
+  useEffect(() => {
+    if (!selectedTimeSlotId) return; // Không tự chọn khi chưa chọn gì
+    const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
+    const isSlotOccupied = (idx) => occupiedSlots.has(idx);
+    
+    let isCurrentValid = startIndex !== -1 && startIndex + numSlots <= TIME_SLOTS.length;
+    if (isCurrentValid) {
+      for (let i = 0; i < numSlots; i++) {
+        if (isSlotOccupied(startIndex + i)) {
+          isCurrentValid = false;
+          break;
+        }
+      }
+    }
+    
+    if (!isCurrentValid) {
+      let foundSlotId = null;
+      for (let i = 0; i <= TIME_SLOTS.length - numSlots; i++) {
+        let isSequenceValid = true;
+        for (let j = 0; j < numSlots; j++) {
+          if (isSlotOccupied(i + j)) {
+            isSequenceValid = false;
+            break;
+          }
+        }
+        if (isSequenceValid) {
+          foundSlotId = TIME_SLOTS[i].id;
+          break;
+        }
+      }
+      if (foundSlotId) {
+        setSelectedTimeSlotId(foundSlotId);
+      } else {
+        setSelectedTimeSlotId(null);
+      }
+    }
+  }, [selectedDate, selectedWashSlot, occupiedSlots, numSlots]);
+
+//<<Comment Function>>
+// Hàm này là: Tạo danh sách các ngày để hiển thị trên lịch (calendar)
+//<</.....>>
   const generateCalendarDays = () => {
     const days = [];
     const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
     const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
     const prevTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
     
-    // 1. Thêm các ngày của tháng trước (in mờ)
+    // [Bình thường] Thêm các ngày của tháng trước (in mờ)
     for (let i = firstDayIndex - 1; i >= 0; i--) {
       const dayNum = prevTotalDays - i;
       let m = calendarMonth - 1;
@@ -807,12 +966,12 @@ export default function Booking() {
       days.push({ day: dayNum, month: m, year: y, isCurrentMonth: false });
     }
     
-    // 2. Thêm các ngày của tháng hiện tại
+    // [Bình thường] Thêm các ngày của tháng hiện tại
     for (let i = 1; i <= totalDays; i++) {
       days.push({ day: i, month: calendarMonth, year: calendarYear, isCurrentMonth: true });
     }
     
-    // 3. Thêm các ngày của tháng sau để lấp đầy grid (42 ô cho 6 tuần)
+    // [Bình thường] Thêm các ngày của tháng sau để lấp đầy grid (42 ô cho 6 tuần)
     const totalCells = 42; 
     const nextDaysCount = totalCells - days.length;
     for (let i = 1; i <= nextDaysCount; i++) {
@@ -825,6 +984,9 @@ export default function Booking() {
     return days;
   };
 
+//<<Comment Function>>
+// Hàm này là: Chuyển lịch sang tháng trước
+//<</.....>>
   const handlePrevMonth = () => {
     if (calendarMonth === 0) {
       setCalendarMonth(11);
@@ -834,6 +996,9 @@ export default function Booking() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Chuyển lịch sang tháng sau
+//<</.....>>
   const handleNextMonth = () => {
     if (calendarMonth === 11) {
       setCalendarMonth(0);
@@ -843,6 +1008,9 @@ export default function Booking() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý khi người dùng chọn một ngày cụ thể trên lịch
+//<</.....>>
   const handleSelectDay = (dayObj) => {
     const y = dayObj.year;
     const m = String(dayObj.month + 1).padStart(2, '0');
@@ -851,6 +1019,9 @@ export default function Booking() {
     setShowCalendarPopup(false);
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý khi người dùng chọn nút "Hôm nay" trên lịch
+//<</.....>>
   const handleSelectToday = () => {
     const today = getVietnamTime();
     const y = today.getFullYear();
@@ -862,6 +1033,9 @@ export default function Booking() {
     setShowCalendarPopup(false);
   };
 
+//<<Comment Function>>
+// Hàm này là: Lấy danh sách các trạm rửa khả dụng dựa trên chi nhánh đã chọn
+//<</.....>>
   const getBranchSlots = (branchId) => {
     if (!branchId) return [];
     switch (branchId) {
@@ -870,14 +1044,14 @@ export default function Booking() {
         return WASH_SLOTS;
       case 'BRN-Q7-01': // LunaWash Quận 7: 2 trạm
         return WASH_SLOTS.slice(0, 2);
-      default: // Còn lại (Tân Thới Hiệp, Tân Bình): 1 trạm
+      default: // [Bình thường] Còn lại (Tân Thới Hiệp, Tân Bình): 1 trạm
         return WASH_SLOTS.slice(0, 1);
     }
   };
 
   const availableSlots = getBranchSlots(selectedBranch);
 
-  // Tự động chuyển trạm về trạm hợp lệ đầu tiên nếu trạm hiện tại không thuộc chi nhánh mới chọn
+  // [Bình thường] Tự động chuyển trạm về trạm hợp lệ đầu tiên nếu trạm hiện tại không thuộc chi nhánh mới chọn
   useEffect(() => {
     if (!selectedBranch) {
       setSelectedWashSlot('');
@@ -891,7 +1065,7 @@ export default function Booking() {
 
 
 
-  // TÍNH TOÁN DỮ LIỆU TÓM TẮT DỊCH VỤ ĐỘNG
+  // [Bình thường] TÍNH TOÁN DỮ LIỆU TÓM TẮT DỊCH VỤ ĐỘNG
   const activePackage = mainPackages.find(p => p.id === selectedPackage) || null;
   const activePackagePrice = activePackage?.prices?.find(p => p.vehicleTypeId === selectedVehicleTypeId)?.price || activePackage?.prices?.[0]?.price || 0;
   const baseCost = activePackage ? activePackagePrice : 0;
@@ -913,7 +1087,9 @@ export default function Booking() {
   const selectedBranchIdx = BRANCHES.findIndex(b => b.id === selectedBranch);
   const allStepsCompleted = !!selectedBranch && !!selectedWashSlot && !!selectedPackage && !!selectedVehicleId && !!selectedTimeSlotId;
 
-  // Định dạng danh sách slot được chọn
+//<<Comment Function>>
+// Hàm này là: Định dạng chuỗi hiển thị danh sách các lượt (slot) đã chọn
+//<</.....>>
   const getSelectedSlotsDisplay = () => {
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
     if (startIndex === -1) return 'Chưa chọn';
@@ -929,7 +1105,7 @@ export default function Booking() {
     }
   };
 
-  // Tính khoảng thời gian dự kiến
+  // [Bình thường] Tính khoảng thời gian dự kiến
   const expectedTimeRange = (() => {
     const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
     if (startIndex === -1) return 'Chưa chọn';
@@ -945,16 +1121,21 @@ export default function Booking() {
     const formattedStart = `${String(finalStartH).padStart(2, '0')}:${String(finalStartM).padStart(2, '0')}`;
     
     const [endH, endM] = endStr.split(':').map(Number);
-    const totalEndM = endH * 60 + endM + 40; // mỗi slot 40 phút
+    const totalEndM = endH * 60 + endM + 40; // [Bình thường] mỗi slot 40 phút
     const finalEndH = Math.floor(totalEndM / 60) % 24;
     const finalEndM = totalEndM % 60;
     const formattedEnd = `${String(finalEndH).padStart(2, '0')}:${String(finalEndM).padStart(2, '0')}`;
     return `${formattedStart} - ${formattedEnd}`;
   })();
 
-  // Định dạng hiển thị tiền VNĐ
+//<<Comment Function>>
+// Hàm này là: Định dạng hiển thị tiền theo chuẩn VNĐ
+//<</.....>>
   const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
+//<<Comment Function>>
+// Hàm này là: Mở modal thanh toán và kiểm tra các điều kiện (đã chọn chi nhánh, trạm, dịch vụ, xe, khung giờ)
+//<</.....>>
   const handleOpenPaymentModal = () => {
     if (requireLogin()) return;
     if (hasActiveBooking) {
@@ -990,6 +1171,9 @@ export default function Booking() {
     setShowPaymentModal(true);
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý quá trình thanh toán và gọi API tạo booking
+//<</.....>>
   const handleExecuteCheckout = async (selectedMethod) => {
     const activeVeh = userVehicles.find(v => v.id === selectedVehicleId);
     if (!activeVeh) return;
@@ -1056,11 +1240,62 @@ export default function Booking() {
       const parsed = JSON.parse(storedUser);
 
       toast.loading('Đang xử lý đặt lịch...', { id: 'booking' });
+      // [API: Gọi API lên Backend (POST /api/bookings), truyền bookingPayload, dùng để tạo booking mới]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${parsed.token}`
+        },
+        body: JSON.stringify(bookingPayload)
+      });
+
+//<<Comment Function>>
+// Hàm này là: Định dạng hiển thị tiền theo chuẩn VNĐ
+//<</.....>>
+  const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+
+//<<Comment Function>>
+// Hàm này là: Mở modal thanh toán và kiểm tra các điều kiện (đã chọn chi nhánh, trạm, dịch vụ, xe, khung giờ)
+//<</.....>>
+  const handleOpenPaymentModal = () => {
+    if (requireLogin()) return;
+    if (hasActiveBooking) {
+      setShowBlockModal(true);
+      return;
+    }
+    if (!selectedBranch) {
+      toast.error('Vui lòng chọn chi nhánh!');
+      return;
+    }
+    if (!selectedWashSlot) {
+      toast.error('Vui lòng chọn trạm rửa!');
+      return;
+    }
+    if (!selectedPackage) {
+      toast.error('Vui lòng chọn gói dịch vụ!');
+      return;
+    }
+    if (!selectedVehicleId) {
+      setShowNoVehicleAlert(true);
+      return;
+    }
+
+    const activeVeh = userVehicles.find(v => v.id === selectedVehicleId);
+    if (!activeVeh) return;
+
+    const startIndex = TIME_SLOTS.findIndex(t => t.id === selectedTimeSlotId);
+    if (startIndex === -1) {
+      toast.error('Vui lòng chọn khung giờ hợp lệ!');
+      return;
+    }
+
+    setShowPaymentModal(true);
+  };
+
+//<<Comment Function>>
+// Hàm này là: Xử lý quá trình thanh toán và gọi API tạo booking
+//<</.....>>
         },
         body: JSON.stringify(bookingPayload)
       });

@@ -9,18 +9,21 @@ const getToken = () => {
   } catch { return null; }
 };
 
+//<<Comment Function>>
+// Hàm này là: Component AdminPromotions dùng cho admin quản lý và tạo mới các chương trình khuyến mãi (vouchers).
+//<</.....>>
 const AdminPromotions = () => {
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Form state
+  // [Bình thường] Trạng thái của Form
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(10);
   const [isLimited, setIsLimited] = useState(false);
   const [maxUsage, setMaxUsage] = useState('');
   
-  // Set default dates (today to next 30 days)
+  // [Bình thường] Đặt ngày mặc định (từ hôm nay đến 30 ngày tới)
   const today = new Date();
   const nextMonth = new Date();
   nextMonth.setDate(today.getDate() + 30);
@@ -28,7 +31,7 @@ const AdminPromotions = () => {
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(nextMonth.toISOString().split('T')[0]);
 
-  // Fetch promotions
+  // [Bình thường] Lấy danh sách khuyến mãi
   useEffect(() => {
     fetchPromotions();
   }, []);
@@ -41,6 +44,7 @@ const AdminPromotions = () => {
         return;
       }
       const baseUrl = API_BASE;
+      // [API: Gọi API lấy danh sách tất cả khuyến mãi, dùng để hiển thị trong bảng quản lý khuyến mãi]
       const response = await fetch(`${baseUrl}/api/vouchers/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -87,6 +91,7 @@ const AdminPromotions = () => {
       };
 
       const baseUrl = API_BASE;
+      // [API: Gọi API tạo mới mã khuyến mãi (voucher), truyền dữ liệu voucher, dùng để thêm chương trình ưu đãi mới]
       // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Admin tạo mới Mã giảm giá (Voucher)
       // -> Sẽ nhận được ở: BE - VouchersController.cs (Hàm CreateVoucher)
       const response = await fetch(`${baseUrl}/api/vouchers`, {
@@ -98,7 +103,7 @@ const AdminPromotions = () => {
         body: JSON.stringify(payload)
       });
 
-      // Xử lý 401 riêng để tránh crash khi body rỗng
+      // [Bình thường] Xử lý 401 riêng để tránh crash khi body rỗng
       if (response.status === 401) {
         toast.error('Không có quyền thực hiện. Vui lòng đăng nhập lại với tài khoản Admin!');
         return;
@@ -108,7 +113,7 @@ const AdminPromotions = () => {
       if (data.success) {
         toast.success(data.message || 'Tạo mã thành công!');
         fetchPromotions();
-        // Reset form
+        // [Bình thường] Đặt lại form
         setName('');
         setCode('');
         setDiscountPercent(10);
@@ -137,7 +142,7 @@ const AdminPromotions = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-[1400px] mx-auto min-h-full space-y-8">
-      {/* Header */}
+      {/* [Bình thường] Phần Header */}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-black text-on-surface tracking-tight mb-1">Quản lý Khuyến mãi</h1>
@@ -145,7 +150,7 @@ const AdminPromotions = () => {
         </div>
       </div>
 
-      {/* Forms Section */}
+      {/* [Bình thường] Phần biểu mẫu (Forms Section) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Thiết lập Khuyến mãi */}
         <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-6 shadow-sm flex flex-col">
@@ -256,7 +261,7 @@ const AdminPromotions = () => {
         </div>
       </div>
 
-      {/* Danh sách Chương trình Đang chạy */}
+      {/* [Bình thường] Danh sách Chương trình Đang chạy */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-on-surface">Danh sách Chương trình</h2>
