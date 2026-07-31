@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Ensure the API key is available
+// [Bình thường] Đảm bảo API key khả dụng
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
@@ -9,7 +9,7 @@ if (!API_KEY) {
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// System instructions to "train" the AI
+// [Bình thường] Hướng dẫn hệ thống để "huấn luyện" AI
 const systemInstruction = `
 Bạn là Luna AI Assistant - Trợ lý hỗ trợ khách hàng thông minh của hệ thống rửa xe cao cấp LunaWash.
 Sứ mệnh của bạn là tư vấn dịch vụ, hướng dẫn đặt lịch và giải đáp thắc mắc nhiệt tình, chuyên nghiệp.
@@ -64,26 +64,29 @@ HƯỚNG DẪN CÁC TÍNH NĂNG TRÊN WEB:
 - Lịch sử & Đánh giá: Khách hàng có thể vào tab "Lịch sử" để xem các dịch vụ đã thực hiện và để lại đánh giá (Review).
 `;
 
-// Initialize the model with specific configurations
+// [Bình thường] Khởi tạo mô hình với các cấu hình cụ thể
 const model = genAI.getGenerativeModel({
   model: "gemini-flash-latest",
   systemInstruction: systemInstruction,
 });
 
+//<<Comment Function>>
+// Hàm này là: Xử lý việc gửi tin nhắn tới AI Gemini, định dạng lịch sử trò chuyện và trả về kết quả
+//<</.....>>
 export const sendChatMessage = async (chatHistory, newMessage) => {
   try {
     if (!API_KEY) {
       return "Xin lỗi, hệ thống chưa được cấu hình API Key. Vui lòng liên hệ quản trị viên.";
     }
 
-    // Format chat history for Gemini SDK
-    // 1. Skip the welcome message (id: 1)
-    // 2. Ensure strictly alternating user/model roles to prevent API crashes
+    // [Bình thường] Định dạng lịch sử trò chuyện cho Gemini SDK
+    // 1. Bỏ qua tin nhắn chào mừng (id: 1)
+    // 2. Đảm bảo luân phiên đúng vai trò user/model để tránh lỗi API
     const formattedHistory = [];
     let expectedRole = 'user';
 
     for (const msg of chatHistory) {
-      // Ignore the initial hardcoded welcome message or error messages
+      // [Bình thường] Bỏ qua tin nhắn chào mừng cố định ban đầu hoặc các tin nhắn lỗi
       if (msg.id === 1 || msg.id === "1" || msg.text.includes("gián đoạn kết nối")) {
         continue;
       }
@@ -99,10 +102,10 @@ export const sendChatMessage = async (chatHistory, newMessage) => {
       }
     }
 
-    // Start a chat session with history
+    // [Bình thường] Bắt đầu phiên trò chuyện với lịch sử
     const chatSession = model.startChat({
       history: formattedHistory,
-      // Remove maxOutputTokens to prevent accidental truncation
+      // [Bình thường] Xóa maxOutputTokens để tránh việc vô tình cắt ngang văn bản
       generationConfig: {
         temperature: 0.7,
       },
@@ -114,7 +117,7 @@ export const sendChatMessage = async (chatHistory, newMessage) => {
     return responseText;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // Return the actual error message so the user and I can see what went wrong
+    // [Bình thường] Trả về tin nhắn lỗi thực tế để người dùng và tôi có thể thấy lỗi gì đã xảy ra
     return `[LỖI HỆ THỐNG]: ${error.message || JSON.stringify(error)}`;
   }
 };

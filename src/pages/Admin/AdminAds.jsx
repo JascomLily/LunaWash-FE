@@ -9,8 +9,11 @@ const getToken = () => {
   } catch { return null; }
 };
 
+//<<Comment Function>>
+// Hàm này là: Component AdminAds dùng cho admin quản lý các banner quảng cáo trên Web và App.
+//<</.....>>
 export default function AdminAds() {
-  const [activeTab, setActiveTab] = useState('Web'); // 'Web' or 'App'
+  const [activeTab, setActiveTab] = useState('Web'); // [Bình thường] 'Web' hoặc 'App'
   
   const [webBanners, setWebBanners] = useState([]);
   const [appBanners, setAppBanners] = useState([]);
@@ -22,6 +25,7 @@ export default function AdminAds() {
   const loadBanners = async (platform, setter) => {
     try {
       const baseUrl = API_BASE;
+      // [API: Gọi API lấy danh sách banner quảng cáo, truyền platform, dùng để hiển thị lên màn hình quản lý]
       const response = await fetch(`${baseUrl}/api/banners?platform=${platform}`);
       const data = await response.json();
       
@@ -44,6 +48,7 @@ export default function AdminAds() {
     const fetchVouchers = async () => {
       try {
         const baseUrl = API_BASE;
+        // [API: Gọi API lấy danh sách tất cả voucher, dùng để admin có thể gán voucher vào banner]
         const response = await fetch(`${baseUrl}/api/vouchers/all`, {
           headers: { 'Authorization': `Bearer ${getToken()}` }
         });
@@ -73,6 +78,7 @@ export default function AdminAds() {
       }));
 
       const baseUrl = API_BASE;
+      // [API: Gọi API lưu cấu hình danh sách banner quảng cáo, truyền danh sách banner, dùng để cập nhật quảng cáo hiển thị]
       // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Admin lưu cấu hình Banner quảng cáo
       // -> Sẽ nhận được ở: BE - BannersController.cs (Hàm SaveBanners)
       const response = await fetch(`${baseUrl}/api/banners/save`, {
@@ -86,7 +92,7 @@ export default function AdminAds() {
       const data = await response.json();
       if (data.success) {
         toast.success('Đã lưu cấu hình quảng cáo vào máy chủ!');
-        // Reload to sync new IDs from database
+        // [Bình thường] Tải lại để đồng bộ các ID mới từ cơ sở dữ liệu
         loadBanners('Web', setWebBanners);
         loadBanners('App', setAppBanners);
       } else {
@@ -193,6 +199,9 @@ export default function AdminAds() {
   );
 }
 
+//<<Comment Function>>
+// Hàm này là: Component BannerCard dùng để hiển thị và chỉnh sửa thông tin của một banner quảng cáo.
+//<</.....>>
 function BannerCard({ banner, index, vouchers, isUploading, setIsUploading, handleUpdateBanner, handleDeleteBanner }) {
   const fileInputRef = useRef(null);
 
@@ -212,6 +221,7 @@ function BannerCard({ banner, index, vouchers, isUploading, setIsUploading, hand
         formData.append('file', file);
 
         const baseUrl = API_BASE;
+        // [API: Gọi API upload ảnh banner, truyền file ảnh, dùng để lưu ảnh lên Cloudinary và lấy URL về]
         const response = await fetch(`${baseUrl}/api/banners/upload`, {
           method: 'POST',
           headers: {

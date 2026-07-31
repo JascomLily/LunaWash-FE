@@ -15,8 +15,8 @@ const getExtraServicesDetails = (notesStr) => {
   }
 };
 
-// Seed data for bookings if not already in localStorage
-// DEMO: Dữ liệu mẫu tạm thời. Đợi BE viết API trả về danh sách lịch hẹn của trạm
+// [Bình thường] Dữ liệu mẫu khởi tạo cho danh sách đặt lịch nếu chưa có trong localStorage
+// [Bình thường] DEMO: Dữ liệu mẫu tạm thời. Đợi BE viết API trả về danh sách lịch hẹn của trạm
 const DEFAULT_BOOKINGS = [
   // Binh Thanh Branch (BRN-BT-01)
   {
@@ -103,7 +103,7 @@ const DEFAULT_BOOKINGS = [
 const BRANCH_DETAILS = {
   'BRN-Q1-01': { name: 'LunaWash Quận 1', address: '123 Lê Lợi, Bến Thành', phone: '1900 5678' },
   'BRN-TD-01': { name: 'LunaWash Thủ Đức', address: '45 Võ Văn Ngân, Thủ Đức', phone: '1900 1234' },
-  'BRN-LD-01': { name: 'LunaWash Lâm Đồng', address: '12 Lâm Đồng', phone: '1900 4321' },
+  'BRN-LD-01': { name: 'LunaWash Linh Đông', address: 'Thủ Đức, HCM', phone: '1900 4321' },
   'BRN-TTH-01': {
     name: 'LunaWash Tân Thới Hiệp',
     address: 'Quận 12, HCM',
@@ -121,10 +121,9 @@ const BRANCH_DETAILS = {
   }
 };
 
-/**
- * This component is used by the staff to manage the car wash queue.
- * It shows the list of customers waiting, in-progress, and finished.
- */
+//<<Comment Function>>
+// Hàm này là: Component StaffQueue dùng cho nhân viên quản lý hàng đợi rửa xe, hiển thị danh sách khách hàng đang chờ, đang rửa và đã hoàn thành.
+//<</.....>>
 export default function StaffQueue() {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -136,7 +135,7 @@ export default function StaffQueue() {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [selectedExtraServices, setSelectedExtraServices] = useState(null);
 
-  // Date picker states
+  // [Bình thường] Trạng thái của bộ chọn ngày (Date picker)
   const getVietnamTime = () => {
     const vnTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
     return new Date(vnTimeStr);
@@ -154,7 +153,7 @@ export default function StaffQueue() {
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
   const datePickerRef = useRef(null);
 
-  // Handle click outside to close date picker
+  // [Bình thường] Xử lý sự kiện click ra ngoài để đóng bộ chọn ngày
   useEffect(() => {
     function handleClickOutside(event) {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
@@ -237,6 +236,7 @@ export default function StaffQueue() {
     try {
       const branchId = parsedUser.branchId || 'BRN-LD-01';
       const targetDate = date || selectedDate;
+      // [API: Gọi API lấy danh sách đặt lịch trong ngày của chi nhánh, truyền branchId và date, để hiển thị danh sách hàng đợi]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/today/${branchId}?date=${targetDate}`, {
         headers: { 'Authorization': `Bearer ${parsedUser.token}` }
       });
@@ -250,7 +250,7 @@ export default function StaffQueue() {
           let status = dto.status;
           if (status === 'Sắp đến' || status === 'Confirmed' || status === 'Pending') {
             status = 'Pending';
-            // Auto-cancel if the car is late (past the end time)
+            // [Bình thường] Tự động hủy nếu xe đến trễ (vượt quá thời gian kết thúc)
             if (dto.timeRange) {
               try {
                 const parts = dto.timeRange.replace('\n', ' ').split(' ');
@@ -261,6 +261,13 @@ export default function StaffQueue() {
                   const [day, month, year] = dateStr.split(separator);
                   const [hours, mins] = endTimeStr.split(':');
                   const endTime = new Date(year, month - 1, day, hours, mins);
+                  
+                  // Fix: Nếu endTime < startTime (ví dụ 00:15 < 22:45), tức là qua ngày hôm sau
+                  const [startHours, startMins] = parts[0].split(':');
+                  const startTime = new Date(year, month - 1, day, startHours, startMins);
+                  if (endTime < startTime) {
+                      endTime.setDate(endTime.getDate() + 1);
+                  }
                   
                   if (getVietnamTime() > endTime) {
                      status = 'Cancelled';
@@ -300,7 +307,7 @@ export default function StaffQueue() {
   };
 
   useEffect(() => {
-    // Check auth
+    // [Bình thường] Kiểm tra xác thực người dùng
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       navigate('/login');
@@ -314,7 +321,7 @@ export default function StaffQueue() {
     setUser(parsedUser);
     fetchBookings(parsedUser, selectedDate);
 
-    // Thêm Polling 10 giây/lần nhưng BẬT ECO-MODE (chỉ gọi API khi màn hình không bị tắt hoặc app không bị thu nhỏ)
+    // [Bình thường] Thêm Polling 10 giây/lần nhưng BẬT ECO-MODE (chỉ gọi API khi màn hình không bị tắt hoặc app không bị thu nhỏ)
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         fetchBookings(parsedUser, selectedDate);
@@ -324,7 +331,7 @@ export default function StaffQueue() {
     return () => clearInterval(interval);
   }, [navigate, selectedDate]);
 
-  // Close dropdown on click outside
+  // [Bình thường] Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -351,15 +358,15 @@ export default function StaffQueue() {
   const shortBranch = getShortBranch(branchId);
   const branchName = user.tier === 'BranchManager' ? `Quản lí chi nhánh - ${shortBranch}` : `Nhân viên chi nhánh - ${shortBranch}`;
 
-  // The API already filters bookings by branchId, so no need to filter again.
+  // [Bình thường] API đã lọc danh sách đặt lịch theo branchId, nên không cần lọc lại ở FE.
   const branchBookings = bookings;
 
-  // Stats
+  // [Bình thường] Thống kê số lượng đơn hàng theo trạng thái
   const countPending = branchBookings.filter(b => b.status === 'Pending').length;
   const countWashing = branchBookings.filter(b => b.status === 'Washing').length;
   const countCompleted = branchBookings.filter(b => b.status === 'Completed').length;
 
-  // Search & Filter
+  // [Bình thường] Lọc và tìm kiếm đơn hàng
   const filteredBookings = branchBookings.filter(b => {
     const matchesSearch = (b.licensePlate || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (b.packageName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -372,6 +379,7 @@ export default function StaffQueue() {
 
   const updateBookingStatus = async (id, newStatus) => {
     try {
+      // [API: Gọi API cập nhật trạng thái đơn hàng lên BE, truyền vào id đơn hàng và trạng thái mới (Washing/Completed), để cập nhật tiến độ rửa xe]
       // FE: ĐÂY LÀ CHỖ CALL API CHO CHỨC NĂNG: Nhân viên cập nhật trạng thái đơn hàng (Đã nhận xe / Hoàn thành)
       // -> Sẽ nhận được ở: BE - StaffBookingsController.cs (Hàm CompleteService / UpdateStatus)
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/${id}/status`, {
@@ -398,6 +406,7 @@ export default function StaffQueue() {
 
   const handleRequestStart = async (id) => {
     try {
+      // [API: Gọi API yêu cầu khách hàng xác nhận bắt đầu, truyền id, dùng để gửi thông báo cho khách]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${id}/request-start`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${user.token}` }
@@ -416,6 +425,7 @@ export default function StaffQueue() {
   const handleConfirmAddInterior = async () => {
     if (!addingInteriorBooking) return;
     try {
+      // [API: Gọi API thêm dịch vụ dọn nội thất vào đơn hàng, truyền id, dùng để cập nhật dịch vụ cho khách]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/bookings/${addingInteriorBooking.id}/add-interior-cleaning`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${user.token}` }
@@ -456,7 +466,7 @@ export default function StaffQueue() {
     <main className="min-h-screen bg-background pt-28 pb-16 px-margin-mobile md:px-margin-desktop">
       <div className="max-w-container-max mx-auto">
         
-        {/* Header Section */}
+        {/* [Bình thường] Phần Header hiển thị thông tin chi nhánh và vai trò */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -481,9 +491,9 @@ export default function StaffQueue() {
           </div>
         </div>
 
-        {/* Stats Overview */}
+        {/* [Bình thường] Phần tổng quan thống kê số lượng đơn */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-8">
-          {/* Card Đang chờ */}
+          {/* [Bình thường] Card hiển thị số xe đang chờ */}
           <div className="glass-card rounded-[24px] p-6 shadow-sm border border-outline-variant/30 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute top-0 left-0 bottom-0 w-2 bg-blue-500"></div>
             <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -495,7 +505,7 @@ export default function StaffQueue() {
             </div>
           </div>
 
-          {/* Card Đang rửa */}
+          {/* [Bình thường] Card hiển thị số xe đang rửa */}
           <div className="glass-card rounded-[24px] p-6 shadow-sm border border-outline-variant/30 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute top-0 left-0 bottom-0 w-2 bg-amber-500 animate-pulse"></div>
             <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -507,7 +517,7 @@ export default function StaffQueue() {
             </div>
           </div>
 
-          {/* Card Hoàn thành */}
+          {/* [Bình thường] Card hiển thị số xe đã hoàn thành */}
           <div className="glass-card rounded-[24px] p-6 shadow-sm border border-outline-variant/30 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute top-0 left-0 bottom-0 w-2 bg-emerald-500"></div>
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -520,10 +530,10 @@ export default function StaffQueue() {
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {/* [Bình thường] Thanh tìm kiếm và bộ lọc trạng thái */}
         <div className="glass-card rounded-3xl p-6 mb-8 border border-outline-variant/30 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative">
           <div className="flex gap-4 w-full md:max-w-xl items-center">
-            {/* Date Picker Toggle */}
+            {/* [Bình thường] Nút bật/tắt bộ chọn ngày */}
             <div className="relative" ref={datePickerRef}>
               <button 
                 onClick={() => setShowDatePicker(!showDatePicker)}
@@ -536,10 +546,10 @@ export default function StaffQueue() {
                 <span className="material-symbols-outlined text-[18px] ml-2">expand_more</span>
               </button>
 
-              {/* Date Picker Dropdown */}
+              {/* [Bình thường] Dropdown chứa lịch chọn ngày */}
               {showDatePicker && (
                 <div className="absolute top-full left-0 mt-2 p-4 bg-surface rounded-3xl shadow-xl border border-outline-variant/20 min-w-[280px] z-50">
-                  {/* Calendar Header */}
+                  {/* [Bình thường] Phần Header của lịch (chuyển tháng) */}
                   <div className="flex justify-between items-center mb-4">
                     <button type="button" onClick={prevMonth} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
                       <span className="material-symbols-outlined text-[20px] font-bold">chevron_left</span>
@@ -550,14 +560,14 @@ export default function StaffQueue() {
                     </button>
                   </div>
 
-                  {/* Day of Week Headers */}
+                  {/* [Bình thường] Tiêu đề các ngày trong tuần */}
                   <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-outline/60 mb-2">
                     {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d) => (
                       <div key={d}>{d}</div>
                     ))}
                   </div>
 
-                  {/* Day Grid */}
+                  {/* [Bình thường] Lưới hiển thị các ngày trong tháng */}
                   <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold">
                     {generateCalendarDays().map((dayObj, idx) => {
                       const y = dayObj.year;
@@ -587,7 +597,7 @@ export default function StaffQueue() {
                     })}
                   </div>
 
-                  {/* Footer today link */}
+                  {/* [Bình thường] Liên kết chọn ngày hôm nay ở Footer */}
                   <div className="flex justify-end border-t border-outline-variant/20 pt-3 mt-3">
                     <button
                       type="button"
@@ -633,7 +643,7 @@ export default function StaffQueue() {
           </div>
         </div>
 
-        {/* Queue Table */}
+        {/* [Bình thường] Bảng hiển thị danh sách hàng đợi */}
         <div className="glass-card rounded-[32px] overflow-hidden border border-outline-variant/30 shadow-md">
           <div className="overflow-x-auto min-h-[350px] pb-32">
             <table className="w-full border-collapse text-left text-sm">

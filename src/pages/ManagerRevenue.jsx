@@ -13,16 +13,19 @@ import {
 const BRANCH_DETAILS = {
   'BRN-Q1-01': { name: 'LunaWash Quận 1', address: '123 Lê Lợi, Bến Thành', phone: '1900 5678' },
   'BRN-TD-01': { name: 'LunaWash Thủ Đức', address: '45 Võ Văn Ngân, Thủ Đức', phone: '1900 1234' },
-  'BRN-LD-01': { name: 'LunaWash Lâm Đồng', address: '12 Lâm Đồng', phone: '1900 4321' }
+  'BRN-LD-01': { name: 'LunaWash Linh Đông', address: 'Thủ Đức, HCM', phone: '1900 4321' }
 };
 
+//<<Comment Function>>
+// Hàm này là: Component ManagerRevenue dùng cho quản lý chi nhánh xem thống kê doanh thu theo tuần và tháng.
+//<</.....>>
 export default function ManagerRevenue() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [branchName, setBranchName] = useState('Chi nhánh của bạn');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('week'); // 'week' or 'month'
+  const [period, setPeriod] = useState('week'); // [Bình thường] 'week' hoặc 'month'
   const [referenceDate, setReferenceDate] = useState(new Date().toISOString());
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export default function ManagerRevenue() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      // [API: Gọi API lấy dữ liệu doanh thu của chi nhánh, truyền branchId, period và referenceDate, dùng để vẽ biểu đồ và hiển thị bảng doanh thu]
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Dashboard/branch/${branchId}/revenue?period=${selectedPeriod}&referenceDate=${refDate}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -98,7 +102,7 @@ export default function ManagerRevenue() {
   return (
     <main className="min-h-screen bg-background pt-28 pb-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
+        {/* [Bình thường] Phần Header (Header Section) */}
         <div className="flex items-center gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2">
@@ -123,7 +127,7 @@ export default function ManagerRevenue() {
           </div>
         </div>
 
-        {/* 3 Revenue Cards */}
+        {/* [Bình thường] 3 Thẻ hiển thị Doanh thu (3 Revenue Cards) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-8">
           <div className="glass-card rounded-[24px] p-6 shadow-sm border border-outline-variant/30 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute top-0 left-0 bottom-0 w-2 bg-blue-500"></div>
@@ -165,7 +169,7 @@ export default function ManagerRevenue() {
           </div>
         </div>
 
-        {/* Filters & Chart */}
+        {/* [Bình thường] Bộ lọc và Biểu đồ (Filters & Chart) */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-outline-variant/20 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h2 className="text-xl font-bold text-on-surface">Thống Kê Doanh Thu</h2>
@@ -222,7 +226,7 @@ export default function ManagerRevenue() {
           </div>
         </div>
 
-        {/* Detailed Table */}
+        {/* [Bình thường] Bảng chi tiết (Detailed Table) */}
         <div className="bg-white rounded-[32px] p-2 md:p-4 shadow-sm border border-outline-variant/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">

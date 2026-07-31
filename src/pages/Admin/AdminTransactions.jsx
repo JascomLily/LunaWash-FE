@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
+//<<Comment Function>>
+// Hàm này là: Component AdminTransactions dùng cho admin cấu hình các phương thức thanh toán (Tiền mặt, VNPay, Momo, ZaloPay).
+//<</.....>>
 const AdminTransactions = () => {
   const [loading, setLoading] = useState(true);
   const [methods, setMethods] = useState({
@@ -12,11 +15,11 @@ const AdminTransactions = () => {
   });
   const [tiers, setTiers] = useState([]);
 
-  // API State
+  // [Bình thường] Trạng thái API
   const [apiKeys, setApiKeys] = useState({ tmnCode: '', hashSecret: '' });
   const [tempKeys, setTempKeys] = useState({ tmnCode: '', hashSecret: '' });
   
-  // UI State
+  // [Bình thường] Trạng thái Giao diện (UI)
   const [isEditingApi, setIsEditingApi] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -33,6 +36,7 @@ const AdminTransactions = () => {
       const userStr = localStorage.getItem('user');
       const token = userStr ? JSON.parse(userStr).token : '';
       
+      // [API: Gọi API lấy cấu hình thanh toán và danh sách hạng thành viên, dùng để khởi tạo trạng thái hiển thị]
       const [res, tiersRes] = await Promise.all([
         fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -83,7 +87,10 @@ const AdminTransactions = () => {
         minimumTierIdForCash: newMethods.minimumTierIdForCash
       };
 
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
+      // [API: Gọi API cập nhật cấu hình thanh toán, truyền payload chứa các cờ bật/tắt và API Keys, dùng để áp dụng cấu hình mới]
+      // GỌI API LÊN BACKEND: PUT /api/Settings/payments
+        // Truyền object chứa các cấu hình: bật/tắt VNPay, Tiền mặt và Hạng tối thiểu
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/Settings/payments', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +116,7 @@ const AdminTransactions = () => {
       return;
     }
     
-    // Optimistic UI Update
+    // [Bình thường] Cập nhật giao diện giả định (Optimistic UI Update)
     setMethods(newMethods);
     
     const success = await updateSettingsAPI(newMethods, apiKeys);
@@ -120,7 +127,7 @@ const AdminTransactions = () => {
         toast.success(`Đã tắt thanh toán bằng ${key.toUpperCase()}`);
       }
     } else {
-      // Revert if failed
+      // [Bình thường] Hoàn tác nếu thất bại
       setMethods(methods);
     }
   };
@@ -129,14 +136,14 @@ const AdminTransactions = () => {
     const newTierId = e.target.value;
     const newMethods = { ...methods, minimumTierIdForCash: newTierId };
     
-    // Optimistic UI Update
+    // [Bình thường] Cập nhật giao diện giả định (Optimistic UI Update)
     setMethods(newMethods);
     
     const success = await updateSettingsAPI(newMethods, apiKeys);
     if (success) {
       toast.success('Đã cập nhật hạng tối thiểu cho Tiền mặt!');
     } else {
-      // Revert if failed
+      // [Bình thường] Hoàn tác nếu thất bại
       setMethods(methods);
     }
   };
@@ -209,7 +216,7 @@ const AdminTransactions = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Tiền mặt */}
+        {/* [Bình thường] Tiền mặt */}
         <div className={`relative overflow-hidden bg-surface-container-lowest rounded-3xl p-6 border transition-all duration-500 hover:shadow-lg ${methods.cash ? 'border-emerald-500/50 shadow-emerald-500/10' : 'border-outline-variant/30 opacity-70 grayscale-[30%]'}`}>
           {methods.cash && <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -z-10 pointer-events-none"></div>}
           
@@ -249,7 +256,7 @@ const AdminTransactions = () => {
           </div>
         </div>
 
-        {/* VNPay */}
+        {/* [Bình thường] VNPay */}
         <div className={`relative overflow-hidden bg-surface-container-lowest rounded-3xl p-6 border transition-all duration-500 hover:shadow-lg ${methods.vnpay ? 'border-blue-500/50 shadow-blue-500/10' : 'border-outline-variant/30 opacity-70 grayscale-[30%]'}`}>
           {methods.vnpay && <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full -z-10 pointer-events-none"></div>}
           
@@ -281,7 +288,7 @@ const AdminTransactions = () => {
 
       </div>
 
-      {/* Auth Modal */}
+      {/* [Bình thường] Modal xác thực (Auth Modal) */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in p-4">
           <div className="bg-surface-container-lowest p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-outline-variant/20">
@@ -311,7 +318,7 @@ const AdminTransactions = () => {
         </div>
       )}
 
-      {/* Legal Warning Modal */}
+      {/* [Bình thường] Modal cảnh báo rủi ro (Legal Warning Modal) */}
       {showWarningModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in p-4">
           <div className="bg-surface-container-lowest p-8 rounded-[2rem] w-full max-w-md shadow-2xl border border-error/20">

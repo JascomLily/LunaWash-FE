@@ -7,6 +7,9 @@ import toast from 'react-hot-toast';
  * Trang Đăng ký tài khoản - LunaWash.
  * Kết nối trực tiếp với API Backend của hệ thống.
  */
+//<<Comment Function>>
+// Hàm này là: Component trang đăng ký tài khoản của hệ thống LunaWash, quản lý form đăng ký, cập nhật hồ sơ và xác thực OTP.
+//<</.....>>
 export default function Register() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
@@ -18,20 +21,20 @@ export default function Register() {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // States for Profile Update Modal
+  // [Bình thường] Khởi tạo các state cho Modal cập nhật hồ sơ
   const [showProfileUpdate, setShowProfileUpdate] = useState(false);
   const [tempUser, setTempUser] = useState(null);
   const [updateFullName, setUpdateFullName] = useState('');
   const [updatePhone, setUpdatePhone] = useState('');
   const [updateAddress, setUpdateAddress] = useState('');
 
-  // States for OTP Modal
+  // [Bình thường] Khởi tạo các state cho Modal OTP
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
   useEffect(() => {
-    // Hiệu ứng tương tác nền
+    // [Bình thường] Xử lý hiệu ứng tương tác nền dựa trên vị trí chuột
     const handleMouseMove = (e) => {
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
@@ -47,6 +50,9 @@ export default function Register() {
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+//<<Comment Function>>
+// Hàm này là: Chuyển đổi hiển thị/ẩn mật khẩu cho ô nhập mật khẩu
+//<</.....>>
   const togglePasswordVisibility = () => {
     const passInput = document.getElementById('password');
     const toggleIcon = document.getElementById('toggle-icon');
@@ -57,6 +63,9 @@ export default function Register() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện gửi form đăng ký tài khoản
+//<</.....>>
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -74,7 +83,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // GỌI API XUỐNG BACKEND: Đẩy thông tin form đăng ký lên Server qua hàm fetch
+      // [API: Gọi API lên Backend (POST /api/Auth/register), truyền fullName, email, phone, password, dùng để đăng ký tài khoản người dùng mới]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/register', {
         method: 'POST',
         headers: {
@@ -108,14 +117,16 @@ export default function Register() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý đăng nhập/đăng ký thành công bằng tài khoản Google, gọi API xác thực token với Backend
+//<</.....>>
   const handleGoogleSuccess = async (credentialResponse) => {
-    // This is the JWT token provided by Google
+    // [Bình thường] Đây là mã token JWT được Google cấp
     const googleToken = credentialResponse.credential;
     setLoading(true);
 
     try {
-      // Gửi Token này xuống Backend để xác thực và lấy Token hệ thống
-      // Đăng nhập hay đăng ký bằng Google đều có thể dùng chung 1 API (vì BE sẽ tự tạo user nếu chưa có)
+      // [API: Gọi API lên Backend (POST /api/Auth/google-login), truyền token Google, dùng để xác thực và tạo tài khoản (nếu chưa có) hoặc lấy token của hệ thống]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/google-login', {
         method: 'POST',
         headers: {
@@ -179,14 +190,21 @@ export default function Register() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý lỗi khi hiển thị cửa sổ đăng nhập Google
+//<</.....>>
   const handleGoogleError = () => {
     toast.error('Có lỗi xảy ra khi bật cửa sổ Đăng nhập Google.');
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện gửi form cập nhật hồ sơ (thêm số điện thoại, địa chỉ) cho người dùng đăng nhập bằng Google
+//<</.....>>
   const handleProfileUpdateSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // [API: Gọi API lên Backend (PUT /api/Auth/me), truyền fullName, phone, address, dùng để cập nhật thông tin cá nhân của người dùng]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/me', {
         method: 'PUT',
         headers: {
@@ -204,7 +222,7 @@ export default function Register() {
         throw new Error('Lỗi cập nhật hồ sơ');
       }
 
-      // Cập nhật lại thông tin mới nhất vào user local
+      // [Bình thường] Cập nhật lại thông tin mới nhất vào user local
       const finalUser = { ...tempUser, fullName: updateFullName };
       localStorage.setItem('user', JSON.stringify(finalUser));
       
@@ -218,10 +236,14 @@ export default function Register() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý xác thực mã OTP được nhập bởi người dùng
+//<</.....>>
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // [API: Gọi API lên Backend (POST /api/Auth/verify-otp), truyền email và otp, dùng để xác thực tài khoản email vừa đăng ký]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -238,8 +260,12 @@ export default function Register() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý yêu cầu gửi lại mã OTP cho người dùng
+//<</.....>>
   const handleResendOtp = async () => {
     try {
+      // [API: Gọi API lên Backend (POST /api/Auth/resend-otp), truyền email, dùng để yêu cầu gửi lại mã OTP xác nhận]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -254,14 +280,14 @@ export default function Register() {
 
   return (
     <main className="flex-grow flex items-center justify-center py-24 px-margin-mobile md:px-margin-desktop relative overflow-hidden">
-      {/* Abstract Background Elements */}
+      {/* [Bình thường] Các phần tử nền trừu tượng */}
       <div className="absolute top-0 left-0 w-full h-full -z-10 opacity-30">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary-fixed blur-[120px] rounded-full transition-transform duration-300 ease-out"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-container blur-[120px] rounded-full transition-transform duration-300 ease-out"></div>
       </div>
 
       <div className="w-full max-w-[1100px] grid grid-cols-1 lg:grid-cols-2 bg-surface-container-lowest rounded-3xl overflow-hidden shadow-2xl border border-outline-variant/30">
-        {/* Left Side: Visual/Branding */}
+        {/* [Bình thường] Phía bên trái: Hình ảnh / Thương hiệu */}
         <div className="hidden lg:block relative overflow-hidden">
           <img 
             className="absolute inset-0 w-full h-full object-cover" 
@@ -300,7 +326,7 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Right Side: Form */}
+        {/* [Bình thường] Phía bên phải: Form đăng ký */}
         <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-surface-container-lowest">
           <div className="mb-10 text-center lg:text-left">
             <h1 className="font-headline-lg text-headline-lg text-primary mb-2">Đăng ký tài khoản</h1>
@@ -469,7 +495,7 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Modal Cập nhật thông tin bắt buộc */}
+      {/* [Bình thường] Modal Cập nhật thông tin bắt buộc */}
       {showProfileUpdate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-[500px] w-full shadow-2xl">
@@ -522,7 +548,7 @@ export default function Register() {
         </div>
       )}
 
-      {/* Modal Nhập OTP */}
+      {/* [Bình thường] Modal Nhập OTP */}
       {showOtpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-[400px] w-full shadow-2xl text-center">

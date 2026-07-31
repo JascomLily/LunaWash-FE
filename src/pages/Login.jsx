@@ -8,6 +8,9 @@ import toast from 'react-hot-toast';
  * Hỗ trợ lưu trữ trạng thái người dùng cục bộ (localStorage) khi đăng nhập thành công.
  * Tự động phân tách hạng thành viên theo email nhập vào để khớp với dữ liệu mẫu của Database.
  */
+//<<Comment Function>>
+// Hàm này là: Component trang đăng nhập của hệ thống LunaWash, quản lý các state và form đăng nhập, cập nhật hồ sơ và xác thực OTP.
+//<</.....>>
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -15,20 +18,20 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // States for Profile Update Modal
+  // [Bình thường] Khởi tạo các state cho Modal cập nhật hồ sơ
   const [showProfileUpdate, setShowProfileUpdate] = useState(false);
   const [tempUser, setTempUser] = useState(null);
   const [updateFullName, setUpdateFullName] = useState('');
   const [updatePhone, setUpdatePhone] = useState('');
   const [updateAddress, setUpdateAddress] = useState('');
 
-  // States for OTP Modal
+  // [Bình thường] Khởi tạo các state cho Modal OTP
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
   useEffect(() => {
-    // Background decorative movement
+    // [Bình thường] Xử lý hiệu ứng di chuyển bong bóng trang trí ở nền dựa trên vị trí chuột
     const handleMouseMove = (e) => {
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
@@ -44,6 +47,9 @@ export default function Login() {
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+//<<Comment Function>>
+// Hàm này là: Chuyển đổi hiển thị/ẩn mật khẩu cho ô nhập mật khẩu
+//<</.....>>
   const togglePasswordVisibility = () => {
     const passInput = document.getElementById('password');
     const toggleIcon = document.getElementById('toggle-icon');
@@ -54,6 +60,9 @@ export default function Login() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện gửi form đăng nhập bằng email và mật khẩu
+//<</.....>>
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,7 +70,7 @@ export default function Login() {
     try {
       // --- Đã xóa Dummy Login. Giờ sẽ gọi thẳng API xuống Backend ---
 
-      // GỌI API XUỐNG BACKEND: Gửi yêu cầu đăng nhập (POST) đến Endpoint /api/Auth/login
+      // [API: Gọi API lên Backend (POST /api/Auth/login), truyền email và password, dùng để xác thực người dùng và đăng nhập hệ thống]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/login', {
         method: 'POST',
         headers: {
@@ -93,7 +102,7 @@ export default function Login() {
       const data = await response.json();
       // data: { token, fullName, email, role }
       
-      // Map role to tier for frontend compatibility
+      // [Bình thường] Phân ánh xạ vai trò (role) sang cấp bậc (tier) để tương thích với giao diện Frontend
       let tier = 'Member';
       if (data.role === 'Admin') tier = 'Admin';
       else if (data.role === 'Staff') tier = 'Staff';
@@ -119,7 +128,7 @@ export default function Login() {
         return;
       }
 
-      // Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
+      // [Bình thường] Lưu vào localStorage để duy trì phiên đăng nhập ở Frontend
       localStorage.setItem('user', JSON.stringify(loggedInUser));
 
       toast.success(`Đăng nhập thành công! Chào mừng ${loggedInUser.fullName}`);
@@ -144,13 +153,16 @@ export default function Login() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý đăng nhập thành công bằng tài khoản Google, gọi API xác thực token với Backend
+//<</.....>>
   const handleGoogleSuccess = async (credentialResponse) => {
-    // This is the JWT token provided by Google
+    // [Bình thường] Đây là mã token JWT được Google cấp
     const googleToken = credentialResponse.credential;
     setLoading(true);
 
     try {
-      // Gửi Token này xuống Backend để xác thực và lấy Token hệ thống
+      // [API: Gọi API lên Backend (POST /api/Auth/google-login), truyền token Google, dùng để xác thực và lấy token của hệ thống]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/google-login', {
         method: 'POST',
         headers: {
@@ -215,14 +227,21 @@ export default function Login() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý lỗi khi hiển thị cửa sổ đăng nhập Google
+//<</.....>>
   const handleGoogleError = () => {
     toast.error('Có lỗi xảy ra khi bật cửa sổ Đăng nhập Google.');
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý sự kiện gửi form cập nhật hồ sơ (thêm số điện thoại, địa chỉ)
+//<</.....>>
   const handleProfileUpdateSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // [API: Gọi API lên Backend (PUT /api/Auth/me), truyền fullName, phone, address, dùng để cập nhật thông tin cá nhân của người dùng]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/me', {
         method: 'PUT',
         headers: {
@@ -240,7 +259,7 @@ export default function Login() {
         throw new Error('Lỗi cập nhật hồ sơ');
       }
 
-      // Cập nhật lại thông tin mới nhất vào user local
+      // [Bình thường] Cập nhật lại thông tin mới nhất vào user local
       const finalUser = { ...tempUser, fullName: updateFullName };
       localStorage.setItem('user', JSON.stringify(finalUser));
       
@@ -254,10 +273,14 @@ export default function Login() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý xác thực mã OTP được nhập bởi người dùng
+//<</.....>>
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // [API: Gọi API lên Backend (POST /api/Auth/verify-otp), truyền email và otp, dùng để xác thực tài khoản email]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,8 +296,12 @@ export default function Login() {
     }
   };
 
+//<<Comment Function>>
+// Hàm này là: Xử lý yêu cầu gửi lại mã OTP cho người dùng
+//<</.....>>
   const handleResendOtp = async () => {
     try {
+      // [API: Gọi API lên Backend (POST /api/Auth/resend-otp), truyền email, dùng để yêu cầu gửi lại mã OTP xác nhận]
       const response = await fetch(import.meta.env.VITE_API_URL + '/api/Auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -289,7 +316,7 @@ export default function Login() {
 
   return (
     <main className="min-h-[calc(100vh-80px)] flex items-center justify-center relative overflow-hidden px-margin-mobile md:px-0 py-24">
-      {/* Background Decorative Elements */}
+      {/* [Bình thường] Các phần tử trang trí nền */}
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-secondary-fixed/20 rounded-full blur-[100px] pointer-events-none transition-transform duration-300 ease-out"></div>
       <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-primary-container/20 rounded-full blur-[100px] pointer-events-none transition-transform duration-300 ease-out"></div>
 
@@ -410,7 +437,7 @@ export default function Login() {
         </form>
       </div>
 
-      {/* Modal Cập nhật thông tin bắt buộc */}
+      {/* [Bình thường] Modal Cập nhật thông tin bắt buộc */}
       {showProfileUpdate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-[500px] w-full shadow-2xl">
@@ -463,7 +490,7 @@ export default function Login() {
         </div>
       )}
 
-      {/* Modal Nhập OTP */}
+      {/* [Bình thường] Modal Nhập OTP */}
       {showOtpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-[400px] w-full shadow-2xl text-center">
