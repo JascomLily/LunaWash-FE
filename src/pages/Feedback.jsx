@@ -182,9 +182,9 @@ export default function Feedback() {
                   </span>
                 </div>
               </div>
-              <div className="bg-slate-50 border border-slate-200 px-5 py-3 rounded-2xl text-center shadow-inner min-w-[120px]">
+              <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl text-center shadow-inner min-w-[140px] max-w-[180px]">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mã cuốc xe</p>
-                <p className="font-black text-[#00236f] text-sm">{bookingId.split('-')[0].toUpperCase()}</p>
+                <p className="font-black text-[#00236f] text-xs break-all">{bookingId?.toUpperCase()}</p>
               </div>
             </div>
           )}
