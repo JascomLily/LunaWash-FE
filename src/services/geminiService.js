@@ -31,7 +31,7 @@ export const sendChatMessage = async (chatHistory, newMessage) => {
     });
 
     // Gọi API Backend
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/AI/chat`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/AI/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
