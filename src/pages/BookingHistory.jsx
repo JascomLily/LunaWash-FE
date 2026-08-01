@@ -701,15 +701,7 @@ export default function BookingHistory() {
                   <p className="text-xs text-outline mb-0.5">Lịch hẹn</p>
                   <p className="font-bold text-on-surface whitespace-pre-line">{detailsBooking.time}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-outline mb-0.5">Check-in (Đang cập nhật BE)</p>
-                  <p className="font-bold text-emerald-600">--:--</p>
-                </div>
-                <div>
-                  <p className="text-xs text-outline mb-0.5">Check-out (Đang cập nhật BE)</p>
-                  <p className="font-bold text-blue-600">--:--</p>
-                </div>
-              </div>
+              
             </div>
 
             <div className="bg-surface-container-low/30 rounded-2xl p-5 border border-outline-variant/30">
